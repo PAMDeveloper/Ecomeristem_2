@@ -89,6 +89,8 @@ public:
     }
 
     void compute(double t, bool /* update */) {
+
+        //@TODO set true values
         _thermal_time_model->put < double >(t, model::ThermalTimeModel::PLASTO_DELAY, 0);
         _thermal_time_model->put < int >(t, model::ThermalTimeModel::PHASE, PlantState::INIT);
         _thermal_time_model->put < double >(t, model::ThermalTimeModel::LIG, 0);

@@ -28,7 +28,7 @@
 
 #include <defines.hpp>
 #include <plant/PlantState.hpp>
-#include <QDebug>
+
 namespace model {
 
 class ThermalTimeModel : public AtomicModel < ThermalTimeModel >
@@ -102,18 +102,17 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        qDebug() << "**************";
         //ThermalTimeManager
         step_state();
 
         //DeltaT
         _Ta = _parameters.get(t).Temperature;
-//        trace_element(t, artis::utils::COMPUTE, boost::lexical_cast<std::string>(_Ta));
+#ifdef WITH_TRACE
         Trace::trace() << TraceElement( path(this), t, artis::utils::COMPUTE)
                 << artis::utils::KernelInfo("_Ta", true, boost::lexical_cast<std::string>(_Ta));
         Trace::trace().flush();
+#endif
 
-//        std::cout << boost::lexical_cast<std::string>(_Ta) << std::endl;
         _deltaT = _Ta - _Tb;
 
         //TT
@@ -188,7 +187,6 @@ public:
         _Tb = _parameters.get < double >("Tb");
         _coef_ligulo = _parameters.get < double >("coef_ligulo1");
         _plasto = _parameters.get < double >("plasto_init");
-        //_TA
 
         //    computed variables
         _state = INIT;
@@ -203,23 +201,19 @@ public:
         _DD = 0;
         _EDD = 0;
         _IH = 0;
-
-        //    external variables
-        _plasto_delay = 0;
-        _phase = PlantState::INIT;
-        _lig = 0;
     }
 
 private:
-    //    parameters variables
     ecomeristem::ModelParameters _parameters;
+    //    parameters variables
     double _Tb;
     double _plasto;
     double _coef_ligulo;
-    //    temporal parameters variables
+
+    //    parameters variables (t)
     double _Ta;
 
-    //    computed variables
+    //    computed variables (internal)
     int _state;
     double _deltaT;
     double _TT;
