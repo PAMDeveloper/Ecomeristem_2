@@ -205,15 +205,15 @@ public:
 
 private:
     ecomeristem::ModelParameters _parameters;
-    //    parameters variables
+    //    parameters
     double _Tb;
     double _plasto;
     double _coef_ligulo;
 
-    //    parameters variables (t)
+    //    parameters(t)
     double _Ta;
 
-    //    computed variables (internal)
+    //    internals - computed
     int _state;
     double _deltaT;
     double _TT;
@@ -227,7 +227,7 @@ private:
     double _EDD;
     double _IH;
 
-    //    external variables
+    //    externals
     double _plasto_delay;
     int _phase;
     double _lig;

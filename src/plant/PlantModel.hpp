@@ -27,6 +27,7 @@
 
 #include "defines.hpp"
 #include <plant/processes/ThermalTimeModel.hpp>
+#include <plant/processes/WaterBalanceModel.hpp>
 
 
 
@@ -47,7 +48,7 @@
 class PlantModel : public CoupledModel < PlantModel >
 {
 public:
-    enum submodels { ASSIMILATION, ROOT, STOCK, THERMAL_TIME, WATER_BALANCE,
+    enum submodels { THERMAL_TIME, WATER_BALANCE, ASSIMILATION, ROOT, STOCK,
                      MANAGER, TILLER_MANAGER, SLA, CULMS };
 
     enum internals { LAI, DELTA_T, DD, EDD, IH, LIGULO_VISU, PHENO_STAGE,
@@ -61,10 +62,12 @@ public:
                      INTERNODE_DEMAND_SUM };
 
     PlantModel():
-    _thermal_time_model(new model::ThermalTimeModel)
+    _thermal_time_model(new model::ThermalTimeModel),
+    _water_balance_model(new model::WaterBalanceModel)
     {
         // submodels
         Submodels( ((THERMAL_TIME, _thermal_time_model.get())) );
+        Submodels( ((WATER_BALANCE, _water_balance_model.get())) );
 
         // local internals
         Internal( LEAF_BIOMASS_SUM, &PlantModel::_leaf_biomass_sum );
@@ -95,6 +98,11 @@ public:
         _thermal_time_model->put < int >(t, model::ThermalTimeModel::PHASE, PlantState::INIT);
         _thermal_time_model->put < double >(t, model::ThermalTimeModel::LIG, 0);
         (*_thermal_time_model)(t);
+
+        _water_balance_model->put < double >(t, model::WaterBalanceModel::ETP, 0);
+        _water_balance_model->put < double >(t, model::WaterBalanceModel::INTERC, 0);
+        _water_balance_model->put < double >(t, model::WaterBalanceModel::WATER_SUPPLY, 0);
+        (*_water_balance_model)(t);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
@@ -110,6 +118,7 @@ public:
 
         //submodels
         _thermal_time_model->init(t, parameters);
+        _water_balance_model->init(t, parameters);
     }
         bool is_dead() const
         { /*return not culm_models.empty() and culm_models[0]->is_dead();*/ }
@@ -118,6 +127,7 @@ private:
 
     // submodels
     std::unique_ptr < model::ThermalTimeModel > _thermal_time_model;
+    std::unique_ptr < model::WaterBalanceModel > _water_balance_model;
 
 
 //    void compute_assimilation(double t);

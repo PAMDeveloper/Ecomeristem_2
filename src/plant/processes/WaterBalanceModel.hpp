@@ -34,19 +34,21 @@ namespace model {
 class WaterBalanceModel : public AtomicModel < WaterBalanceModel >
 {
 public:
-    enum internals { };
-
-    enum externals { };
+    enum internals { CSTR, FCSTR, FTSW, TRANSPIRATION, SWC };
+    enum externals { ETP, INTERC, WATER_SUPPLY };
 
 
     WaterBalanceModel() {
         //    computed variables
-        Internal(IIII, &WaterBalanceModel::_iiii);
+        Internal(CSTR, &WaterBalanceModel::_cstr);
+        Internal(FCSTR, &WaterBalanceModel::_fcstr);
+        Internal(FTSW, &WaterBalanceModel::_ftsw);
+        Internal(TRANSPIRATION, &WaterBalanceModel::_transpiration);
+        Internal(SWC, &WaterBalanceModel::_swc);
 
-
-        //    external variables
-        External(XXX, &WaterBalanceModel::_xxxx);
-
+        External(ETP, &WaterBalanceModel::_etp);
+        External(INTERC, &WaterBalanceModel::_interc);
+        External(WATER_SUPPLY, &WaterBalanceModel::_water_supply);
     }
 
     virtual ~WaterBalanceModel()
@@ -54,7 +56,22 @@ public:
 
 
     void compute(double t, bool /* update */) {
+        //FTSW
+        _ftsw = _swc / RU1;
 
+        //cstr
+        _cstr = (_ftsw < ThresTransp) ?
+                    std::max(1e-4, _ftsw * 1. / ThresTransp) : 1;
+
+        //fcstr
+        _fcstr = std::sqrt(_cstr);
+
+        //transpiration
+        _transpiration = std::min(_swc, (Kcpot * std::min(_etp, ETPmax) *
+                                        _interc * _cstr) / Density);
+
+        //SWC
+        _swc = _swc - _transpiration + _water_supply;
     }
 
 
@@ -63,20 +80,40 @@ public:
         _parameters = parameters;
 
         //    paramaters variables
+        ThresTransp = parameters.get < double >("thresTransp");
+        RU1 = parameters.get < double >("RU1");
+        ETPmax = parameters.get < double >("ETPmax");
+        Kcpot = parameters.get < double >("Kcpot");
+        Density = parameters.get < double >("density");
 
         //    computed variables
-
+        _cstr = 1;
+        _fcstr = 1;
+        _ftsw = 1;
+        _swc = RU1;
+        _transpiration = 0;
     }
 
 private:
     ecomeristem::ModelParameters _parameters;
-    //    parameters variables
+    // parameters
+        double ETPmax;
+        double Kcpot;
+        double Density;
+        double RU1;
+        double ThresTransp;
 
-    //    temporal parameters variables
+    //    internals (computed)
+        double _transpiration;
+        double _ftsw;
+        double _swc;
+        double _cstr;
+        double _fcstr;
 
-    //    computed variables
-
-    //    external variables
+        //  externals
+        double _etp;
+        double _interc;
+        double _water_supply;
 };
 
 } // namespace model

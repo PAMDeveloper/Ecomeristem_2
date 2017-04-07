@@ -82,16 +82,16 @@ public:
 
 private:
     ecomeristem::ModelParameters _parameters;
-    //    parameters variables
+    //    parameters
 	double _gggg;
 	
-    //    parameters variables (t)
+    //    parameters(t)
 	double _tttt;
 
-    //    computed variables (internal)
+    //    internals - computed
 	double _iiii;
 
-    //    external variables
+    //    externals
 	double _xxxx;
 };
 
