@@ -105,10 +105,10 @@ public:
         _thermal_time_model->put < double >(t, model::ThermalTimeModel::LIG, 0);
         (*_thermal_time_model)(t);
 
-        _water_balance_model->put < double >(t, model::WaterBalanceModel::ETP, 0);
-        _water_balance_model->put < double >(t, model::WaterBalanceModel::INTERC, 0);
-        _water_balance_model->put < double >(t, model::WaterBalanceModel::WATER_SUPPLY, 0);
-        (*_water_balance_model)(t);
+//        _water_balance_model->put < double >(t, model::WaterBalanceModel::ETP, 0);
+//        _water_balance_model->put < double >(t, model::WaterBalanceModel::INTERC, 0);
+//        _water_balance_model->put < double >(t, model::WaterBalanceModel::WATER_SUPPLY, 0);
+//        (*_water_balance_model)(t);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)

@@ -116,47 +116,47 @@ public:
                      WaterBalanceModel::SWC});
 
         //AssimilationModel
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::ASSIM});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::ASSIM_POT});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::INTERC});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::LAI});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::RESP_MAINT});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::ASSIMILATION,
+//                     AssimilationModel::ASSIM});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::ASSIMILATION,
+//                     AssimilationModel::ASSIM_POT});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::ASSIMILATION,
+//                     AssimilationModel::INTERC});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::ASSIMILATION,
+//                     AssimilationModel::LAI});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::ASSIMILATION,
+//                     AssimilationModel::RESP_MAINT});
 
-        //StockModel
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::DAY_DEMAND});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::IC});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::TEST_IC});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::RESERVOIR_DISPO});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::SEED_RES});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::STOCK});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::SUPPLY});
-        selector("", artis::kernel::DOUBLE, {
-                     PlantModel::STOCK,
-                     StockModel::SURPLUS});
+//        //StockModel
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::DAY_DEMAND});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::IC});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::TEST_IC});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::RESERVOIR_DISPO});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::SEED_RES});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::STOCK});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::SUPPLY});
+//        selector("", artis::kernel::DOUBLE, {
+//                     PlantModel::STOCK,
+//                     StockModel::SURPLUS});
     }
 
     virtual ~PlantView()

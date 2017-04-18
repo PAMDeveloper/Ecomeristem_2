@@ -36,15 +36,14 @@ class ThermalTimeModel : public AtomicModel < ThermalTimeModel >
 public:
     enum states { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
 
-    enum internals { LIG, STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
+    enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
                      PLASTO_VISU, LIGULO_VISU, PHENOSTAGE, SLA, DD, EDD, IH };
 
-    enum externals { PHASE, PLASTO_DELAY, LEAF_LEN, LEAF_PREDIM };
+    enum externals {  LIG, PHASE, PLASTO_DELAY, LEAF_LEN, LEAF_PREDIM };
 
 
     ThermalTimeModel() {
         //    computed variables
-        Internal(LIG, &ThermalTimeModel::_lig);
         Internal(STATE, &ThermalTimeModel::_state);
         Internal(DELTA_T, &ThermalTimeModel::_deltaT);
         Internal(TT, &ThermalTimeModel::_TT);
@@ -59,6 +58,7 @@ public:
         Internal(IH, &ThermalTimeModel::_IH);
 
         //    external variables
+        External(LIG, &ThermalTimeModel::_lig);
         External(PLASTO_DELAY, &ThermalTimeModel::_plasto_delay);
         External(PHASE, &ThermalTimeModel::_phase);
         External(LEAF_LEN, &ThermalTimeModel::_leafLen);
