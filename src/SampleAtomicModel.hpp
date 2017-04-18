@@ -42,10 +42,8 @@ public:
         //    computed variables
         Internal(IIII, &SampleAtomicModel::_iiii);
 
-
         //    external variables
         External(XXX, &SampleAtomicModel::_xxxx);
-
     }
 
     virtual ~SampleAtomicModel()
