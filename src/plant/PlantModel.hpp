@@ -25,13 +25,14 @@
 #ifndef PLANT_MODEL_HPP
 #define PLANT_MODEL_HPP
 
-#include "defines.hpp"
+#include <defines.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>
-#include <plant/processes/StockModel.hpp>
+#include <plant/processes/PlantStockModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
 #include <plant/processes/TilleringModel.hpp>
 #include <plant/root/RootModel.hpp>
+#include <plant/culm/CulmModel.hpp>
 
 
 //#include <model/models/ecomeristem/culm/CulmModel.hpp>
@@ -55,26 +56,26 @@ class PlantModel : public CoupledModel < PlantModel >
 {
 public:
     enum submodels { THERMAL_TIME, WATER_BALANCE, STOCK, ASSIMILATION,
-                     TILLERING, ROOT};
+                     TILLERING, ROOT, CULM};
 
-    enum internals { LAI, DELTA_T, DD, EDD, IH, LIGULO_VISU, PHENO_STAGE,
-                     PLASTO_VISU, TT, TT_LIG, BOOL_CROSSED_PLASTO,
-                     ASSIM, CSTR, ROOT_DEMAND_COEF, ROOT_DEMAND,
-                     ROOT_BIOMASS, /*STOCK,*/ GROW, SUPPLY, DEFICIT, IC,
-                     SURPLUS, TEST_IC, DAY_DEMAND, RESERVOIR_DISPO,
-                     SEED_RES, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
-                     SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
-                     INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
-                     INTERNODE_DEMAND_SUM };
+//    enum internals { LAI, DELTA_T, DD, EDD, IH, LIGULO_VISU, PHENO_STAGE,
+//                     PLASTO_VISU, TT, TT_LIG, BOOL_CROSSED_PLASTO,
+//                     ASSIM, CSTR, ROOT_DEMAND_COEF, ROOT_DEMAND,
+//                     ROOT_BIOMASS, /*STOCK,*/ GROW, SUPPLY, DEFICIT, IC,
+//                     SURPLUS, TEST_IC, DAY_DEMAND, RESERVOIR_DISPO,
+//                     SEED_RES, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
+//                     SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
+//                     INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
+//                     INTERNODE_DEMAND_SUM };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
         _water_balance_model(new WaterBalanceModel),
-        _stock_model(new StockModel),
+        _stock_model(new PlantStockModel),
         _assimilation_model(new AssimilationModel),
         _tillering_model(new TilleringModel),
-        _root_model(new RootModel)
-
+        _root_model(new RootModel),
+        _culm_model(new CulmModel)
     {
         // submodels
         Submodels( ((THERMAL_TIME, _thermal_time_model.get())) );
@@ -82,16 +83,17 @@ public:
         Submodels( ((STOCK, _stock_model.get())) );
         Submodels( ((ASSIMILATION, _assimilation_model.get())) );
         Submodels( ((TILLERING, _tillering_model.get())) );
-        Submodels( ((TILLERING, _root_model.get())) );
+        Submodels( ((ROOT, _root_model.get())) );
+        Submodels( ((CULM, _culm_model.get())) );
 
         // local internals
-        Internal( LEAF_BIOMASS_SUM, &PlantModel::_leaf_biomass_sum );
-        Internal( LEAF_DEMAND_SUM, &PlantModel::_leaf_demand_sum );
-        Internal( LEAF_LAST_DEMAND_SUM, &PlantModel::_leaf_last_demand_sum );
-        Internal( INTERNODE_BIOMASS_SUM, &PlantModel::_internode_biomass_sum );
-        Internal( INTERNODE_DEMAND_SUM, &PlantModel::_internode_demand_sum );
-        Internal( INTERNODE_LAST_DEMAND_SUM, &PlantModel::_internode_last_demand_sum );
-        Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
+//        Internal( LEAF_BIOMASS_SUM, &PlantModel::_leaf_biomass_sum );
+//        Internal( LEAF_DEMAND_SUM, &PlantModel::_leaf_demand_sum );
+//        Internal( LEAF_LAST_DEMAND_SUM, &PlantModel::_leaf_last_demand_sum );
+//        Internal( INTERNODE_BIOMASS_SUM, &PlantModel::_internode_biomass_sum );
+//        Internal( INTERNODE_DEMAND_SUM, &PlantModel::_internode_demand_sum );
+//        Internal( INTERNODE_LAST_DEMAND_SUM, &PlantModel::_internode_last_demand_sum );
+//        Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
 
     }
 
@@ -125,11 +127,14 @@ public:
         /***********************************************/
         /****/
 //        compute_manager(t); //t-1
+
         //day - compute entities
 //        if(get_phase(t) == NEW_PHYTOMER or get_phase(t) == NEW_PHYTOMER3) //virer un état
 //            create_phytomer(t);
-//            compute_culms(t);
 
+        //CulmModel
+        _culm_model->put < int >(t, CulmModel::STATE, PlantState::VEGETATIVE);
+        (*_culm_model)(t);
         /***********************************************/
 
 //        after day - compute bilans
@@ -167,18 +172,18 @@ public:
 //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
 
         // Stock
-        _stock_model->put < double >(t, StockModel::DEMAND_SUM, 0);
-        _stock_model->put < double >(t, StockModel::LEAF_LAST_DEMAND_SUM, 0);
-        _stock_model->put < double >(t, StockModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _stock_model->put < int >(t, StockModel::PHASE, PlantState::INIT);
-        _stock_model->put < double >(t, StockModel::LEAF_BIOMASS_SUM, 0);
-        _stock_model->put < double >(t, StockModel::DELETED_LEAF_BIOMASS, 0);
-        _stock_model->put < double >(t, StockModel::REALLOC_BIOMASS_SUM, 0);
-        _stock_model->put < double >(t, StockModel::ASSIM, 0);
-        _stock_model->put < double >(t, StockModel::CULM_STOCK, 0);
-        _stock_model->put < double >(t, StockModel::CULM_DEFICIT, 0);
-        _stock_model->put < double >(t, StockModel::CULM_SURPLUS_SUM, 0);
-        _stock_model->put < int >(t, StockModel::STATE, PlantState::VEGETATIVE);
+        _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, 0);
+        _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, 0);
+        _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, 0);
+        _stock_model->put < int >(t, PlantStockModel::PHASE, PlantState::INIT);
+        _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, 0);
+        _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
+        _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, 0);
+        _stock_model->put < double >(t, PlantStockModel::ASSIM, 0);
+        _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, 0);
+        _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, 0);
+        _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, 0);
+        _stock_model->put < int >(t, PlantStockModel::STATE, PlantState::VEGETATIVE);
         (*_stock_model)(t);
 
         /***********************************************/
@@ -195,15 +200,18 @@ public:
         _water_balance_model->init(t, parameters);
         _stock_model->init(t, parameters);
         _assimilation_model->init(t, parameters);
+        _tillering_model->init(t, parameters);
+        _root_model->init(t, parameters);
+        _culm_model->init(t, parameters);
 
         //internal variables (local)
-        _leaf_biomass_sum = 0;
-        _leaf_demand_sum = 0;
-        _leaf_last_demand_sum = 0;
-        _internode_demand_sum = 0;
-        _internode_last_demand_sum = 0;
-        _internode_biomass_sum = 0;
-        _senesc_dw_sum = 0;
+//        _leaf_biomass_sum = 0;
+//        _leaf_demand_sum = 0;
+//        _leaf_last_demand_sum = 0;
+//        _internode_demand_sum = 0;
+//        _internode_last_demand_sum = 0;
+//        _internode_biomass_sum = 0;
+//        _senesc_dw_sum = 0;
 
 
     }
@@ -215,10 +223,11 @@ private:
     // submodels
     std::unique_ptr < model::ThermalTimeModel > _thermal_time_model;
     std::unique_ptr < model::WaterBalanceModel > _water_balance_model;
-    std::unique_ptr < model::StockModel > _stock_model;
+    std::unique_ptr < model::PlantStockModel > _stock_model;
     std::unique_ptr < model::AssimilationModel > _assimilation_model;
     std::unique_ptr < model::TilleringModel > _tillering_model;
     std::unique_ptr < model::RootModel > _root_model;
+    std::unique_ptr < model::CulmModel > _culm_model;
 
     //    void compute_assimilation(double t);
     //    void compute_culms(double t);
@@ -250,13 +259,13 @@ private:
     //    const model::models::ModelParameters* _parameters;
 
     // internal variables (local)
-    double _leaf_biomass_sum;
-    double _leaf_demand_sum;
-    double _leaf_last_demand_sum;
-    double _internode_biomass_sum;
-    double _internode_demand_sum;
-    double _internode_last_demand_sum;
-    double _senesc_dw_sum;
+//    double _leaf_biomass_sum;
+//    double _leaf_demand_sum;
+//    double _leaf_last_demand_sum;
+//    double _internode_biomass_sum;
+//    double _internode_demand_sum;
+//    double _internode_last_demand_sum;
+//    double _senesc_dw_sum;
 
     //    double _leaf_blade_area_sum;
     //    double _demand_sum;

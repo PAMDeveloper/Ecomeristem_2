@@ -62,6 +62,8 @@ public:
     void compute(double t, bool /* update */) {
         //Phytomers
         compute_phytomers(t);
+        
+        //Sum
 
         //StockModel
         if (_state == PlantState::ELONG) {

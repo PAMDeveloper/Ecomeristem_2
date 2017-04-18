@@ -34,9 +34,9 @@
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
-#include <plant/processes/StockModel.hpp>
+#include <plant/processes/PlantStockModel.hpp>
 #include <plant/processes/TilleringModel.hpp>
-#include <plant/root/processes/RootDemandModel.hpp>
+#include <plant/root/RootModel.hpp>
 
 using namespace model;
 namespace observer {
@@ -48,20 +48,20 @@ public:
     PlantView()
     {
         //PlantModel
-        selector("LEAF_BIOMASS_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::LEAF_BIOMASS_SUM });
-        selector("LEAF_DEMAND_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::LEAF_DEMAND_SUM });
-        selector("LEAF_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::LEAF_LAST_DEMAND_SUM });
-        selector("INTERNODE_BIOMASS_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::INTERNODE_BIOMASS_SUM });
-        selector("INTERNODE_DEMAND_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::INTERNODE_DEMAND_SUM });
-        selector("INTERNODE_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::INTERNODE_LAST_DEMAND_SUM });
-        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
-                     PlantModel::SENESC_DW_SUM });
+//        selector("LEAF_BIOMASS_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::LEAF_BIOMASS_SUM });
+//        selector("LEAF_DEMAND_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::LEAF_DEMAND_SUM });
+//        selector("LEAF_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::LEAF_LAST_DEMAND_SUM });
+//        selector("INTERNODE_BIOMASS_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::INTERNODE_BIOMASS_SUM });
+//        selector("INTERNODE_DEMAND_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::INTERNODE_DEMAND_SUM });
+//        selector("INTERNODE_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::INTERNODE_LAST_DEMAND_SUM });
+//        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
+//                     PlantModel::SENESC_DW_SUM });
 
         //ThermalTimeModel
         selector("LIG", artis::kernel::DOUBLE, {
@@ -138,28 +138,28 @@ public:
 //        //StockModel
         selector("DAY_DEMAND", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::DAY_DEMAND});
+                     PlantStockModel::DAY_DEMAND});
         selector("IC", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::IC});
+                     PlantStockModel::IC});
         selector("TEST_IC", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::TEST_IC});
+                     PlantStockModel::TEST_IC});
         selector("RESERVOIR_DISPO", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::RESERVOIR_DISPO});
+                     PlantStockModel::RESERVOIR_DISPO});
         selector("SEED_RES", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::SEED_RES});
+                     PlantStockModel::SEED_RES});
         selector("STOCK", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::STOCK});
+                     PlantStockModel::STOCK});
         selector("SUPPLY", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::SUPPLY});
+                     PlantStockModel::SUPPLY});
         selector("SURPLUS", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
-                     StockModel::SURPLUS});
+                     PlantStockModel::SURPLUS});
 
 
         //TilleringModel
@@ -180,6 +180,37 @@ public:
         selector("SURPLUS", artis::kernel::DOUBLE, {
                      PlantModel::ROOT,
                      RootModel::SURPLUS});
+
+        //CulmStockModel
+//        STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS, FIRST_DAY
+//        selector("CULM_STOCK", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::STOCK});
+//        selector("SUPPLY", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::SUPPLY});
+//        selector("SURPLUS", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::SURPLUS});
+//        selector("SURPLUS", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::SURPLUS});
+//        selector("SURPLUS", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::SURPLUS});
+//        selector("SURPLUS", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::SURPLUS});
+//        selector("SURPLUS", artis::kernel::DOUBLE, {
+//                     PlantModel::CULM,
+//                     CulmModel::CULM_STOCK,
+//                     CulmStockModel::SURPLUS});
     }
 
     virtual ~PlantView()

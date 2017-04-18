@@ -31,7 +31,7 @@
 
 namespace model {
 
-class StockModel : public AtomicModel < StockModel >
+class PlantStockModel : public AtomicModel < PlantStockModel >
 {
 public:
     enum internals { DAY_DEMAND, IC, TEST_IC, RESERVOIR_DISPO, SEED_RES, STOCK,
@@ -43,34 +43,34 @@ public:
                      STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM };
 
 
-    StockModel() {
+    PlantStockModel() {
         //    computed variables
-        Internal(DAY_DEMAND, &StockModel::_day_demand);
-        Internal(IC, &StockModel::_ic);
-        Internal(TEST_IC, &StockModel::_test_ic);
-        Internal(RESERVOIR_DISPO, &StockModel::_reservoir_dispo);
-        Internal(SEED_RES, &StockModel::_seed_res);
-        Internal(STOCK, &StockModel::_stock);
-        Internal(SUPPLY, &StockModel::_supply);
-        Internal(SURPLUS, &StockModel::_surplus);
+        Internal(DAY_DEMAND, &PlantStockModel::_day_demand);
+        Internal(IC, &PlantStockModel::_ic);
+        Internal(TEST_IC, &PlantStockModel::_test_ic);
+        Internal(RESERVOIR_DISPO, &PlantStockModel::_reservoir_dispo);
+        Internal(SEED_RES, &PlantStockModel::_seed_res);
+        Internal(STOCK, &PlantStockModel::_stock);
+        Internal(SUPPLY, &PlantStockModel::_supply);
+        Internal(SURPLUS, &PlantStockModel::_surplus);
 
 
         //    external variables
-        External(DEMAND_SUM, &StockModel::_demand_sum);
-        External(LEAF_LAST_DEMAND_SUM, &StockModel::_leaf_last_demand_sum);
-        External(INTERNODE_LAST_DEMAND_SUM, &StockModel::_internode_last_demand_sum);
-        External(PHASE, &StockModel::_phase);
-        External(LEAF_BIOMASS_SUM, &StockModel::_leaf_biomass_sum);
-        External(DELETED_LEAF_BIOMASS, &StockModel::_deleted_leaf_biomass);
-        External(REALLOC_BIOMASS_SUM, &StockModel::_realloc_biomass_sum);
-        External(ASSIM, &StockModel::_assim);
-        External(STATE, &StockModel::_state);
-        External(CULM_STOCK, &StockModel::_culm_stock);
-        External(CULM_DEFICIT, &StockModel::_culm_deficit);
-        External(CULM_SURPLUS_SUM, &StockModel::_culm_surplus_sum);
+        External(DEMAND_SUM, &PlantStockModel::_demand_sum);
+        External(LEAF_LAST_DEMAND_SUM, &PlantStockModel::_leaf_last_demand_sum);
+        External(INTERNODE_LAST_DEMAND_SUM, &PlantStockModel::_internode_last_demand_sum);
+        External(PHASE, &PlantStockModel::_phase);
+        External(LEAF_BIOMASS_SUM, &PlantStockModel::_leaf_biomass_sum);
+        External(DELETED_LEAF_BIOMASS, &PlantStockModel::_deleted_leaf_biomass);
+        External(REALLOC_BIOMASS_SUM, &PlantStockModel::_realloc_biomass_sum);
+        External(ASSIM, &PlantStockModel::_assim);
+        External(STATE, &PlantStockModel::_state);
+        External(CULM_STOCK, &PlantStockModel::_culm_stock);
+        External(CULM_DEFICIT, &PlantStockModel::_culm_deficit);
+        External(CULM_SURPLUS_SUM, &PlantStockModel::_culm_surplus_sum);
     }
 
-    virtual ~StockModel()
+    virtual ~PlantStockModel()
     {}
 
     void compute(double t, bool /* update */) {
