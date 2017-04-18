@@ -26,61 +26,133 @@
 #define ROOT_MODEL_HPP
 
 #include "defines.hpp"
-#include <model/kernel/AbstractCoupledModel.hpp>
-#include <plant/root/processes/RootDemandModel.hpp>
+#include <plant/PlantState.hpp>
 
-namespace ecomeristem { namespace root {
+namespace model {
 
-class RootModel : public ecomeristem::AbstractCoupledModel < RootModel >
+class RootModel : public AtomicModel < RootModel >
 {
+
 public:
-    enum submodels { ROOT_DEMAND_MODEL };
-    enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, ROOT_BIOMASS,
-                     SURPLUS };
-    enum externals { LEAF_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
-                     INTERNODE_DEMAND_SUM, INTERNODE_LAST_DEMAND_SUM, P,
-                     STOCK, PHASE, STATE, CULM_SURPLUS_SUM };
+    enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS };
 
-    RootModel():
-        _root_demand_model(new model::RootDemandModel)
-    {
-        // submodels
-        Submodels( ((ROOT_DEMAND, _root_demand_model.get())) );
+    enum externals { P, LEAF_DEMAND_SUM, LEAF_LAST_DEMAND_SUM, INTERNODE_DEMAND_SUM,
+                     INTERNODE_LAST_DEMAND_SUM, PHASE, STATE };
 
-        // internals
 
-        // externals
-;
+    RootModel() {
+        //    computed variables
+        Internal(ROOT_DEMAND_COEF, &RootModel::_root_demand_coef);
+        Internal(ROOT_DEMAND, &RootModel::_root_demand);
+        Internal(SURPLUS, &RootModel::_surplus);
+
+        //    external variables
+        External(P, &RootModel::_P);
+        External(LEAF_DEMAND_SUM, &RootModel::_leaf_demand_sum);
+        External(LEAF_LAST_DEMAND_SUM, &RootModel::_leaf_last_demand_sum);
+        External(INTERNODE_DEMAND_SUM, &RootModel::_internode_demand_sum);
+        External(INTERNODE_LAST_DEMAND_SUM, &RootModel::_internode_last_demand_sum);
+        External(PHASE, &RootModel::_phase);
+        External(STATE, &RootModel::_state);
     }
 
     virtual ~RootModel()
-    { }
+    {}
 
-    void init(double t, const model::models::ModelParameters& parameters)
-    {
-        _root_demand_model->init(t, parameters);
+
+    void compute(double t, bool /* update */) {
+        // Root Demand Coef
+        _root_demand_coef = _coeff1_R_d * std::exp(_coeff2_R_d * (t - _parameters.beginDate)) * (_P * _resp_R_d + 1);
+
+
+        // Root Demand
+        if (t == _parameters.beginDate) {
+            _root_demand = (_leaf_demand_sum + _leaf_last_demand_sum +
+                            _internode_demand_sum) * _root_demand_coef;
+            _last_value = _root_demand;
+            _root_biomass = _root_demand;
+        } else {
+            if (_phase == PlantState::NOGROWTH or _phase == PlantState::NOGROWTH4) {
+                _root_demand = 0;
+                _last_value = 0;
+            } else {
+                if (_state == PlantState::ELONG or _state == PlantState::PI) {
+                    if (_leaf_demand_sum + _leaf_last_demand_sum + _internode_demand_sum
+                            + _internode_last_demand_sum == 0) {
+                        _root_demand = _last_value * _root_demand_coef;
+                    } else {
+                        _root_demand = (_leaf_demand_sum + _leaf_last_demand_sum + _internode_demand_sum +
+                                        _internode_last_demand_sum) * _root_demand_coef;
+                    }
+                    if (_leaf_demand_sum + _leaf_last_demand_sum + _internode_demand_sum +
+                            _internode_last_demand_sum != 0) {
+                        _last_value = _leaf_demand_sum + _leaf_last_demand_sum
+                                + _internode_demand_sum + _internode_last_demand_sum;
+                    } else {
+                        _last_value = 0;
+                    }
+                    _root_demand = std::min(_culm_surplus_sum, _root_demand);
+                    _surplus = _culm_surplus_sum - _root_demand;
+
+                } else {
+                    if (_leaf_demand_sum + _leaf_last_demand_sum == 0) {
+                        _root_demand = _last_value * _root_demand_coef;
+                    } else {
+                        _root_demand = (_leaf_demand_sum + _leaf_last_demand_sum) * _root_demand_coef;
+                    }
+                    if (_leaf_demand_sum + _internode_demand_sum != 0) {
+                        _last_value = _leaf_demand_sum + _internode_demand_sum;
+                    } else {
+                        _last_value = 0;
+                    }
+                    _surplus = 0;
+                }
+            }
+            _root_biomass = _root_biomass + _root_demand;
+        }
     }
 
-    void compute(double t, bool /* update */)
-    {
-        _root_demand_model(t);
+    void init(double t, const ecomeristem::ModelParameters& parameters) {
+        _parameters = parameters;
+
+        //    parameters variables
+        _coeff1_R_d = _parameters.get < double >("coeff1_R_d");
+        _coeff2_R_d = _parameters.get < double >("coeff2_R_d");
+        _resp_R_d = _parameters.get < double >("resp_R_d");
+
+        //    computed variables (internal)
+        _root_demand = 0;
+        _root_demand_coef = 0;
+        _last_value = 0;
+        _root_biomass = 0;
+        _surplus = 0;
     }
 
 private:
-    //external variables
+    ecomeristem::ModelParameters _parameters;
+    //    parameters
+    double _coeff1_R_d;
+    double _coeff2_R_d;
+    double _resp_R_d;
+
+    //    internals - computed
+    double _root_demand_coef;
+    double _root_demand;
+    double _root_biomass;
+    double _last_value;
+    double _surplus;
+
+    //    externals
+    double _P;
     double _leaf_demand_sum;
     double _leaf_last_demand_sum;
     double _internode_demand_sum;
     double _internode_last_demand_sum;
-    double _p;
-    double _stock;
-    double _grow;
     double _phase;
     double _state;
     double _culm_surplus_sum;
-
-    // submodels
-    std::unique_ptr < model::RootDemandModel > _root_demand_model;
 };
 
-} } // namespace ecomeristem root
+} // namespace model
+
+#endif //ROOT_MODEL_HPP

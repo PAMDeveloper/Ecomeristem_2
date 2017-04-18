@@ -34,22 +34,18 @@ namespace model {
 class TilleringModel : public AtomicModel < TilleringModel >
 {
 public:
-    enum internals { IC, TEST_IC, NB_TILLERS, CREATE };
+    enum internals { NB_TILLERS, CREATE };
 
-    enum externals { SEED_RES, SUPPLY, DAY_DEMAND, BOOL_CROSSED_PLASTO, TAE };
+    enum externals { IC, BOOL_CROSSED_PLASTO, TAE };
 
 
     TilleringModel() {
         //    computed variables
-        Internal(IC, &TilleringModel::_ic);
-        Internal(TEST_IC, &TilleringModel::_test_ic);
         Internal(NB_TILLERS, &TilleringModel::_nb_tillers);
         Internal(CREATE, &TilleringModel::_create);
 
         //    external variables
-        External(SEED_RES, &TilleringModel::_seed_res);
-        External(SUPPLY, &TilleringModel::_supply);
-        External(DAY_DEMAND, &TilleringModel::_day_demand);
+        External(IC, &TilleringModel::_ic);
         External(BOOL_CROSSED_PLASTO, &TilleringModel::_boolCrossedPlasto);
         External(TAE, &TilleringModel::_tae);
     }
@@ -58,40 +54,6 @@ public:
     {}
 
     void compute(double t, bool /* update */) {
-
-        //  indice de competition - Proposition
-        if (t != _parameters.beginDate) {
-            double mean;
-            unsigned int n = 2;
-            if (_day_demand != 0) {
-                _ic_[0] = std::max(0., _seed_res + _supply) / _day_demand;
-            } else {
-                _ic_[0] = _ic;
-            }
-
-            mean = 2. * _ic_[0];
-
-            for (unsigned int i = 1; i < 3; i++) {
-                if (_ic_[i] != 0) {
-                    mean = mean + _ic_[i];
-                    n = n + 1;
-                }
-            }
-            mean = mean / n;
-
-            if (mean == 0) {
-                _ic = 0.001;
-                _test_ic = 0.001;
-            } else {
-                _ic = std::min(5.,mean);
-                _test_ic = std::min(1., std::sqrt(_ic));
-            }
-        }
-
-        // Day step
-        _ic_[2] = _ic_[1];
-        _ic_[1] = _ic_[0];
-
         // Tillering
         _create = 0;
         if (_ic > _Ict) {
@@ -116,13 +78,9 @@ public:
 
 
         //    computed variables (internal)
-        _ic = 0;
-        _test_ic = 0;
-        _ic_[2] = _ic_[1] = _ic_[0] = 0;
         _nb_tillers = 0;
         _nbExistingTillers = 1;
         _create = 0;
-        //    external variables
 
     }
 
@@ -138,17 +96,12 @@ private:
     //    parameters(t)
 
     //    internals - computed
-    double _ic;
-    double _test_ic;
-    double _ic_[3];
     double _nb_tillers;
     double _nbExistingTillers;
     double _create;
 
     //    externals
-    double _seed_res;
-    double _supply;
-    double _day_demand;
+    double _ic;
     double _boolCrossedPlasto;
     double _tae;
 

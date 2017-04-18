@@ -30,6 +30,8 @@
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/StockModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
+#include <plant/processes/TilleringModel.hpp>
+#include <plant/root/RootModel.hpp>
 
 
 //#include <model/models/ecomeristem/culm/CulmModel.hpp>
@@ -46,11 +48,14 @@
 //#include <model/kernel/AbstractModel.hpp>
 //#include <model/kernel/AbstractCoupledModel.hpp>
 
+
+using namespace model;
+
 class PlantModel : public CoupledModel < PlantModel >
 {
 public:
     enum submodels { THERMAL_TIME, WATER_BALANCE, STOCK, ASSIMILATION,
-                     MANAGER, TILLER_MANAGER, SLA, CULMS };
+                     TILLERING, ROOT};
 
     enum internals { LAI, DELTA_T, DD, EDD, IH, LIGULO_VISU, PHENO_STAGE,
                      PLASTO_VISU, TT, TT_LIG, BOOL_CROSSED_PLASTO,
@@ -63,10 +68,12 @@ public:
                      INTERNODE_DEMAND_SUM };
 
     PlantModel():
-        _thermal_time_model(new model::ThermalTimeModel),
-        _water_balance_model(new model::WaterBalanceModel),
-        _stock_model(new model::StockModel),
-        _assimilation_model(new model::AssimilationModel)
+        _thermal_time_model(new ThermalTimeModel),
+        _water_balance_model(new WaterBalanceModel),
+        _stock_model(new StockModel),
+        _assimilation_model(new AssimilationModel),
+        _tillering_model(new TilleringModel),
+        _root_model(new RootModel)
 
     {
         // submodels
@@ -74,6 +81,8 @@ public:
         Submodels( ((WATER_BALANCE, _water_balance_model.get())) );
         Submodels( ((STOCK, _stock_model.get())) );
         Submodels( ((ASSIMILATION, _assimilation_model.get())) );
+        Submodels( ((TILLERING, _tillering_model.get())) );
+        Submodels( ((TILLERING, _root_model.get())) );
 
         // local internals
         Internal( LEAF_BIOMASS_SUM, &PlantModel::_leaf_biomass_sum );
@@ -97,22 +106,96 @@ public:
         //        }
     }
 
+        //@TODO set true values in push
     void compute(double t, bool /* update */) {
 
-        //@TODO set true values
-        _thermal_time_model->put < double >(t, model::ThermalTimeModel::PLASTO_DELAY, 0);
-        _thermal_time_model->put < int >(t, model::ThermalTimeModel::PHASE, PlantState::INIT);
-        _thermal_time_model->put < double >(t, model::ThermalTimeModel::LIG, 0);
+        //Thermal time
+        _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0);
+        _thermal_time_model->put < int >(t, ThermalTimeModel::PHASE, PlantState::INIT);
+        _thermal_time_model->put < double >(t, ThermalTimeModel::LEAF_LEN, 0);
+        _thermal_time_model->put < double >(t, ThermalTimeModel::LEAF_PREDIM, 0);
         (*_thermal_time_model)(t);
 
-//        _water_balance_model->put < double >(t, model::WaterBalanceModel::ETP, 0);
-//        _water_balance_model->put < double >(t, model::WaterBalanceModel::INTERC, 0);
-//        _water_balance_model->put < double >(t, model::WaterBalanceModel::WATER_SUPPLY, 0);
-//        (*_water_balance_model)(t);
+        //Water balance
+        _water_balance_model->put < double >(t, WaterBalanceModel::ETP, 0);
+        _water_balance_model->put < double >(t, WaterBalanceModel::INTERC, 0);
+        _water_balance_model->put < double >(t, WaterBalanceModel::WATER_SUPPLY, 0);
+        (*_water_balance_model)(t);
+
+        /***********************************************/
+        /****/
+//        compute_manager(t); //t-1
+        //day - compute entities
+//        if(get_phase(t) == NEW_PHYTOMER or get_phase(t) == NEW_PHYTOMER3) //virer un état
+//            create_phytomer(t);
+//            compute_culms(t);
+
+        /***********************************************/
+
+//        after day - compute bilans
+        //Tillering
+        _tillering_model->put < double >(t, TilleringModel::IC, 0);
+        _tillering_model->put < double >(t, TilleringModel::BOOL_CROSSED_PLASTO,
+                                         _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO));
+        _tillering_model->put < double >(t, TilleringModel::TAE, 0);
+        (*_tillering_model)(t);
+
+
+        //Assimilation
+        _assimilation_model->put < double >(t, AssimilationModel::CSTR,
+                                            _water_balance_model->get < double >(t, WaterBalanceModel::CSTR));
+        _assimilation_model->put < double >(t, AssimilationModel::FCSTR,
+                                            _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
+        _assimilation_model->put < double >(t, AssimilationModel::PAI, 0);
+        _assimilation_model->put < double >(t, AssimilationModel::LEAFBIOMASS, 0);
+        _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, 0);
+        (*_assimilation_model)(t);
+
+
+        //fin du jour pdt morphogénèse, t-1 à partir de PI ELONG ???
+
+        //Root
+        _root_model->put < double >(t, RootModel::P, 0);
+        _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, 0);
+        _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, 0);
+        _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, 0);
+        _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, 0);
+        _root_model->put < double >(t, RootModel::PHASE, PlantState::INIT);
+        _root_model->put < double >(t, RootModel::STATE, PlantState::VEGETATIVE);
+        (*_root_model)(t);
+
+//        search_deleted_leaf(t); //on passe avant pour le realloc biomass
+
+        // Stock
+        _stock_model->put < double >(t, StockModel::DEMAND_SUM, 0);
+        _stock_model->put < double >(t, StockModel::LEAF_LAST_DEMAND_SUM, 0);
+        _stock_model->put < double >(t, StockModel::INTERNODE_LAST_DEMAND_SUM, 0);
+        _stock_model->put < int >(t, StockModel::PHASE, PlantState::INIT);
+        _stock_model->put < double >(t, StockModel::LEAF_BIOMASS_SUM, 0);
+        _stock_model->put < double >(t, StockModel::DELETED_LEAF_BIOMASS, 0);
+        _stock_model->put < double >(t, StockModel::REALLOC_BIOMASS_SUM, 0);
+        _stock_model->put < double >(t, StockModel::ASSIM, 0);
+        _stock_model->put < double >(t, StockModel::CULM_STOCK, 0);
+        _stock_model->put < double >(t, StockModel::CULM_DEFICIT, 0);
+        _stock_model->put < double >(t, StockModel::CULM_SURPLUS_SUM, 0);
+        _stock_model->put < int >(t, StockModel::STATE, PlantState::VEGETATIVE);
+        (*_stock_model)(t);
+
+        /***********************************************/
+//        compute_height(t);
+        /***********************************************/
+
+
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
     {
+        //submodels
+        _thermal_time_model->init(t, parameters);
+        _water_balance_model->init(t, parameters);
+        _stock_model->init(t, parameters);
+        _assimilation_model->init(t, parameters);
+
         //internal variables (local)
         _leaf_biomass_sum = 0;
         _leaf_demand_sum = 0;
@@ -122,11 +205,7 @@ public:
         _internode_biomass_sum = 0;
         _senesc_dw_sum = 0;
 
-        //submodels
-        _thermal_time_model->init(t, parameters);
-        _water_balance_model->init(t, parameters);
-        _stock_model->init(t, parameters);
-        _assimilation_model->init(t, parameters);
+
     }
     bool is_dead() const
     { /*return not culm_models.empty() and culm_models[0]->is_dead();*/ }
@@ -138,6 +217,8 @@ private:
     std::unique_ptr < model::WaterBalanceModel > _water_balance_model;
     std::unique_ptr < model::StockModel > _stock_model;
     std::unique_ptr < model::AssimilationModel > _assimilation_model;
+    std::unique_ptr < model::TilleringModel > _tillering_model;
+    std::unique_ptr < model::RootModel > _root_model;
 
     //    void compute_assimilation(double t);
     //    void compute_culms(double t);

@@ -103,12 +103,43 @@ void MainWindow::addChart(int row, int col,
     series->attachAxis(axisX);
 
 
+    bool refBigger = false;
+    double maxVal = 0;
+    double minVal = 999999999999999;
+    for (int i = 0; i < series->count(); ++i) {
+        if(series->at(i).y() > maxVal){
+            maxVal = series->at(i).y();
+            refBigger = false;
+        }
+        if(series->at(i).y() < minVal){
+            minVal = series->at(i).y();
+        }
+        if(refSeries != NULL) {
+            if(refSeries->at(i).y() > maxVal){
+                maxVal = refSeries->at(i).y();
+                refBigger = true;
+            }
+            if(refSeries->at(i).y() < minVal){
+                minVal = refSeries->at(i).y();
+            }
+        }
+    }
+
     QValueAxis *axisY = new QValueAxis;
     axisY->setLabelFormat("%i");
     chart->addAxis(axisY, Qt::AlignLeft);
-    if(refSeries != NULL)
-        refSeries->attachAxis(axisY);
-    series->attachAxis(axisY);
+    axisY->setMax(maxVal*1.1);
+    axisY->setMin(qMin<double>(0,minVal - (maxVal-minVal)*0.1));
+    if(refBigger) {
+        if(refSeries != NULL)
+            refSeries->attachAxis(axisY);
+        series->attachAxis(axisY);
+    } else {
+        series->attachAxis(axisY);
+        if(refSeries != NULL)
+            refSeries->attachAxis(axisY);
+    }
+
 
     ChartView *chartView = new ChartView(chart, series, refSeries, this);
     lay->addWidget(chartView, row, col);

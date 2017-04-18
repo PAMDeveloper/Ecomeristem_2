@@ -34,10 +34,13 @@ namespace model {
 class StockModel : public AtomicModel < StockModel >
 {
 public:
-    enum internals { DAY_DEMAND, IC, TEST_IC, RESERVOIR_DISPO, SEED_RES, STOCK, SUPPLY, SURPLUS };
+    enum internals { DAY_DEMAND, IC, TEST_IC, RESERVOIR_DISPO, SEED_RES, STOCK,
+                     SUPPLY, SURPLUS };
 
-    enum externals { DEMAND_SUM, LEAF_LAST_DEMAND_SUM, INTERNODE_LAST_DEMAND_SUM,
-                     PHASE, LEAF_BIOMASS_SUM, DELETED_LEAF_BIOMASS, REALLOC_BIOMASS_SUM, ASSIM };
+    enum externals { DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
+                     INTERNODE_LAST_DEMAND_SUM, PHASE, LEAF_BIOMASS_SUM,
+                     DELETED_LEAF_BIOMASS, REALLOC_BIOMASS_SUM, ASSIM,
+                     STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM };
 
 
     StockModel() {
@@ -61,6 +64,10 @@ public:
         External(DELETED_LEAF_BIOMASS, &StockModel::_deleted_leaf_biomass);
         External(REALLOC_BIOMASS_SUM, &StockModel::_realloc_biomass_sum);
         External(ASSIM, &StockModel::_assim);
+        External(STATE, &StockModel::_state);
+        External(CULM_STOCK, &StockModel::_culm_stock);
+        External(CULM_DEFICIT, &StockModel::_culm_deficit);
+        External(CULM_SURPLUS_SUM, &StockModel::_culm_surplus_sum);
     }
 
     virtual ~StockModel()
@@ -79,43 +86,28 @@ public:
             }
 
         }
-        //  index_competition
+
+        //  indice de competition - Proposition
         if (t != _parameters.beginDate) {
-            double resDiv, mean;
-            double total = 0.;
-            int n = 0;
-
-            if (_day_demand_[0] != 0) {
-                resDiv = (std::max(0., _seed_res_[0]) + _supply_[0]) / _day_demand_[0];
-                total += resDiv;
-                ++n;
-            }
-
-            if (_day_demand_[0] != 0) {
-                resDiv = (std::max(0., _seed_res_[0]) + _supply_[0]) / _day_demand_[0];
-                total += resDiv;
-                ++n;
-            }
-
-            if (_day_demand_[1] != 0) {
-                resDiv = (std::max(0., _seed_res_[1]) + _supply_[1]) / _day_demand_[1];
-                total += resDiv;
-                ++n;
-            }
-
-            if (_day_demand_[2] != 0) {
-                resDiv = (std::max(0., _seed_res_[2]) + _supply_[2]) / _day_demand_[2];
-                total += resDiv;
-                ++n;
-            }
-
-            if (n != 0) {
-                mean = total / n;
+            double mean;
+            unsigned int n = 2;
+            if (_day_demand != 0) {
+                _ic_[0] = std::max(0., _seed_res + _supply / _day_demand); //@TODO vérifier pourquoi négatif
             } else {
-                mean = _ic;
+                _ic_[0] = _ic;
             }
 
-            if (mean == 0 and _seed_res_[0] == 0 and _seed_res_[1] == 0 and _seed_res_[2] == 0) {
+            mean = 2. * _ic_[0];
+
+            for (unsigned int i = 1; i < 3; i++) {
+                if (_ic_[i] != 0) {
+                    mean = mean + _ic_[i];
+                    n = n + 1;
+                }
+            }
+            mean = mean / n;
+
+            if (mean == 0) {
                 _ic = 0.001;
                 _test_ic = 0.001;
             } else {
@@ -123,6 +115,10 @@ public:
                 _test_ic = std::min(1., std::sqrt(_ic));
             }
         }
+
+        // Day step
+        _ic_[2] = _ic_[1];
+        _ic_[1] = _ic_[0];
 
         //  reservoir_dispo
         _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
@@ -139,57 +135,55 @@ public:
         }
 
         //  stock
-        //        if (_state == plant::ELONG) {
-        //            _stock = _culm_stock;
-        //            _deficit = _culm_deficit;
-        //        } else {
-        double stock = 0;
-
-        if (_seed_res > 0) {
-            if (_seed_res > _day_demand) {
-                stock = _stock + std::min(_reservoir_dispo, _supply + _realloc_biomass_sum);
-            } else {
-                stock = _stock +
-                        std::min(_reservoir_dispo, _supply - (_day_demand - _seed_res) +
-                                 _realloc_biomass_sum);
-            }
+        if (_state == PlantState::ELONG) {
+            _stock = _culm_stock;
+            _deficit = _culm_deficit;
         } else {
-            stock = _stock + std::min(_reservoir_dispo, _supply - _day_demand +
-                                      _realloc_biomass_sum);
-        }
+            double stock = 0;
 
-        _stock = std::max(0., _deficit + stock);
-        _deficit = std::min(0., _deficit + stock);
-        //        }
+            if (_seed_res > 0) {
+                if (_seed_res > _day_demand) {
+                    stock = _stock + std::min(_reservoir_dispo, _supply + _realloc_biomass_sum);
+                } else {
+                    stock = _stock +
+                            std::min(_reservoir_dispo, _supply - (_day_demand - _seed_res) +
+                                     _realloc_biomass_sum);
+                }
+            } else {
+                stock = _stock + std::min(_reservoir_dispo, _supply - _day_demand +
+                                          _realloc_biomass_sum);
+            }
+
+            _stock = std::max(0., _deficit + stock);
+            _deficit = std::min(0., _deficit + stock);
+        }
 
         //  supply
         _supply = _assim;
 
         //  surplus
-        //        if (_state == plant::ELONG) {
-        //            _surplus = _culm_surplus_sum;
-        //        } else {
-        if (_seed_res > 0) {
-            if (_seed_res > _day_demand) {
-                _surplus = std::max(0., _supply - _reservoir_dispo + _realloc_biomass_sum);
-            } else {
-                _surplus = std::max(0., _supply - (_day_demand - _seed_res) -
-                                    _reservoir_dispo + _realloc_biomass_sum);
-            }
+        if (_state == PlantState::ELONG) {
+            _surplus = _culm_surplus_sum;
         } else {
-            _surplus = std::max(0., _supply - _reservoir_dispo - _day_demand +
-                                _realloc_biomass_sum);
+            if (_seed_res > 0) {
+                if (_seed_res > _day_demand) {
+                    _surplus = std::max(0., _supply - _reservoir_dispo + _realloc_biomass_sum);
+                } else {
+                    _surplus = std::max(0., _supply - (_day_demand - _seed_res) -
+                                        _reservoir_dispo + _realloc_biomass_sum);
+                }
+            } else {
+                _surplus = std::max(0., _supply - _reservoir_dispo - _day_demand +
+                                    _realloc_biomass_sum);
+            }
         }
-        //        }
 
         // Realloc biomass
-        //        void realloc_biomass(double t, double value)
-        //        {
-        //            if (value > 0) {
-        //                double qty = value * _realocationCoeff;
-        //            }
-        //        }
-
+        if (_deleted_leaf_biomass > 0) {
+            double qty = _deleted_leaf_biomass * _realocationCoeff;
+            _stock = std::max(0., qty + _deficit);
+            _deficit = std::min(0., qty + _deficit);
+        }
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
@@ -198,11 +192,7 @@ public:
         //    parameters variables
         _gdw = _parameters.get < double >("gdw");
         _leaf_stock_max = parameters.get < double >("leaf_stock_max");
-//        _realocationCoeff = _parameters.get < double >("realocationCoeff");
-
-
-        //    parameters variables (t)
-
+        _realocationCoeff = _parameters.get < double >("realocationCoeff");
 
         //    computed variables (internal)
         _day_demand = 0;
@@ -214,11 +204,6 @@ public:
         _deficit = 0;
         _supply = 0;
         _surplus = 0;
-
-        //    external variables
-        _supply_[2] = _supply_[1] = _supply_[0] = 0;
-        _seed_res_[2] = _seed_res_[1] = _seed_res_[0] = 0;
-        _day_demand_[2] = _day_demand_[1] = _day_demand_[0] = 0;
     }
 
 private:
@@ -226,7 +211,7 @@ private:
     //    parameters
     double _gdw;
     double _leaf_stock_max;
-//    double _realocationCoeff;
+    double _realocationCoeff;
 
     //    parameters(t)
 
@@ -234,6 +219,7 @@ private:
     double _day_demand;
     double _ic;
     double _test_ic;
+    double _ic_[3];
     double _seed_res;
     double _supply;
     double _reservoir_dispo;
@@ -252,9 +238,10 @@ private:
     double _leaf_biomass_sum;
     double _deleted_leaf_biomass;
     double _realloc_biomass_sum;
-    //    int _state;
-    //    double _culm_stock;
-    //    double _culm_deficit;
+    int _state;
+    double _culm_stock;
+    double _culm_deficit;
+    double _culm_surplus_sum;
     double _assim;
 
 };
