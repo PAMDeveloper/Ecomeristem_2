@@ -6,7 +6,6 @@
 #include <artis/observer/Observer.hpp>
 #include <artis/observer/View.hpp>
 #include <artis/utils/DoubleTime.hpp>
-
 #include <ModelParameters.hpp>
 
 struct GlobalParameters
@@ -34,4 +33,4 @@ typedef artis::observer::View < artis::utils::DoubleTime,
                                 ecomeristem::ModelParameters > View;
 
 
-#endif // HEADERS_HPP
+#endif // DEFINES_HPP

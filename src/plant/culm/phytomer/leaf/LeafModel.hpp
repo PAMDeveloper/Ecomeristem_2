@@ -46,13 +46,12 @@ public:
                      SLA, GROW, PLANT_PHASE, STATE, STOP, TEST_IC };
 
 
-
-
     virtual ~LeafModel()
     { }
 
     LeafModel::LeafModel(int index, bool is_on_mainstem) :
-        _index(index), _is_first_leaf(_index == 1),
+        _index(index),
+        _is_first_leaf(_index == 1),
         _is_on_mainstem(is_on_mainstem)
     {
         //internals
@@ -160,10 +159,8 @@ public:
         _plasto_delay = std::min(((_delta_t > _exp_time) ? _exp_time :
                                                            _delta_t) * (-1. + _reduction_ler), 0.);
 
-
         //Width
         _width = _len * _WLR / _LL_BL;
-
 
         //ThermalTimeSinceLigulation
         if (not _lig) {
@@ -213,7 +210,6 @@ public:
                 }
             }
         }
-
 
         //LeafDemand
         if (_first_day == t) {

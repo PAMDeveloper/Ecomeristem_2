@@ -182,35 +182,7 @@ public:
                      RootModel::SURPLUS});
 
         //CulmStockModel
-//        STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS, FIRST_DAY
-//        selector("CULM_STOCK", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::STOCK});
-//        selector("SUPPLY", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::SUPPLY});
-//        selector("SURPLUS", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::SURPLUS});
-//        selector("SURPLUS", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::SURPLUS});
-//        selector("SURPLUS", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::SURPLUS});
-//        selector("SURPLUS", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::SURPLUS});
-//        selector("SURPLUS", artis::kernel::DOUBLE, {
-//                     PlantModel::CULM,
-//                     CulmModel::CULM_STOCK,
-//                     CulmStockModel::SURPLUS});
+        //LeafModel
     }
 
     virtual ~PlantView()

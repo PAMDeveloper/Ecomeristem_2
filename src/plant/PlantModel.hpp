@@ -34,22 +34,6 @@
 #include <plant/root/RootModel.hpp>
 #include <plant/culm/CulmModel.hpp>
 
-
-//#include <model/models/ecomeristem/culm/CulmModel.hpp>
-
-//#include <model/models/ecomeristem/plant/Lig.hpp>
-//#include <model/models/ecomeristem/plant/PlantManager.hpp>
-//#include <model/models/ecomeristem/plant/TillerManager.hpp>
-//#include <model/models/ecomeristem/plant/assimilation/PlantAssimilationModel.hpp>
-//#include <model/models/ecomeristem/root/RootModel.hpp>
-//#include <model/models/ecomeristem/plant/SLA.hpp>
-//#include <model/models/ecomeristem/plant/stock/PlantStockModel.hpp>
-//#include <model/models/ecomeristem/plant/thermal-time/ThermalTimeModel.hpp>
-//#include <model/models/ecomeristem/plant/water-balance/WaterBalanceModel.hpp>
-//#include <model/kernel/AbstractModel.hpp>
-//#include <model/kernel/AbstractCoupledModel.hpp>
-
-
 using namespace model;
 
 class PlantModel : public CoupledModel < PlantModel >

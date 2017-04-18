@@ -26,7 +26,6 @@
 #define __ECOMERISTEM_PLANT_MANAGER_HPP
 
 #include <defines.hpp>
-//#include <model/models/ModelParameters.hpp>
 
 
 class PlantState : public AtomicModel < PlantState >
@@ -46,7 +45,6 @@ public:
 
     enum state_t { VEGETATIVE, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO, FLO,
                    END_FILLING, MATURITY, DEAD };
-
 
     enum internals { PHASE, STATE };
     enum externals { STOCK, PHENO_STAGE, BOOL_CROSSED_PLASTO, FTSW, IC };
