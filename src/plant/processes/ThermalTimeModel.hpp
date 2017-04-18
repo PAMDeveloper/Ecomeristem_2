@@ -106,12 +106,6 @@ public:
 
         //DeltaT
         _Ta = _parameters.get(t).Temperature;
-#ifdef WITH_TRACE
-        Trace::trace() << TraceElement( path(this), t, artis::utils::COMPUTE)
-                       << artis::utils::KernelInfo("_Ta", true, boost::lexical_cast<std::string>(_Ta));
-        Trace::trace().flush();
-#endif
-
         _deltaT = _Ta - _Tb;
 
         //TT

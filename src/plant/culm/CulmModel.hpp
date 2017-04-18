@@ -63,6 +63,8 @@ public:
         //Phytomers
         compute_phytomers(t);
 
+        //Sum
+
         //StockModel
         if (_state == PlantState::ELONG) {
             compute_stock(t);

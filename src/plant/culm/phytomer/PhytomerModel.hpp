@@ -22,24 +22,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <model/kernel/AbstractCoupledModel.hpp>
-#include <model/models/ecomeristem/internode/InternodeModel.hpp>
-#include <model/models/ecomeristem/leaf/LeafModel.hpp>
-#include <utils/Trace.hpp>
+#include <defines.hpp>
+#include <plant/culm/phytomer/internode/InternodeModel.hpp>
+#include <plant/culm/phytomer/leaf/LeafModel.hpp>
 
-namespace ecomeristem { namespace phytomer {
+namespace model {
 
-class PhytomerModel : public ecomeristem::AbstractCoupledModel < PhytomerModel >
+class PhytomerModel : public CoupledModel < PhytomerModel >
 {
 public:
     enum submodels { LEAF, INTERNODE };
 
-    enum internals { LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_DEMAND,
-                     INTERNODE_DEMAND, INTERNODE_LAST_DEMAND, INTERNODE_BIOMASS,
-                     INTERNODE_LEN, LEAF_LAST_DEMAND, PREDIM, PLASTO_DELAY,
-                     REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
-                     LEAF_CORRECTED_BIOMASS, LEAF_CORRECTED_BLADE_AREA,
-                     LEAF_LEN };
+//    enum internals { LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_DEMAND,
+//                     INTERNODE_DEMAND, INTERNODE_LAST_DEMAND, INTERNODE_BIOMASS,
+//                     INTERNODE_LEN, LEAF_LAST_DEMAND, PREDIM, PLASTO_DELAY,
+//                     REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
+//                     LEAF_CORRECTED_BIOMASS, LEAF_CORRECTED_BLADE_AREA,
+//                     LEAF_LEN };
+
     enum externals { DD, DELTA_T, FTSW, FCSTR, P, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, PREDIM_PREVIOUS_LEAF,
                      SLA, GROW, PHASE, STATE, STOP, TEST_IC };
@@ -52,43 +52,43 @@ public:
     {
         S({ { LEAF, leaf_model }, { INTERNODE, internode_model } });
 
-        internal(LEAF_BIOMASS, leaf_model, leaf::LeafModel::BIOMASS);
-        internal(LEAF_BLADE_AREA, leaf_model, leaf::LeafModel::BLADE_AREA);
-        internal(LEAF_DEMAND, leaf_model, leaf::LeafModel::DEMAND);
-        internal(LEAF_LAST_DEMAND, leaf_model, leaf::LeafModel::LAST_DEMAND);
-        internal(PREDIM, leaf_model, leaf::LeafModel::PREDIM);
-        internal(PLASTO_DELAY, leaf_model, leaf::LeafModel::PLASTO_DELAY);
-        internal(REALLOC_BIOMASS, leaf_model, leaf::LeafModel::REALLOC_BIOMASS);
-        internal(SENESC_DW, leaf_model, leaf::LeafModel::SENESC_DW);
-        internal(SENESC_DW_SUM, leaf_model, leaf::LeafModel::SENESC_DW_SUM);
-        internal(LEAF_CORRECTED_BIOMASS, leaf_model,
-                 leaf::LeafModel::CORRECTED_BIOMASS);
-        internal(LEAF_CORRECTED_BLADE_AREA, leaf_model,
-                 leaf::LeafModel::CORRECTED_BLADE_AREA);
-        internal(LEAF_LEN, leaf_model, leaf::LeafModel::LEN);
+//        internal(LEAF_BIOMASS, leaf_model, leaf::LeafModel::BIOMASS);
+//        internal(LEAF_BLADE_AREA, leaf_model, leaf::LeafModel::BLADE_AREA);
+//        internal(LEAF_DEMAND, leaf_model, leaf::LeafModel::DEMAND);
+//        internal(LEAF_LAST_DEMAND, leaf_model, leaf::LeafModel::LAST_DEMAND);
+//        internal(PREDIM, leaf_model, leaf::LeafModel::PREDIM);
+//        internal(PLASTO_DELAY, leaf_model, leaf::LeafModel::PLASTO_DELAY);
+//        internal(REALLOC_BIOMASS, leaf_model, leaf::LeafModel::REALLOC_BIOMASS);
+//        internal(SENESC_DW, leaf_model, leaf::LeafModel::SENESC_DW);
+//        internal(SENESC_DW_SUM, leaf_model, leaf::LeafModel::SENESC_DW_SUM);
+//        internal(LEAF_CORRECTED_BIOMASS, leaf_model,
+//                 leaf::LeafModel::CORRECTED_BIOMASS);
+//        internal(LEAF_CORRECTED_BLADE_AREA, leaf_model,
+//                 leaf::LeafModel::CORRECTED_BLADE_AREA);
+//        internal(LEAF_LEN, leaf_model, leaf::LeafModel::LEN);
 
-        internal(INTERNODE_LAST_DEMAND, internode_model,
-                 internode::InternodeModel::LAST_DEMAND);
-        internal(INTERNODE_DEMAND, internode_model, internode::InternodeModel::DEMAND);
-        internal(INTERNODE_BIOMASS, internode_model,
-                 internode::InternodeModel::BIOMASS);
-        internal(INTERNODE_LEN, internode_model,
-                 internode::InternodeModel::LEN);
+//        internal(INTERNODE_LAST_DEMAND, internode_model,
+//                 internode::InternodeModel::LAST_DEMAND);
+//        internal(INTERNODE_DEMAND, internode_model, internode::InternodeModel::DEMAND);
+//        internal(INTERNODE_BIOMASS, internode_model,
+//                 internode::InternodeModel::BIOMASS);
+//        internal(INTERNODE_LEN, internode_model,
+//                 internode::InternodeModel::LEN);
 
-        external(DD, &PhytomerModel::_dd);
-        external(DELTA_T, &PhytomerModel::_delta_t);
-        external(FTSW, &PhytomerModel::_ftsw);
-        external(FCSTR, &PhytomerModel::_fcstr);
-        external(P, &PhytomerModel::_p);
-        external(PHENO_STAGE, &PhytomerModel::_pheno_stage);
-        external(PREDIM_LEAF_ON_MAINSTEM, &PhytomerModel::_predim_leaf_on_mainstem);
-        external(PREDIM_PREVIOUS_LEAF, &PhytomerModel::_predim_previous_leaf);
-        external(SLA, &PhytomerModel::_sla);
-        external(GROW, &PhytomerModel::_grow);
-        external(PHASE, &PhytomerModel::_phase);
-        external(STATE, &PhytomerModel::_state);
-        external(STOP, &PhytomerModel::_stop);
-        external(TEST_IC, &PhytomerModel::_test_ic);
+        External(DD, &PhytomerModel::_dd);
+        External(DELTA_T, &PhytomerModel::_delta_t);
+        External(FTSW, &PhytomerModel::_ftsw);
+        External(FCSTR, &PhytomerModel::_fcstr);
+        External(P, &PhytomerModel::_p);
+        External(PHENO_STAGE, &PhytomerModel::_pheno_stage);
+        External(PREDIM_LEAF_ON_MAINSTEM, &PhytomerModel::_predim_leaf_on_mainstem);
+        External(PREDIM_PREVIOUS_LEAF, &PhytomerModel::_predim_previous_leaf);
+        External(SLA, &PhytomerModel::_sla);
+        External(GROW, &PhytomerModel::_grow);
+        External(PHASE, &PhytomerModel::_phase);
+        External(STATE, &PhytomerModel::_state);
+        External(STOP, &PhytomerModel::_stop);
+        External(TEST_IC, &PhytomerModel::_test_ic);
     }
 
     virtual ~PhytomerModel()
@@ -247,4 +247,4 @@ private:
     double _test_ic;
 };
 
-} } // namespace ecomeristem phytomer
+} // namespace model
