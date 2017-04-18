@@ -42,8 +42,10 @@ public:
         //    computed variables
         Internal(IIII, &SampleAtomicModel::_iiii);
 
+
         //    external variables
         External(XXX, &SampleAtomicModel::_xxxx);
+
     }
 
     virtual ~SampleAtomicModel()
@@ -65,7 +67,7 @@ public:
         _parameters = parameters;
 
 		//    parameters variables
-		_gggg = _parameters.get < double >("GGGG");;
+		_gggg = _parameters.get < double >("GGGG");
 		
 		//    parameters variables (t)
 		_tttt = 0;

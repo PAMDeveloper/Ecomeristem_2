@@ -33,6 +33,10 @@
 #include <plant/PlantModel.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>
+#include <plant/processes/AssimilationModel.hpp>
+#include <plant/processes/StockModel.hpp>
+#include <plant/processes/TilleringModel.hpp>
+#include <plant/root/processes/RootDemandModel.hpp>
 
 using namespace model;
 namespace observer {
@@ -110,6 +114,49 @@ public:
         selector("SWC", artis::kernel::DOUBLE, {
                      PlantModel::WATER_BALANCE,
                      WaterBalanceModel::SWC});
+
+        //AssimilationModel
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::ASSIM});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::ASSIM_POT});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::INTERC});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::LAI});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::RESP_MAINT});
+
+        //StockModel
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::DAY_DEMAND});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::IC});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::TEST_IC});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::RESERVOIR_DISPO});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::SEED_RES});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::STOCK});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::SUPPLY});
+        selector("", artis::kernel::DOUBLE, {
+                     PlantModel::STOCK,
+                     StockModel::SURPLUS});
     }
 
     virtual ~PlantView()
