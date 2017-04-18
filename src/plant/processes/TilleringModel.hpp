@@ -64,7 +64,7 @@ public:
             double mean;
             unsigned int n = 2;
             if (_day_demand != 0) {
-                _ic_[0] = std::max(0., _seed_res + _supply / _day_demand;
+                _ic_[0] = std::max(0., _seed_res + _supply) / _day_demand;
             } else {
                 _ic_[0] = _ic;
             }
