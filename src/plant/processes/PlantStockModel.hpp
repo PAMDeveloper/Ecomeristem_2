@@ -38,9 +38,9 @@ public:
                      SUPPLY, SURPLUS };
 
     enum externals { DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
-                     INTERNODE_LAST_DEMAND_SUM, PHASE, LEAF_BIOMASS_SUM,
+                     INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, LEAF_BIOMASS_SUM,
                      DELETED_LEAF_BIOMASS, REALLOC_BIOMASS_SUM, ASSIM,
-                     STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM };
+                     PLANT_STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM };
 
 
     PlantStockModel() {
@@ -59,12 +59,12 @@ public:
         External(DEMAND_SUM, &PlantStockModel::_demand_sum);
         External(LEAF_LAST_DEMAND_SUM, &PlantStockModel::_leaf_last_demand_sum);
         External(INTERNODE_LAST_DEMAND_SUM, &PlantStockModel::_internode_last_demand_sum);
-        External(PHASE, &PlantStockModel::_phase);
+        External(PLANT_PHASE, &PlantStockModel::_plant_phase);
         External(LEAF_BIOMASS_SUM, &PlantStockModel::_leaf_biomass_sum);
         External(DELETED_LEAF_BIOMASS, &PlantStockModel::_deleted_leaf_biomass);
         External(REALLOC_BIOMASS_SUM, &PlantStockModel::_realloc_biomass_sum);
         External(ASSIM, &PlantStockModel::_assim);
-        External(STATE, &PlantStockModel::_state);
+        External(PLANT_STATE, &PlantStockModel::_state);
         External(CULM_STOCK, &PlantStockModel::_culm_stock);
         External(CULM_DEFICIT, &PlantStockModel::_culm_deficit);
         External(CULM_SURPLUS_SUM, &PlantStockModel::_culm_surplus_sum);
@@ -75,8 +75,8 @@ public:
 
     void compute(double t, bool /* update */) {
         //  day_demand
-        if (_phase == PlantState::NOGROWTH or _phase == PlantState::NOGROWTH3 or
-                _phase == PlantState::NOGROWTH4) {
+        if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3 or
+                _plant_phase == PlantState::NOGROWTH4) {
             _day_demand = 0;
         } else {
             if (_demand_sum == 0) {
@@ -231,7 +231,7 @@ private:
     double _demand_sum;
     double _leaf_last_demand_sum;
     double _internode_last_demand_sum;
-    int _phase;
+    int _plant_phase;
     double _day_demand_[3];
     double _seed_res_[3];
     double _supply_[3];

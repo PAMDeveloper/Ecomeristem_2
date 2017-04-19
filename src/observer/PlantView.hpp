@@ -142,7 +142,7 @@ public:
         selector("IC", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::IC});
-        selector("TEST_IC", artis::kernel::DOUBLE, {
+        selector("TESTIC", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::TEST_IC});
         selector("RESERVOIR_DISPO", artis::kernel::DOUBLE, {
@@ -163,7 +163,7 @@ public:
 
 
         //TilleringModel
-        selector("NB_TILLERS", artis::kernel::DOUBLE, {
+        selector("NBTILLER", artis::kernel::DOUBLE, {
                      PlantModel::TILLERING,
                      TilleringModel::NB_TILLERS});
         selector("CREATE_TILLER", artis::kernel::DOUBLE, {
@@ -183,6 +183,7 @@ public:
 
         //CulmStockModel
         //LeafModel
+        //PhytomerModel
     }
 
     virtual ~PlantView()

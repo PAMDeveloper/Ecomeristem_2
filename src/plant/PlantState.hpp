@@ -31,20 +31,20 @@
 class PlantState : public AtomicModel < PlantState >
 {
 public:
-    enum phase_t { INIT = 0,
-                   INITIAL = 1,
-                   GROWTH = 2,
-                   NOGROWTH = 3,
-                   NEW_PHYTOMER = 5,
-                   NOGROWTH2 = 18,
-                   NOGROWTH3 = 19,
-                   NOGROWTH4 = 20,
-                   NEW_PHYTOMER3 = 23,
-                   LIG = 24,
-                   KILL = 25 };
+    enum plant_phase { INIT = 0,
+                       INITIAL = 1,
+                       GROWTH = 2,
+                       NOGROWTH = 3,
+                       NEW_PHYTOMER = 5,
+                       NOGROWTH2 = 18,
+                       NOGROWTH3 = 19,
+                       NOGROWTH4 = 20,
+                       NEW_PHYTOMER3 = 23,
+                       LIG = 24,
+                       KILL = 25 };
 
-    enum state_t { VEGETATIVE, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO, FLO,
-                   END_FILLING, MATURITY, DEAD };
+    enum plant_state {  VEGETATIVE, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO,
+                        FLO, END_FILLING, MATURITY, DEAD };
 
     enum internals { PHASE, STATE };
     enum externals { STOCK, PHENO_STAGE, BOOL_CROSSED_PLASTO, FTSW, IC };

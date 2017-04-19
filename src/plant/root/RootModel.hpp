@@ -37,7 +37,7 @@ public:
     enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS };
 
     enum externals { P, LEAF_DEMAND_SUM, LEAF_LAST_DEMAND_SUM, INTERNODE_DEMAND_SUM,
-                     INTERNODE_LAST_DEMAND_SUM, PHASE, STATE };
+                     INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, PLANT_STATE };
 
 
     RootModel() {
@@ -52,8 +52,8 @@ public:
         External(LEAF_LAST_DEMAND_SUM, &RootModel::_leaf_last_demand_sum);
         External(INTERNODE_DEMAND_SUM, &RootModel::_internode_demand_sum);
         External(INTERNODE_LAST_DEMAND_SUM, &RootModel::_internode_last_demand_sum);
-        External(PHASE, &RootModel::_phase);
-        External(STATE, &RootModel::_state);
+        External(PLANT_PHASE, &RootModel::_plant_phase);
+        External(PLANT_STATE, &RootModel::_plant_state);
     }
 
     virtual ~RootModel()
@@ -72,11 +72,11 @@ public:
             _last_value = _root_demand;
             _root_biomass = _root_demand;
         } else {
-            if (_phase == PlantState::NOGROWTH or _phase == PlantState::NOGROWTH4) {
+            if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH4) {
                 _root_demand = 0;
                 _last_value = 0;
             } else {
-                if (_state == PlantState::ELONG or _state == PlantState::PI) {
+                if (_plant_state == PlantState::ELONG or _plant_state == PlantState::PI) {
                     if (_leaf_demand_sum + _leaf_last_demand_sum + _internode_demand_sum
                             + _internode_last_demand_sum == 0) {
                         _root_demand = _last_value * _root_demand_coef;
@@ -148,8 +148,8 @@ private:
     double _leaf_last_demand_sum;
     double _internode_demand_sum;
     double _internode_last_demand_sum;
-    double _phase;
-    double _state;
+    double _plant_phase;
+    double _plant_state;
     double _culm_surplus_sum;
 };
 

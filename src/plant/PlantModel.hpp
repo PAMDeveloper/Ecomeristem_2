@@ -97,7 +97,7 @@ public:
 
         //Thermal time
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0);
-        _thermal_time_model->put < int >(t, ThermalTimeModel::PHASE, PlantState::INIT);
+        _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, PlantState::INIT);
         _thermal_time_model->put < double >(t, ThermalTimeModel::LEAF_LEN, 0);
         _thermal_time_model->put < double >(t, ThermalTimeModel::LEAF_PREDIM, 0);
         (*_thermal_time_model)(t);
@@ -117,7 +117,7 @@ public:
 //            create_phytomer(t);
 
         //CulmModel
-        _culm_model->put < int >(t, CulmModel::STATE, PlantState::VEGETATIVE);
+        _culm_model->put < int >(t, CulmModel::PLANT_STATE, PlantState::VEGETATIVE);
         (*_culm_model)(t);
         /***********************************************/
 
@@ -149,8 +149,8 @@ public:
         _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, 0);
         _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, 0);
         _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _root_model->put < double >(t, RootModel::PHASE, PlantState::INIT);
-        _root_model->put < double >(t, RootModel::STATE, PlantState::VEGETATIVE);
+        _root_model->put < double >(t, RootModel::PLANT_PHASE, PlantState::INIT);
+        _root_model->put < double >(t, RootModel::PLANT_STATE, PlantState::VEGETATIVE);
         (*_root_model)(t);
 
 //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
@@ -159,7 +159,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, 0);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, 0);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _stock_model->put < int >(t, PlantStockModel::PHASE, PlantState::INIT);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, PlantState::INIT);
         _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, 0);
         _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
         _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, 0);
@@ -167,7 +167,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, 0);
         _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, 0);
         _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, 0);
-        _stock_model->put < int >(t, PlantStockModel::STATE, PlantState::VEGETATIVE);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, PlantState::VEGETATIVE);
         (*_stock_model)(t);
 
         /***********************************************/

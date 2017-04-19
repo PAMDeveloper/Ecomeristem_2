@@ -34,18 +34,18 @@ namespace model {
 class ThermalTimeModel : public AtomicModel < ThermalTimeModel >
 {
 public:
-    enum states { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
+    enum tt_state { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
 
     enum internals { LIG, STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
                      PLASTO_VISU, LIGULO_VISU, PHENOSTAGE, SLA, DD, EDD, IH };
 
-    enum externals {  PHASE, PLASTO_DELAY, LEAF_LEN, LEAF_PREDIM };
+    enum externals {  PLANT_PHASE, PLASTO_DELAY, LEAF_LEN, LEAF_PREDIM };
 
 
     ThermalTimeModel() {
         //    computed variables
         Internal(LIG, &ThermalTimeModel::_lig);
-        Internal(STATE, &ThermalTimeModel::_state);
+        Internal(STATE, &ThermalTimeModel::_tt_state);
         Internal(DELTA_T, &ThermalTimeModel::_deltaT);
         Internal(TT, &ThermalTimeModel::_TT);
         Internal(BOOL_CROSSED_PLASTO, &ThermalTimeModel::_boolCrossedPlasto);
@@ -60,7 +60,7 @@ public:
 
         //    external variables
         External(PLASTO_DELAY, &ThermalTimeModel::_plasto_delay);
-        External(PHASE, &ThermalTimeModel::_phase);
+        External(PLANT_PHASE, &ThermalTimeModel::_plant_phase);
         External(LEAF_LEN, &ThermalTimeModel::_leafLen);
         External(LEAF_PREDIM, &ThermalTimeModel::_leafPredim);
 
@@ -71,24 +71,24 @@ public:
 
 
     void step_state() {
-        switch (_state) {
+        switch (_tt_state) {
         case INIT: {
-            _state = STOCK_AVAILABLE;
+            _tt_state = STOCK_AVAILABLE;
             break;
         }
         case DEAD: {
             break;
         }
         case STOCK_AVAILABLE: {
-            if (_phase == PlantState::NOGROWTH or _phase == PlantState::NOGROWTH3 or
-                    _phase == PlantState::NOGROWTH4) {
-                _state = NO_STOCK;
+            if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3 or
+                    _plant_phase == PlantState::NOGROWTH4) {
+                _tt_state = NO_STOCK;
             }
             break;
         }
         case NO_STOCK: {
-            if (_phase == PlantState::GROWTH or _phase == PlantState::NEW_PHYTOMER3){
-                _state = STOCK_AVAILABLE;
+            if (_plant_phase == PlantState::GROWTH or _plant_phase == PlantState::NEW_PHYTOMER3){
+                _tt_state = STOCK_AVAILABLE;
             }
             break;
         }};
@@ -112,7 +112,7 @@ public:
         _TT = _TT + _deltaT;
 
         //DD
-        if (_state == STOCK_AVAILABLE) {
+        if (_tt_state == STOCK_AVAILABLE) {
             double tempDD = _DD + _deltaT + _plasto_delay;
 
             _boolCrossedPlasto = tempDD - _plasto;
@@ -133,7 +133,7 @@ public:
         //TT_Lig
         if (t != _parameters.beginDate) {
             if (_lig_1 == _lig) {
-                if (_state == STOCK_AVAILABLE) {
+                if (_tt_state == STOCK_AVAILABLE) {
                     _TT_lig = _TT_lig + _EDD;
                 }
             } else {
@@ -142,7 +142,7 @@ public:
         }
 
         //PhenoStage
-        if (_state == STOCK_AVAILABLE) {
+        if (_tt_state == STOCK_AVAILABLE) {
             if (_boolCrossedPlasto >= 0) {
                 _phenoStage = _phenoStage + 1;
             }
@@ -152,21 +152,21 @@ public:
         _sla = _FSLA - _SLAp * std::log(_phenoStage);
 
         //PlastoVisu
-        if (_state == STOCK_AVAILABLE) {
+        if (_tt_state == STOCK_AVAILABLE) {
             _plastoVisu = _plastoVisu - _plasto_delay;
         } else {
             _plastoVisu = _plastoVisu + _EDD;
         }
 
         //LiguloVisu
-        if (_state == STOCK_AVAILABLE) {
+        if (_tt_state == STOCK_AVAILABLE) {
             _liguloVisu = _liguloVisu - _plasto_delay;
         } else {
             _liguloVisu = _liguloVisu + _EDD;
         }
 
         //IH
-        if (_state == STOCK_AVAILABLE) {
+        if (_tt_state == STOCK_AVAILABLE) {
             _IH = _lig + std::min(1., _TT_lig / _liguloVisu);
         }
 
@@ -187,7 +187,7 @@ public:
         _SLAp = _parameters.get < double >("SLAp");
 
         //    computed variables
-        _state = INIT;
+        _tt_state = INIT;
         _deltaT = 0;
         _TT = 0;
         _boolCrossedPlasto = 0;
@@ -216,7 +216,7 @@ private:
     double _Ta;
 
     //    internals - computed
-    int _state;
+    int _tt_state;
     double _deltaT;
     double _TT;
     double _boolCrossedPlasto;
@@ -233,7 +233,7 @@ private:
 
     //    externals
     double _plasto_delay;
-    int _phase;
+    int _plant_phase;
     double _leafLen;
     double _leafPredim;
 };
