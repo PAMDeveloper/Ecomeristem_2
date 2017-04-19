@@ -33,7 +33,7 @@ class LeafModel : public AtomicModel < LeafModel >
 public:
     enum phase_t   { INIT, INITIAL, LIG, NOGROWTH };
 
-    enum internals { LIFE_SPAN, REDUCTION_LER, LEN, PHASE, LER,
+    enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEN, LER,
                      EXP_TIME, PLASTO_DELAY, PREDIM, WIDTH,
                      TT_LIG, BLADE_AREA, CORRECTED_BLADE_AREA,
                      BIOMASS, BLADE_AREA, DEMAND, LAST_DEMAND,
@@ -55,7 +55,7 @@ public:
         _is_on_mainstem(is_on_mainstem)
     {
         //internals
-        Internal(PHASE, &LeafModel::_phase);
+        Internal(LEAF_PHASE, &LeafModel::_leaf_phase);
         Internal(PREDIM, &LeafModel::_predim);
         Internal(LEN, &LeafModel::_len);
         Internal(LIFE_SPAN, &LeafModel::_life_span);
@@ -87,7 +87,6 @@ public:
         External(DD, &LeafModel::_dd);
         External(DELTA_T, &LeafModel::_delta_t);
         External(GROW, &LeafModel::_grow);
-        External(PHASE, &LeafModel::_phase);
         External(LER, &LeafModel::_ler);
         External(EXP_TIME, &LeafModel::_exp_time);
         External(PREDIM, &LeafModel::_predim);
@@ -164,7 +163,7 @@ public:
 
         //ThermalTimeSinceLigulation
         if (not _lig) {
-            _lig = _phase == LeafModel::LIG;
+            _lig = _leaf_phase == LeafModel::LIG;
         } else {
             _TT_Lig += _delta_t; //@TODO vérifier si c'est calculé qu'une seule fois
         }
@@ -189,7 +188,7 @@ public:
             _sla_cste = _sla;
             _old_biomass = _biomass;
         } else {
-            if (_phase != LeafModel::NOGROWTH) {
+            if (_leaf_phase != LeafModel::NOGROWTH) {
                 if (not _lig) {
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _corrected_biomass = 0;
@@ -226,27 +225,27 @@ public:
         if (_first_day == t) {
             _time_from_app = _dd;
         } else {
-            if (_phase != LeafModel::NOGROWTH) {
+            if (_leaf_phase != LeafModel::NOGROWTH) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
     }
 
     void step_state() {
-        if (_phase == LeafModel::INIT) {
-            _phase = LeafModel::INITIAL;
-        } else if (_phase == LeafModel::INITIAL and _len >= _predim) {
-            _phase = LeafModel::LIG;
-        } else if (_phase == LeafModel::LIG and _len < _predim) {
-            _phase = LeafModel::INITIAL;
-        } else if (_phase == LeafModel::INITIAL and
+        if (_leaf_phase == LeafModel::INIT) {
+            _leaf_phase = LeafModel::INITIAL;
+        } else if (_leaf_phase == LeafModel::INITIAL and _len >= _predim) {
+            _leaf_phase = LeafModel::LIG;
+        } else if (_leaf_phase == LeafModel::LIG and _len < _predim) {
+            _leaf_phase = LeafModel::INITIAL;
+        } else if (_leaf_phase == LeafModel::INITIAL and
                    (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3
                     or _plant_phase == PlantState::NOGROWTH4)) {
-            _phase = LeafModel::NOGROWTH;
-        } else if (_phase == LeafModel::NOGROWTH and
+            _leaf_phase = LeafModel::NOGROWTH;
+        } else if (_leaf_phase == LeafModel::NOGROWTH and
                    (_plant_phase == PlantState::GROWTH or
                     _plant_phase == PlantState::NEW_PHYTOMER3)) {
-            _phase = LeafModel::INITIAL;
+            _leaf_phase = LeafModel::INITIAL;
         }
     }
 
@@ -272,7 +271,7 @@ public:
         //internals
         _first_day = t;
         _life_span = 0;
-        _phase = LeafModel::INIT;
+        _leaf_phase = LeafModel::INIT;
         _predim = 0;
         _reduction_ler = 0;
         _ler = 0;
@@ -319,7 +318,7 @@ private:
 
     // internal variable
     double _width;
-    double _phase;
+    double _leaf_phase;
     double _predim;
     double _first_day;
     double _life_span;

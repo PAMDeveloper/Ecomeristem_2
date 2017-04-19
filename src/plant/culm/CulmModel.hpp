@@ -38,7 +38,7 @@ public:
 
     enum internals { };
 
-    enum externals { STATE };
+    enum externals { PLANT_STATE };
 
 
     CulmModel():
@@ -50,7 +50,7 @@ public:
         //    computed variables
 
         //    external variables
-        External(STATE, &CulmModel::_state);
+        External(PLANT_STATE, &CulmModel::_state);
 
     }
 
