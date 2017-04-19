@@ -90,7 +90,7 @@ public:
                      ThermalTimeModel::LIGULO_VISU});
         selector("PHENOSTAGE", artis::kernel::INT, {
                      PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::PHENOSTAGE});
+                     ThermalTimeModel::PHENO_STAGE});
         selector("DD", artis::kernel::DOUBLE, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::DD});

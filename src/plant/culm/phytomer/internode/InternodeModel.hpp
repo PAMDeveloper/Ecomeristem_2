@@ -26,7 +26,7 @@
 #include <plant/PlantState.hpp>
 
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
 
 namespace model {
 
@@ -74,7 +74,7 @@ public:
     virtual ~InternodeModel()
     { }
 
-    void compute(double /* t */, bool /* update */){
+    void compute(double t, bool /* update */){
 
         //InternodePredim
         if (_index - 1 - _nb_leaf_param2 < 0) {
@@ -133,7 +133,7 @@ public:
         }
 
         //InternodeManager
-        step_state();
+        step_state(t);
 
         //DiameterPredim
         _inter_diameter = _IN_length_to_IN_diam * _inter_predim + _coef_lin_IN_diam;
@@ -147,14 +147,13 @@ public:
         _biomass = _inter_volume * _density;
 
         //InternodeDemand & InternodeLastDemand
+        _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
         if (_inter_phase == MATURITY or
             _inter_phase == MATURITY_NOGROWTH) {
             _demand = 0;
         } else {
             _demand = _biomass - biomass_1;
         }
-
-        _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
 
         //InternodeTimeFromApp
         if (_first_day == t) {
@@ -166,7 +165,7 @@ public:
         }
     }
 
-    void step_state() {
+    void step_state(double t) {
         _inter_phase_1 = _inter_phase;
         if (_inter_phase == INIT) {
             _inter_phase = VEGETATIVE;
@@ -195,7 +194,7 @@ public:
     }
 
     void init(double t,
-              const ecomeristem::ModelParameters& /* parameters */) {
+              const ecomeristem::ModelParameters& parameters) {
 
         //parameters
         _LL_BL_init = parameters.get < double >("LL_BL_init");
@@ -240,7 +239,6 @@ private:
     bool _is_on_mainstem;
 
     // parameters
-    int _index;
     double _LL_BL_init;
     double _slope_LL_BL_at_PI;
     double _nb_leaf_param2;

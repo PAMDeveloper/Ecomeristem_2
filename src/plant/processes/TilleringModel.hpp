@@ -71,7 +71,8 @@ public:
 
         //    parameters variables
         _Ict = _parameters.get < double >("Ict");
-        _nbleaf_enabling_tillering = _parameters.get < double >("nbleaf_enabling_tillering");
+        //@TODO implement test pour tillering
+//        _nbleaf_enabling_tillering = _parameters.get < double >("nbleaf_enabling_tillering");
         _P = 0 /* _parameters.get < double >("P") */; // pas encore dans le fichier parametre
         _resp_Ict = _parameters.get < double >("resp_Ict");
         //    parameters variables (t)
@@ -89,7 +90,7 @@ private:
 
     //    parameters
     double _Ict;
-    double _nbleaf_enabling_tillering;
+//    double _nbleaf_enabling_tillering;
     double _P;
     double _resp_Ict;
 

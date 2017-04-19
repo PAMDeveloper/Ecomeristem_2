@@ -37,7 +37,7 @@ public:
     enum tt_state { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
 
     enum internals { LIG, STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
-                     PLASTO_VISU, LIGULO_VISU, PHENOSTAGE, SLA, DD, EDD, IH };
+                     PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD, IH };
 
     enum externals {  PLANT_PHASE, PLASTO_DELAY, LEAF_LEN, LEAF_PREDIM };
 
@@ -52,7 +52,7 @@ public:
         Internal(TT_LIG, &ThermalTimeModel::_TT_lig);
         Internal(PLASTO_VISU, &ThermalTimeModel::_plastoVisu);
         Internal(LIGULO_VISU, &ThermalTimeModel::_liguloVisu);
-        Internal(PHENOSTAGE, &ThermalTimeModel::_phenoStage);
+        Internal(PHENO_STAGE, &ThermalTimeModel::_phenoStage);
         Internal(SLA, &ThermalTimeModel::_sla);
         Internal(DD, &ThermalTimeModel::_DD);
         Internal(EDD, &ThermalTimeModel::_EDD);

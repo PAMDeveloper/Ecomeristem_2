@@ -24,7 +24,6 @@
 
 #include <defines.hpp>
 #include <plant/PlantState.hpp>
-#include <plant/culm/phytomer/leaf/LeafState.hpp>
 
 namespace model {
 
@@ -36,9 +35,10 @@ public:
     enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEN, LER,
                      EXP_TIME, PLASTO_DELAY, PREDIM, WIDTH,
                      TT_LIG, BLADE_AREA, CORRECTED_BLADE_AREA,
-                     BIOMASS, BLADE_AREA, DEMAND, LAST_DEMAND,
+                     BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
-                     CORRECTED_BIOMASS, DEMAND, TIME_FROM_APP
+                     CORRECTED_BIOMASS, TIME_FROM_APP,
+                     LIG_T, IS_LIG
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, P, PHENO_STAGE,
@@ -65,7 +65,7 @@ public:
         Internal(LEN, &LeafModel::_len);
         Internal(PLASTO_DELAY, &LeafModel::_plasto_delay);
         Internal(WIDTH, &LeafModel::_width);
-        Internal(TT_LIG, &LeafModel::_TT_LIG);
+        Internal(TT_LIG, &LeafModel::_TT_Lig);
         Internal(BLADE_AREA, &LeafModel::_blade_area);
         Internal(CORRECTED_BLADE_AREA, &LeafModel::_corrected_blade_area);
         Internal(BIOMASS, &LeafModel::_biomass);
@@ -75,6 +75,8 @@ public:
         Internal(CORRECTED_BIOMASS, &LeafModel::_corrected_biomass);
         Internal(DEMAND, &LeafModel::_demand);
         Internal(TIME_FROM_APP, &LeafModel::_time_from_app);
+        Internal(LIG_T, &LeafModel::_lig_t);
+        Internal(IS_LIG, &LeafModel::_is_lig);
 
         //externals
         External(PLANT_PHASE, &LeafModel::_plant_phase);
@@ -87,9 +89,6 @@ public:
         External(DD, &LeafModel::_dd);
         External(DELTA_T, &LeafModel::_delta_t);
         External(GROW, &LeafModel::_grow);
-        External(LER, &LeafModel::_ler);
-        External(EXP_TIME, &LeafModel::_exp_time);
-        External(PREDIM, &LeafModel::_predim);
         External(SLA, &LeafModel::_sla);
     }
 
@@ -162,15 +161,20 @@ public:
         _width = _len * _WLR / _LL_BL;
 
         //ThermalTimeSinceLigulation
-        if (not _lig) {
-            _lig = _leaf_phase == LeafModel::LIG;
+        if (not _is_lig) {
+            if(_leaf_phase == LeafModel::LIG) {
+                _is_lig = true;
+                if(_lig_t == 0) {
+                    _lig_t = t;
+                }
+            }
         } else {
             _TT_Lig += _delta_t; //@TODO vérifier si c'est calculé qu'une seule fois
         }
 
         //BladeArea
         _blade_area = _len * _width * _allo_area / _LL_BL;
-        if (not _lig) {
+        if (not _is_lig) {
             _corrected_blade_area = 0;
         } else {
             if (_blade_area < 0) {
@@ -189,7 +193,7 @@ public:
             _old_biomass = _biomass;
         } else {
             if (_leaf_phase != LeafModel::NOGROWTH) {
-                if (not _lig) {
+                if (not _is_lig) {
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _corrected_biomass = 0;
                     _realloc_biomass = 0;
@@ -214,7 +218,7 @@ public:
         if (_first_day == t) {
             _demand = _biomass;
         } else {
-            if (not _lig) {
+            if (not _is_lig) {
                 _demand = _biomass - _old_biomass;
             } else {
                 _demand = 0;
@@ -231,6 +235,7 @@ public:
         }
     }
 
+    //@TODO modifier LIG en flag pour signifier le bool _lig
     void step_state() {
         if (_leaf_phase == LeafModel::INIT) {
             _leaf_phase = LeafModel::INITIAL;
@@ -250,7 +255,7 @@ public:
     }
 
     void LeafModel::init(double t,
-                         const model::models::ModelParameters& parameters)
+                         const ecomeristem::ModelParameters& parameters)
     {
         //parameters
         _coeffLifespan = parameters.get < double >("coeff_lifespan");
@@ -280,7 +285,7 @@ public:
         _plasto_delay = 0;
         _width = 0;
         _TT_Lig = 0;
-        _lig = false;
+        _is_lig = false;
         _corrected_blade_area = 0;
         _blade_area = 0;
         _biomass = 0;
@@ -289,6 +294,7 @@ public:
         _senesc_dw_sum = 0;
         _demand = 0;
         _time_from_app = 0;
+        _lig_t = 0;
     }
 
     //    double get_blade_area() const
@@ -328,7 +334,7 @@ private:
     double _len;
     double _plasto_delay;
     double _TT_Lig;
-    double _lig;
+    bool   _is_lig;
     double _blade_area;
     double _corrected_blade_area;
     double _biomass;
@@ -339,12 +345,13 @@ private:
     double _senesc_dw_sum;
     double _demand;
     double _time_from_app;
+    double _sla_cste;
+    double _lig_t;
 
     // external variables
     double _ftsw;
     double _p;
     double _plant_phase;
-    double _len;
     double _fcstr;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;
@@ -353,7 +360,6 @@ private:
     double _delta_t;
     double _grow;
     double _sla;
-    double _sla_cste;
 
 };
 
