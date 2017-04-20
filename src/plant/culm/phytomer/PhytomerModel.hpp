@@ -33,10 +33,16 @@ class PhytomerModel : public CoupledModel < PhytomerModel >
 public:
     enum submodels { LEAF, INTERNODE };
 
-    enum internals { LEAF_PREDIM };
-    enum externals { DD, DELTA_T, FTSW, FCSTR, P, PHENO_STAGE,
-                     PREDIM_LEAF_ON_MAINSTEM, PREDIM_PREVIOUS_LEAF,
-                     SLA, GROW, PLANT_PHASE, STATE, TEST_IC,
+    enum internals { LEAF_PREDIM,
+                     LEAF_BIOMASS, LEAF_BLADE_AREA, LEAF_DEMAND,
+                     INTERNODE_DEMAND, INTERNODE_LAST_DEMAND, INTERNODE_BIOMASS,
+                     INTERNODE_LEN, LEAF_LAST_DEMAND, PLASTO_DELAY,
+                     REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
+                     LEAF_CORRECTED_BIOMASS, LEAF_CORRECTED_BLADE_AREA,
+                     LEAF_LEN };
+
+    enum externals { DD, DELTA_T, FTSW, FCSTR, PREDIM_LEAF_ON_MAINSTEM,
+                     PREDIM_PREVIOUS_LEAF, SLA, PLANT_PHASE, TEST_IC,
                      PLANT_STATE};
 
     PhytomerModel(int index, bool is_on_mainstem) :
@@ -51,7 +57,23 @@ public:
         Submodels( ((INTERNODE, _internode_model.get())) );
 
         // internals
-        InternalS(LEAF_PREDIM,  _leaf_model.get(), LeafModel::PREDIM);
+        InternalS(LEAF_PREDIM,  _leaf_model.get(), LeafModel::LEAF_PREDIM);
+        InternalS(LEAF_BIOMASS, _leaf_model.get(), LeafModel::BIOMASS);
+        InternalS(LEAF_BLADE_AREA, _leaf_model.get(), LeafModel::BLADE_AREA);
+        InternalS(LEAF_DEMAND, _leaf_model.get(), LeafModel::DEMAND);
+        InternalS(LEAF_LAST_DEMAND, _leaf_model.get(), LeafModel::LAST_DEMAND);
+        InternalS(PLASTO_DELAY, _leaf_model.get(), LeafModel::PLASTO_DELAY);
+        InternalS(REALLOC_BIOMASS, _leaf_model.get(), LeafModel::REALLOC_BIOMASS);
+        InternalS(SENESC_DW, _leaf_model.get(), LeafModel::SENESC_DW);
+        InternalS(SENESC_DW_SUM, _leaf_model.get(), LeafModel::SENESC_DW_SUM);
+        InternalS(LEAF_CORRECTED_BIOMASS, _leaf_model.get(), LeafModel::CORRECTED_BIOMASS);
+        InternalS(LEAF_CORRECTED_BLADE_AREA, _leaf_model.get(), LeafModel::CORRECTED_BLADE_AREA);
+        InternalS(LEAF_LEN, _leaf_model.get(), LeafModel::LEAF_LEN);
+        InternalS(INTERNODE_LAST_DEMAND, _internode_model.get(), InternodeModel::LAST_DEMAND);
+        InternalS(INTERNODE_DEMAND, _internode_model.get(), InternodeModel::DEMAND);
+        InternalS(INTERNODE_BIOMASS, _internode_model.get(), InternodeModel::BIOMASS);
+        InternalS(INTERNODE_LEN, _internode_model.get(), InternodeModel::INTERNODE_LEN);
+
 
         // externals
         External(PLANT_PHASE, &PhytomerModel::_plant_phase);
@@ -61,12 +83,9 @@ public:
         External(PREDIM_LEAF_ON_MAINSTEM, &PhytomerModel::_predim_leaf_on_mainstem);
         External(PREDIM_PREVIOUS_LEAF, &PhytomerModel::_predim_previous_leaf);
         External(FTSW, &PhytomerModel::_ftsw);
-        External(P, &PhytomerModel::_p);
         External(DD, &PhytomerModel::_dd);
         External(DELTA_T, &PhytomerModel::_delta_t);
-        External(GROW, &PhytomerModel::_grow);
         External(SLA, &PhytomerModel::_sla);
-        External(PHENO_STAGE, &PhytomerModel::_pheno_stage);
     }
 
     virtual ~PhytomerModel()
@@ -77,23 +96,22 @@ public:
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
     {
+        // submodels
         _internode_model->init(t, parameters);
         _leaf_model->init(t, parameters);
     }
 
     void compute(double t, bool /* update */)
     {
-        if (_leaf_model) {
+        if (_leaf_model) {       
             _leaf_model->put(t, LeafModel::DD, _dd);
             _leaf_model->put(t, LeafModel::DELTA_T, _delta_t);
             _leaf_model->put(t, LeafModel::FTSW, _ftsw);
             _leaf_model->put(t, LeafModel::FCSTR, _fcstr);
-            _leaf_model->put(t, LeafModel::P, _p);
-            _leaf_model->put(t, LeafModel::PHENO_STAGE, _pheno_stage);
-            _leaf_model->put(t, LeafModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
-            _leaf_model->put(t, LeafModel::PREDIM_PREVIOUS_LEAF, _predim_previous_leaf);
+            _leaf_model->put(t, LeafModel::LEAF_PREDIM_ON_MAINSTEM, _predim_leaf_on_mainstem);
+            _leaf_model->put(t, LeafModel::PREVIOUS_LEAF_PREDIM, _predim_previous_leaf);
             _leaf_model->put(t, LeafModel::SLA, _sla);
-            _leaf_model->put(t, LeafModel::GROW, _grow);
+            _leaf_model->put < int >(t, LeafModel::PLANT_PHASE, PlantState::INIT); //@TODO set real value
             _leaf_model->put(t, LeafModel::TEST_IC, _test_ic);
             (*_leaf_model)(t);
         }
@@ -101,13 +119,10 @@ public:
         _internode_model->put(t, InternodeModel::DD, _dd);
         _internode_model->put(t, InternodeModel::DELTA_T, _delta_t);
         _internode_model->put(t, InternodeModel::FTSW, _ftsw);
-        _internode_model->put(t, InternodeModel::P, _p);
-        _internode_model->put(t, InternodeModel::PLANT_PHASE, _plant_phase);
-        _internode_model->put(t, InternodeModel::PLANT_STATE, _plant_state);
-        _internode_model->put(t, InternodeModel::LIG,
-                             _leaf_model->get < double > (t, LeafModel::LIG_T));
-        _internode_model->put(t, InternodeModel::LEAF_PREDIM,
-                             _leaf_model->get < double > (t, LeafModel::PREDIM));
+        _internode_model->put < int >(t, InternodeModel::PLANT_PHASE, _plant_phase);
+        _internode_model->put < int >(t, InternodeModel::PLANT_STATE, _plant_state);
+        _internode_model->put(t, InternodeModel::LIG, _leaf_model->get < double > (t, LeafModel::LIG_T));
+        _internode_model->put(t, InternodeModel::LEAF_PREDIM, _leaf_model->get < double > (t, LeafModel::LEAF_PREDIM));
         (*_internode_model)(t);
     }
 
@@ -143,7 +158,7 @@ public:
 //    const LeafModel& leaf() const
 //    { return *leaf_model; }
 
-//    const internode::InternodeModel& internode() const
+//    const InternodeModel& internode() const
 //    { return *internode_model; }
 
 //    int get_index() const
@@ -169,9 +184,8 @@ private:
 
     // external variables
     double _ftsw;
-    double _p;
-    double _plant_phase;
-    double _plant_state;
+    int _plant_phase;
+    int _plant_state;
     double _len;
     double _fcstr;
     double _predim_leaf_on_mainstem;
@@ -179,9 +193,7 @@ private:
     double _test_ic;
     double _dd;
     double _delta_t;
-    double _grow;
     double _sla;
-    double _pheno_stage;
 };
 
 } // namespace model

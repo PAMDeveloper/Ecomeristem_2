@@ -48,20 +48,20 @@ public:
     PlantView()
     {
         //PlantModel
-//        selector("LEAF_BIOMASS_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::LEAF_BIOMASS_SUM });
-//        selector("LEAF_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::LEAF_DEMAND_SUM });
-//        selector("LEAF_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::LEAF_LAST_DEMAND_SUM });
-//        selector("INTERNODE_BIOMASS_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::INTERNODE_BIOMASS_SUM });
-//        selector("INTERNODE_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::INTERNODE_DEMAND_SUM });
-//        selector("INTERNODE_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::INTERNODE_LAST_DEMAND_SUM });
-//        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::SENESC_DW_SUM });
+        selector("LEAF_BIOMASS_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_BIOMASS_SUM });
+        selector("LEAF_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_DEMAND_SUM });
+        selector("LEAF_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_LAST_DEMAND_SUM });
+        selector("INTERNODE_BIOMASS_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_BIOMASS_SUM });
+        selector("INTERNODE_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_DEMAND_SUM });
+        selector("INTERNODE_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_LAST_DEMAND_SUM });
+        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::SENESC_DW_SUM });
 
         //ThermalTimeModel
         selector("LIG", artis::kernel::DOUBLE, {

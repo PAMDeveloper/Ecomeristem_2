@@ -40,7 +40,7 @@ public:
     enum internals { INTERNODE_PHASE, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
-    enum externals { PLANT_PHASE, PLANT_STATE, LIG, LEAF_PREDIM, FTSW, P,
+    enum externals { PLANT_PHASE, PLANT_STATE, LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T};
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
@@ -66,7 +66,6 @@ public:
         External(LIG, &InternodeModel::_lig);
         External(LEAF_PREDIM, &InternodeModel::_leaf_predim);
         External(FTSW, &InternodeModel::_ftsw);
-        External(P, &InternodeModel::_p);
         External(DD, &InternodeModel::_dd);
         External(DELTA_T, &InternodeModel::_delta_t);
     }
@@ -75,7 +74,7 @@ public:
     { }
 
     void compute(double t, bool /* update */){
-
+        _p = _parameters.get(t).P;
         //InternodePredim
         if (_index - 1 - _nb_leaf_param2 < 0) {
             _LL_BL = _LL_BL_init;
@@ -195,7 +194,7 @@ public:
 
     void init(double t,
               const ecomeristem::ModelParameters& parameters) {
-
+        _parameters = parameters;
         //parameters
         _LL_BL_init = parameters.get < double >("LL_BL_init");
         _slope_LL_BL_at_PI = parameters.get < double >("slope_LL_BL_at_PI");
@@ -232,7 +231,7 @@ public:
     }
 
 private:
-
+    ecomeristem::ModelParameters _parameters;
     // attributes
     int _index;
     bool _is_first_internode;
@@ -272,8 +271,8 @@ private:
     double _first_day; //@TODO unused
 
     // externals
-    double _plant_phase;
-    double _plant_state;
+    int _plant_phase;
+    int _plant_state;
     double _leaf_predim;
     double _lig;
     double _ftsw;

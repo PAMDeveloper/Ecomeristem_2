@@ -32,8 +32,8 @@ class LeafModel : public AtomicModel < LeafModel >
 public:
     enum phase_t   { INIT, INITIAL, LIG, NOGROWTH };
 
-    enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEN, LER,
-                     EXP_TIME, PLASTO_DELAY, PREDIM, WIDTH,
+    enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEAF_LEN, LER,
+                     EXP_TIME, PLASTO_DELAY, LEAF_PREDIM, WIDTH,
                      TT_LIG, BLADE_AREA, CORRECTED_BLADE_AREA,
                      BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
@@ -41,9 +41,9 @@ public:
                      LIG_T, IS_LIG
                    };
 
-    enum externals { DD, DELTA_T, FTSW, FCSTR, P, PHENO_STAGE,
-                     PREDIM_LEAF_ON_MAINSTEM, PREDIM_PREVIOUS_LEAF,
-                     SLA, GROW, PLANT_PHASE, STATE, STOP, TEST_IC };
+    enum externals { DD, DELTA_T, FTSW, FCSTR,
+                     LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
+                     SLA, PLANT_PHASE, TEST_IC };
 
 
     virtual ~LeafModel()
@@ -56,13 +56,13 @@ public:
     {
         //internals
         Internal(LEAF_PHASE, &LeafModel::_leaf_phase);
-        Internal(PREDIM, &LeafModel::_predim);
-        Internal(LEN, &LeafModel::_len);
+        Internal(LEAF_PREDIM, &LeafModel::_predim);
+        Internal(LEAF_LEN, &LeafModel::_len);
         Internal(LIFE_SPAN, &LeafModel::_life_span);
         Internal(REDUCTION_LER, &LeafModel::_reduction_ler);
         Internal(LER, &LeafModel::_ler);
         Internal(EXP_TIME, &LeafModel::_exp_time);
-        Internal(LEN, &LeafModel::_len);
+        Internal(LEAF_LEN, &LeafModel::_len);
         Internal(PLASTO_DELAY, &LeafModel::_plasto_delay);
         Internal(WIDTH, &LeafModel::_width);
         Internal(TT_LIG, &LeafModel::_TT_Lig);
@@ -74,6 +74,7 @@ public:
         Internal(SENESC_DW_SUM, &LeafModel::_senesc_dw_sum);
         Internal(CORRECTED_BIOMASS, &LeafModel::_corrected_biomass);
         Internal(DEMAND, &LeafModel::_demand);
+        Internal(LAST_DEMAND, &LeafModel::_last_demand);
         Internal(TIME_FROM_APP, &LeafModel::_time_from_app);
         Internal(LIG_T, &LeafModel::_lig_t);
         Internal(IS_LIG, &LeafModel::_is_lig);
@@ -82,13 +83,11 @@ public:
         External(PLANT_PHASE, &LeafModel::_plant_phase);
         External(TEST_IC, &LeafModel::_test_ic);
         External(FCSTR, &LeafModel::_fcstr);
-        External(PREDIM_LEAF_ON_MAINSTEM, &LeafModel::_predim_leaf_on_mainstem);
-        External(PREDIM_PREVIOUS_LEAF, &LeafModel::_predim_previous_leaf);
+        External(LEAF_PREDIM_ON_MAINSTEM, &LeafModel::_predim_leaf_on_mainstem);
+        External(PREVIOUS_LEAF_PREDIM, &LeafModel::_predim_previous_leaf);
         External(FTSW, &LeafModel::_ftsw);
-        External(P, &LeafModel::_p);
         External(DD, &LeafModel::_dd);
         External(DELTA_T, &LeafModel::_delta_t);
-        External(GROW, &LeafModel::_grow);
         External(SLA, &LeafModel::_sla);
     }
 
@@ -96,6 +95,8 @@ public:
 
     void LeafModel::compute(double t, bool /* update */)
     {
+        _p = _parameters.get(t).P;
+
         //LeafManager
         step_state();
 
@@ -215,6 +216,7 @@ public:
         }
 
         //LeafDemand
+         _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
         if (_first_day == t) {
             _demand = _biomass;
         } else {
@@ -257,6 +259,7 @@ public:
     void LeafModel::init(double t,
                          const ecomeristem::ModelParameters& parameters)
     {
+        _parameters = parameters;
         //parameters
         _coeffLifespan = parameters.get < double >("coeff_lifespan");
         _mu = parameters.get < double >("mu");
@@ -293,6 +296,7 @@ public:
         _senesc_dw = 0;
         _senesc_dw_sum = 0;
         _demand = 0;
+        _last_demand = 0;
         _time_from_app = 0;
         _lig_t = 0;
     }
@@ -301,6 +305,7 @@ public:
     //    { return blade_area_model.get_blade_area(); }
 
 private:
+    ecomeristem::ModelParameters _parameters;
     // parameters
     double _coeffLifespan;
     double _mu;
@@ -344,6 +349,7 @@ private:
     double _senesc_dw;
     double _senesc_dw_sum;
     double _demand;
+    double _last_demand;
     double _time_from_app;
     double _sla_cste;
     double _lig_t;
@@ -351,7 +357,7 @@ private:
     // external variables
     double _ftsw;
     double _p;
-    double _plant_phase;
+    int _plant_phase;
     double _fcstr;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;

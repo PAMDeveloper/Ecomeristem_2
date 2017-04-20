@@ -35,7 +35,7 @@ class PlantStockModel : public AtomicModel < PlantStockModel >
 {
 public:
     enum internals { DAY_DEMAND, IC, TEST_IC, RESERVOIR_DISPO, SEED_RES, STOCK,
-                     SUPPLY, SURPLUS };
+                     SUPPLY, SURPLUS, DEFICIT };
 
     enum externals { DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, LEAF_BIOMASS_SUM,
@@ -53,6 +53,7 @@ public:
         Internal(STOCK, &PlantStockModel::_stock);
         Internal(SUPPLY, &PlantStockModel::_supply);
         Internal(SURPLUS, &PlantStockModel::_surplus);
+        Internal(DEFICIT, &PlantStockModel::_deficit);
 
 
         //    external variables
