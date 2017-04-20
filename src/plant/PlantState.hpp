@@ -43,7 +43,7 @@ public:
                        LIG = 24,
                        KILL = 25 };
 
-    enum plant_state {  VEGETATIVE, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO,
+    enum plant_state {  VEGETATIVE = 0, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO,
                         FLO, END_FILLING, MATURITY, DEAD };
 
     enum internals { PHASE, STATE };

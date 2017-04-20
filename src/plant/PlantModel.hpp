@@ -191,20 +191,20 @@ public:
         while (it != _culm_models.end()) {
             (*it)->put(t, CulmModel::DD, _thermal_time_model->get < double >(t, ThermalTimeModel::DD));
             (*it)->put(t, CulmModel::DELTA_T, _thermal_time_model->get < double >(t, ThermalTimeModel::DELTA_T));
-            (*it)->put(t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
+            (*it)->put < int > (t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
             (*it)->put(t, CulmModel::SLA, _thermal_time_model->get < double >(t, ThermalTimeModel::SLA));
             (*it)->put(t, CulmModel::FTSW, _water_balance_model->get < double >(t, WaterBalanceModel::FTSW));
             (*it)->put(t, CulmModel::FCSTR, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
             (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, predim_leaf_on_mainstem);
-            (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t, PlantStockModel::TEST_IC));
+            (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
 
-            //@TODO remplir
-            (*it)->put(t, CulmModel::PLANT_PHASE, PlantState::INIT);//PlantState.get < double >(t, PlantState::PHASE));
-            (*it)->put(t, CulmModel::PLANT_STATE, PlantState::VEGETATIVE);//manager_model.get < double >(t, PlantState::STATE));
+            //@TODO remplir correctement les variables
+            (*it)->put < int >(t, CulmModel::PLANT_PHASE, PlantState::INIT);//PlantState.get < double >(t, PlantState::PHASE));
+            (*it)->put < int >(t, CulmModel::PLANT_STATE, PlantState::VEGETATIVE);//manager_model.get < double >(t, PlantState::STATE));
             (**it)(t);
 
             if (it == _culm_models.begin()) {
-                predim_leaf_on_mainstem = (*it)->get < double, CulmModel>(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM);
+//                predim_leaf_on_mainstem = (*it)->get < double, CulmModel>(t, CulmModel::STEM_LEAF_PREDIM);
             }
 
 

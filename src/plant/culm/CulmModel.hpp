@@ -415,8 +415,8 @@ private:
     double _grow;
     double _stop;
     double _test_ic;
-    double _plant_phase;
-    double _plant_state;
+    int _plant_phase;
+    int _plant_state;
     double _plant_stock;
     double _plant_deficit;
     double _plant_biomass_sum;

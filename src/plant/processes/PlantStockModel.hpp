@@ -73,6 +73,7 @@ public:
     virtual ~PlantStockModel()
     {}
 
+
     void compute(double t, bool /* update */) {
         //  day_demand
         if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3 or
@@ -187,6 +188,10 @@ public:
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
+        //permet le passage du get à t0 en mimant un isComputed au temps t
+        last_time = t-1;
+
+        // parameters
         _parameters = parameters;
 
         //    parameters variables
