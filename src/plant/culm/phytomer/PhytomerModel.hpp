@@ -161,8 +161,8 @@ public:
 //    const InternodeModel& internode() const
 //    { return *internode_model; }
 
-//    int get_index() const
-//    { return _index; }
+    int get_index() const
+    { return _index; }
 
     bool is_leaf_dead() const
     { return _leaf_model.get() != nullptr; }

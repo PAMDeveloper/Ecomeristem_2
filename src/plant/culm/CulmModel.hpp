@@ -107,6 +107,7 @@ public:
         auto it = _phytomer_models.begin();
         std::deque < PhytomerModel* >::iterator previous_it;
         int i = 0;
+        _nb_lig = 0;
         while (it != _phytomer_models.end()) {
             //Phytomers
             compute_phytomers(it, previous_it, i, t);
@@ -158,7 +159,7 @@ public:
             } else {
                 (*it)->put(
                             t, PhytomerModel::PREDIM_LEAF_ON_MAINSTEM,
-                            (*previous_it)->get < double, PhytomerModel >(t, PhytomerModel::LEAF_PREDIM));
+                            (*previous_it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM));
             }
         } else {
             (*it)->put(t, PhytomerModel::PREDIM_LEAF_ON_MAINSTEM,
@@ -170,7 +171,7 @@ public:
             (*it)->put(t, PhytomerModel::PREDIM_PREVIOUS_LEAF, 0.);
         } else {
             (*it)->put(t, PhytomerModel::PREDIM_PREVIOUS_LEAF,
-                       (*previous_it)->get < double, PhytomerModel >(t, PhytomerModel::LEAF_PREDIM));
+                       (*previous_it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM));
         }
         (**it)(t);
     }
@@ -183,7 +184,7 @@ public:
 
             //@TODO inutile de le calculer ailleurs que sur le mainstem (_is_first_culm)
             if (i == 0 or (*it)->is_leaf_lig(t)) {
-                _stem_leaf_predim = (*it)->get < double, PhytomerModel >(t, PhytomerModel::LEAF_PREDIM);
+                _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
         }
 
@@ -228,33 +229,22 @@ public:
     }
 
 
-    //    void CulmModel::create_phytomer(double t)
-    //    {
-    //        if (t != _first_day) {
-    //            int index;
+    void create_phytomer(double t)
+    {
+        if (t != _parameters.beginDate) {
+            int index;
+            if (_phytomer_models.empty()) {
+                index = 1;
+            } else {
+                index = _phytomer_models.back()->get_index() + 1;
+            }
 
-    //            if (phytomer_models.empty()) {
-    //                index = 1;
-    //            } else {
-    //                index = phytomer_models.back()->get_index() + 1;
-    //            }
-
-    //#ifdef WITH_TRACE
-    //            utils::Trace::trace()
-    //                    << utils::TraceElement("CULM", t, artis::utils::COMPUTE)
-    //                    << "CREATE PHYTOMER: " << index
-    //                    << " ; index = " << _index;
-    //            utils::Trace::trace().flush();
-    //#endif
-
-    //            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm);
-
-    //            setsubmodel(PHYTOMERS, phytomer);
-    //            phytomer->init(t, *_parameters);
-    //            phytomer_models.push_back(phytomer);
-    //            compute(t, true);
-    //        }
-    //    }
+            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm);
+            setsubmodel(PHYTOMERS, phytomer);
+            phytomer->init(t, _parameters);
+            _phytomer_models.push_back(phytomer);
+        }
+    }
 
     //    void CulmModel::delete_leaf(double t, int index)
     //    {
@@ -420,8 +410,6 @@ private:
     //    internals
     double _nb_lig;
     double _stem_leaf_predim;
-
-    // internal
     double _leaf_biomass_sum;
     double _leaf_last_demand_sum;
     double _leaf_demand_sum;

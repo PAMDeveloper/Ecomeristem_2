@@ -36,20 +36,20 @@ class ThermalTimeModel : public AtomicModel < ThermalTimeModel >
 public:
     enum tt_state { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
 
-    enum internals { LIG, STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
+    enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
                      PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD, IH };
 
-    enum externals {  PLANT_PHASE, PLASTO_DELAY, LEAF_LEN, LEAF_PREDIM };
+    enum externals {  PLANT_PHASE, PLASTO_DELAY, LIG };
 
 
     ThermalTimeModel() {
         //    computed variables
-        Internal(LIG, &ThermalTimeModel::_lig);
+
         Internal(STATE, &ThermalTimeModel::_tt_state);
         Internal(DELTA_T, &ThermalTimeModel::_deltaT);
         Internal(TT, &ThermalTimeModel::_TT);
-        Internal(BOOL_CROSSED_PLASTO, &ThermalTimeModel::_boolCrossedPlasto);
         Internal(TT_LIG, &ThermalTimeModel::_TT_lig);
+        Internal(BOOL_CROSSED_PLASTO, &ThermalTimeModel::_boolCrossedPlasto);
         Internal(PLASTO_VISU, &ThermalTimeModel::_plastoVisu);
         Internal(LIGULO_VISU, &ThermalTimeModel::_liguloVisu);
         Internal(PHENO_STAGE, &ThermalTimeModel::_phenoStage);
@@ -59,10 +59,9 @@ public:
         Internal(IH, &ThermalTimeModel::_IH);
 
         //    external variables
+        External(LIG, &ThermalTimeModel::_lig);
         External(PLASTO_DELAY, &ThermalTimeModel::_plasto_delay);
         External(PLANT_PHASE, &ThermalTimeModel::_plant_phase);
-        External(LEAF_LEN, &ThermalTimeModel::_leafLen);
-        External(LEAF_PREDIM, &ThermalTimeModel::_leafPredim);
 
     }
 
@@ -98,11 +97,6 @@ public:
     void compute(double t, bool /* update */) {
         //ThermalTimeManager
         step_state();
-
-        // lig @TODO
-        if (_leafLen >= _leafPredim) {
-            _lig = _lig + 1;
-        }
 
         //DeltaT
         _Ta = _parameters.get(t).Temperature;
@@ -191,9 +185,6 @@ public:
         _deltaT = 0;
         _TT = 0;
         _boolCrossedPlasto = 0;
-        _TT_lig = 0;
-        _lig = 0;
-        _lig_1 = 0;
         _plastoVisu = _plasto;
         _liguloVisu = _plasto * _coef_ligulo;
         _phenoStage = 1;
@@ -215,14 +206,15 @@ private:
     //    parameters(t)
     double _Ta;
 
-    //    internals - computed
+    // vars
+    double _lig_1;
+
+    //    internals - computed.
+    double _TT_lig;
     int _tt_state;
     double _deltaT;
     double _TT;
     double _boolCrossedPlasto;
-    double _TT_lig;
-    double _lig;
-    double _lig_1;
     double _plastoVisu;
     double _liguloVisu;
     int _phenoStage;
@@ -232,10 +224,9 @@ private:
     double _IH;
 
     //    externals
+    double _lig;
     double _plasto_delay;
     int _plant_phase;
-    double _leafLen;
-    double _leafPredim;
 };
 
 } // namespace model

@@ -48,7 +48,7 @@ public:
                      ROOT_BIOMASS, GROW, SUPPLY, DEFICIT, IC,
                      SURPLUS, TEST_IC, DAY_DEMAND, RESERVOIR_DISPO,
                      SEED_RES, */
-    enum internals { LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
+    enum internals { LIG, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM };
@@ -70,6 +70,7 @@ public:
         Submodels( ((ROOT, _root_model.get())) );
 
         // local internals
+        Internal(LIG, &PlantModel::_lig);
         Internal( LEAF_BIOMASS_SUM, &PlantModel::_leaf_biomass_sum );
         Internal( LEAF_DEMAND_SUM, &PlantModel::_leaf_demand_sum );
         Internal( LEAF_LAST_DEMAND_SUM, &PlantModel::_leaf_last_demand_sum );
@@ -91,14 +92,93 @@ public:
         //        }
     }
 
-        //@TODO set true values in push
+
+    void step_state(double t) {
+        PlantState::plant_phase old_phase;
+
+        double nbleaf_pi = _parameters.get < double >("nbleaf_pi");
+        double nbleaf_culm_elong = _parameters.get < double >("nb_leaf_stem_elong");
+        double _stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
+        double _phenoStage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
+        double _boolCrossedPlasto = _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
+
+        do {
+            old_phase = _phase;
+
+            switch (_phase) {
+            case PlantState::INIT: {
+                _phase = PlantState::INITIAL;
+                _state = PlantState::VEGETATIVE;
+                break;
+            }
+            case PlantState::INITIAL: {
+                if (_stock > 0 and _phenoStage < nbleaf_pi) {
+                    _phase = PlantState::GROWTH;
+                } else {
+                    _phase = PlantState::KILL;
+                }
+                break;
+            }
+            case PlantState::GROWTH:
+                if (_boolCrossedPlasto > 0 and _stock > 0) {
+                    _phase = PlantState::NEW_PHYTOMER;
+                }
+                if (_stock <= 0) {
+                    _phase = PlantState::NOGROWTH2;
+                }
+                break;
+            case PlantState::NOGROWTH: {
+                if (_stock > 0) {
+                    _phase = PlantState::GROWTH;
+                }
+                break;
+            }
+            case PlantState::KILL: break;
+            case PlantState::NEW_PHYTOMER: {
+                if (_phenoStage == nbleaf_culm_elong) {
+                    _state = PlantState::ELONG;
+                }
+                _phase = PlantState::NEW_PHYTOMER3;
+                break;
+            }
+            case PlantState::NOGROWTH2: {
+                _last_time = t;
+                _phase = PlantState::NOGROWTH3;
+                break;
+            }
+            case PlantState::NOGROWTH3: {
+                if (t == _last_time + 1) {
+                    _phase = PlantState::NOGROWTH4;
+                }
+                break;
+            }
+            case PlantState::NOGROWTH4: {
+                if (_stock > 0) {
+                    _phase = PlantState::GROWTH;
+                }
+                break;
+            }
+            case PlantState::NEW_PHYTOMER3: {
+                if (_boolCrossedPlasto <= 0) {
+                    _phase = PlantState::GROWTH;
+                }
+                if (_stock <= 0) {
+                    _phase = PlantState::NOGROWTH2;
+                }
+                break;
+            }
+            case PlantState::LIG: break;
+            };
+        } while (old_phase != _phase);
+    }
+
+
     void compute(double t, bool /* update */) {
 
         //Thermal time
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0);
-        _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, PlantState::INIT);
-        _thermal_time_model->put < double >(t, ThermalTimeModel::LEAF_LEN, 0);
-        _thermal_time_model->put < double >(t, ThermalTimeModel::LEAF_PREDIM, 0);
+        _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, _phase);
+        _thermal_time_model->put < double >(t, ThermalTimeModel::LIG, _lig);
         (*_thermal_time_model)(t);
 
         //Water balance
@@ -108,16 +188,19 @@ public:
         (*_water_balance_model)(t);
 
         /***********************************************/
-        /****/
-//        compute_manager(t); //t-1
+        // Manager
+        step_state(t);
 
-        //Phytomer creations
-//        if(get_phase(t) == NEW_PHYTOMER or get_phase(t) == NEW_PHYTOMER3) //virer un état
-//            create_phytomer(t);
+        //Phytomer creation
+        if(_phase == PlantState::NEW_PHYTOMER or _phase == PlantState::NEW_PHYTOMER3) //@TODO virer un état
+            create_phytomer(t);
 
         //CulmModel
         compute_culms(t);
-        /***********************************************/
+
+        //Lig update
+        std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
+        _lig = (*it)->get <double, CulmModel>(t, CulmModel::NB_LIG);
 
 //        after day - compute bilans
         //Tillering
@@ -128,10 +211,10 @@ public:
         (*_tillering_model)(t);
 
         //culm creation
-//        if (tiller_manager_model.get < double >(t, TillerManager::CREATE) > 0
-//                and tiller_manager_model.get < double >(t, TillerManager::NB_TILLERS) > 0) {
-//            create_culm(t, tiller_manager_model.get < double >(t, TillerManager::NB_TILLERS));
-//        }
+        if (_tillering_model->get < double >(t, TilleringModel::CREATE) > 0
+                and _tillering_model->get < double >(t, TilleringModel::NB_TILLERS) > 0) {
+            create_culm(t, _tillering_model->get < double >(t, TilleringModel::NB_TILLERS));
+        }
 
         //Assimilation
         _assimilation_model->put < double >(t, AssimilationModel::CSTR,
@@ -180,6 +263,26 @@ public:
 
     }
 
+
+    void create_culm(double t, int n)
+    {
+        for (int i = 0; i < n; ++i) {
+            CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
+            setsubmodel(CULMS, meristem);
+            meristem->init(t, _parameters);
+            _culm_models.push_back(meristem);
+        }
+    }
+
+    void create_phytomer(double t)
+    {
+        std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
+        while (it != _culm_models.end()) {
+            (*it)->create_phytomer(t);
+            ++it;
+        }
+    }
+
     void compute_culms(double t)
     {
         double predim_leaf_on_mainstem = 0;
@@ -206,6 +309,7 @@ public:
 
             if (it == _culm_models.begin()) {
 //                predim_leaf_on_mainstem = (*it)->get < double, CulmModel>(t, CulmModel::STEM_LEAF_PREDIM);
+
             }
             ++it;
         }
@@ -275,6 +379,7 @@ public:
         _root_model->init(t, parameters);
 
         //internal variables (local)
+        _lig = 0;
         _leaf_biomass_sum = 0;
         _leaf_demand_sum = 0;
         _leaf_last_demand_sum = 0;
@@ -282,11 +387,17 @@ public:
         _internode_last_demand_sum = 0;
         _internode_biomass_sum = 0;
         _senesc_dw_sum = 0;
+
+        //
+        _last_time = 0;
     }
     bool is_dead() const
     { /*return not culm_models.empty() and culm_models[0]->is_dead();*/ }
 
 private:
+    //@TODO vérif
+    double _last_time;
+
     ecomeristem::ModelParameters _parameters;
     // submodels
     std::deque < CulmModel* > _culm_models;
@@ -297,36 +408,8 @@ private:
     std::unique_ptr < model::TilleringModel > _tillering_model;
     std::unique_ptr < model::RootModel > _root_model;
 
-    //    void compute_assimilation(double t);
-    //    void compute_culms(double t);
-    //    void compute_height(double t);
-    //    void compute_lig(double t);
-    //    void compute_manager(double t);
-    //    void compute_root(double t);
-    //    void compute_sla(double t);
-    //    void compute_stock(double t);
-    //    void compute_thermal_time(double t);
-    //    void compute_tiller(double t);
-    //    void compute_water_balance(double t);
-    //    void create_culm(double t, int n);
-    //    void create_phytomer(double t);
-    //    bool culms_is_stable(double t);
-    //    void delete_leaf(double t);
-    //    double get_deficit(double t) const;
-    //    double get_phase(double t) const;
-    //    double get_root_demand(double t) const;
-    //    double get_state(double t) const;
-    //    double get_stock(double t) const;
-    //    void search_deleted_leaf(double t);
-
-    //// parameters
-    //    double _nbleaf_enabling_tillering;
-    //    double _realocationCoeff;
-    //    double _LL_BL;
-
-    //    const model::models::ModelParameters* _parameters;
-
-    // internal variables (local)
+    // internals
+    double _lig;
     double _leaf_biomass_sum;
     double _leaf_demand_sum;
     double _leaf_blade_area_sum;
@@ -337,33 +420,16 @@ private:
     double _senesc_dw_sum;
     double _realloc_biomass_sum;
 
+    //internal states
+    PlantState::plant_phase _phase;
+    PlantState::plant_state _state;
+
     //    double _demand_sum;
     //    bool _culm_is_computed;
     //    double _lig;
     //    double _deleted_leaf_biomass;
     //    double _deleted_leaf_blade_area;
     //    double _height;
-
-    //// external variables
-    //    double _etp;
-    //    double _p;
-    //    double _radiation;
-    //    double _ta;
-    //    double _water_supply;
-    //    int _culm_index;
-    //    int _leaf_index;
-
-    //    ecomeristem::plant::assimilation::PlantAssimilationModel assimilation_model;
-    //    ecomeristem::root::RootModel root_model;
-    //    ecomeristem::plant::stock::PlantStockModel stock_model;
-    //    ecomeristem::plant::water_balance::WaterBalanceModel water_balance_model;
-    //    ecomeristem::plant::PlantManager manager_model;
-    //    ecomeristem::plant::TillerManager tiller_manager_model;
-    ////    ecomeristem::plant::Lig lig_model;
-    //    ecomeristem::plant::Sla sla_model;
-
-    //    std::vector < culm::CulmModel* > culm_models;
-    //    double _begin;
 };
 
 #endif //PLANT_MODEL_HPP
