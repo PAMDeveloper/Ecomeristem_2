@@ -23,7 +23,6 @@
  */
 
 #include <defines.hpp>
-#include <plant/PlantState.hpp>
 
 namespace model {
 
@@ -147,8 +146,8 @@ public:
             _len = _ler * _dd;
         } else {
 
-            if (not (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3
-                     or _plant_phase == PlantState::NOGROWTH4)) {
+            if (not (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
+                     or _plant_phase == plant::NOGROWTH4)) {
                 _len = std::min(_predim,
                                 _len + _ler * std::min(_delta_t, _exp_time));
             }
@@ -246,12 +245,12 @@ public:
         } else if (_leaf_phase == LeafModel::LIG and _len < _predim) {
             _leaf_phase = LeafModel::INITIAL;
         } else if (_leaf_phase == LeafModel::INITIAL and
-                   (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3
-                    or _plant_phase == PlantState::NOGROWTH4)) {
+                   (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
+                    or _plant_phase == plant::NOGROWTH4)) {
             _leaf_phase = LeafModel::NOGROWTH;
         } else if (_leaf_phase == LeafModel::NOGROWTH and
-                   (_plant_phase == PlantState::GROWTH or
-                    _plant_phase == PlantState::NEW_PHYTOMER3)) {
+                   (_plant_phase == plant::GROWTH or
+                    _plant_phase == plant::NEW_PHYTOMER3)) {
             _leaf_phase = LeafModel::INITIAL;
         }
     }

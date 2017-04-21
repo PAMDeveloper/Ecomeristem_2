@@ -121,7 +121,7 @@ public:
         }
 
         //StockModel
-        if (_plant_state == PlantState::ELONG) {
+        if (_plant_state == plant::ELONG) {
             compute_stock(t);
         }
     }
@@ -139,7 +139,7 @@ public:
         _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, 0);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, 0);
         _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_STATE, PlantState::VEGETATIVE);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_STATE, plant::VEGETATIVE);
         (*_culm_stock_model)(t);
     }
 

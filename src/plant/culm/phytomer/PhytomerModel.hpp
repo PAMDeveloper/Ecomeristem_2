@@ -111,7 +111,7 @@ public:
             _leaf_model->put(t, LeafModel::LEAF_PREDIM_ON_MAINSTEM, _predim_leaf_on_mainstem);
             _leaf_model->put(t, LeafModel::PREVIOUS_LEAF_PREDIM, _predim_previous_leaf);
             _leaf_model->put(t, LeafModel::SLA, _sla);
-            _leaf_model->put < int >(t, LeafModel::PLANT_PHASE, PlantState::INIT); //@TODO set real value
+            _leaf_model->put < int >(t, LeafModel::PLANT_PHASE, plant::INIT); //@TODO set real value
             _leaf_model->put(t, LeafModel::TEST_IC, _test_ic);
             (*_leaf_model)(t);
         }

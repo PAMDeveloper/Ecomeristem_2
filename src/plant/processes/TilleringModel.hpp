@@ -27,7 +27,6 @@
 #define TILLERING_MODEL_HPP
 
 #include <defines.hpp>
-#include <plant/PlantState.hpp>
 
 namespace model {
 

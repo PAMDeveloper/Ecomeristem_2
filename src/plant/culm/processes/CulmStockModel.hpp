@@ -2,7 +2,6 @@
 #define CULMSTOCKMODEL_H
 
 #include <defines.hpp>
-#include <plant/PlantState.hpp>
 
 namespace model {
 
@@ -74,7 +73,7 @@ public:
         _deficit = std::min(0., _intermediate);
 
         //CulmSurplus
-        if (_plant_state == PlantState::ELONG) {
+        if (_plant_state == plant::ELONG) {
             if (_first_day == t) {
                 _surplus = std::max(0., _plant_stock - _internode_demand_sum -
                                     _leaf_demand_sum - _leaf_last_demand_sum -

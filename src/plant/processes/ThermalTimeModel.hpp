@@ -27,7 +27,6 @@
 #define THERMAL_TIME_MODEL_HPP
 
 #include <defines.hpp>
-#include <plant/PlantState.hpp>
 
 namespace model {
 
@@ -79,14 +78,14 @@ public:
             break;
         }
         case STOCK_AVAILABLE: {
-            if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3 or
-                    _plant_phase == PlantState::NOGROWTH4) {
+            if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3 or
+                    _plant_phase == plant::NOGROWTH4) {
                 _tt_state = NO_STOCK;
             }
             break;
         }
         case NO_STOCK: {
-            if (_plant_phase == PlantState::GROWTH or _plant_phase == PlantState::NEW_PHYTOMER3){
+            if (_plant_phase == plant::GROWTH or _plant_phase == plant::NEW_PHYTOMER3){
                 _tt_state = STOCK_AVAILABLE;
             }
             break;

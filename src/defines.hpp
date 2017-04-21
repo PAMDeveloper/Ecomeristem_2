@@ -8,6 +8,24 @@
 #include <artis/utils/DoubleTime.hpp>
 #include <ModelParameters.hpp>
 
+// Plant enums
+namespace plant {
+enum plant_phase { INIT = 0,
+                   INITIAL = 1,
+                   GROWTH = 2,
+                   NOGROWTH = 3,
+                   NEW_PHYTOMER = 5,
+                   NOGROWTH2 = 18,
+                   NOGROWTH3 = 19,
+                   NOGROWTH4 = 20,
+                   NEW_PHYTOMER3 = 23,
+                   LIG = 24,
+                   KILL = 25 };
+
+enum plant_state {  VEGETATIVE = 0, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO,
+                    FLO, END_FILLING, MATURITY, DEAD };
+}
+
 struct GlobalParameters
 { };
 

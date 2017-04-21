@@ -27,7 +27,6 @@
 #define STOCK_MODEL_HPP
 
 #include <defines.hpp>
-#include <plant/PlantState.hpp>
 
 namespace model {
 
@@ -77,8 +76,8 @@ public:
 
     void compute(double t, bool /* update */) {
         //  day_demand
-        if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH3 or
-                _plant_phase == PlantState::NOGROWTH4) {
+        if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3 or
+                _plant_phase == plant::NOGROWTH4) {
             _day_demand = 0;
         } else {
             if (_demand_sum == 0) {
@@ -137,7 +136,7 @@ public:
         }
 
         //  stock
-        if (_state == PlantState::ELONG) {
+        if (_state == plant::ELONG) {
             _stock = _culm_stock;
             _deficit = _culm_deficit;
         } else {
@@ -164,7 +163,7 @@ public:
         _supply = _assim;
 
         //  surplus
-        if (_state == PlantState::ELONG) {
+        if (_state == plant::ELONG) {
             _surplus = _culm_surplus_sum;
         } else {
             if (_seed_res > 0) {

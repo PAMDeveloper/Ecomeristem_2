@@ -94,7 +94,7 @@ public:
 
 
     void step_state(double t) {
-        PlantState::plant_phase old_phase;
+        plant::plant_phase old_phase;
 
         double nbleaf_pi = _parameters.get < double >("nbleaf_pi");
         double nbleaf_culm_elong = _parameters.get < double >("nb_leaf_stem_elong");
@@ -106,68 +106,68 @@ public:
             old_phase = _phase;
 
             switch (_phase) {
-            case PlantState::INIT: {
-                _phase = PlantState::INITIAL;
-                _state = PlantState::VEGETATIVE;
+            case plant::INIT: {
+                _phase = plant::INITIAL;
+                _state = plant::VEGETATIVE;
                 break;
             }
-            case PlantState::INITIAL: {
+            case plant::INITIAL: {
                 if (_stock > 0 and _phenoStage < nbleaf_pi) {
-                    _phase = PlantState::GROWTH;
+                    _phase = plant::GROWTH;
                 } else {
-                    _phase = PlantState::KILL;
+                    _phase = plant::KILL;
                 }
                 break;
             }
-            case PlantState::GROWTH:
+            case plant::GROWTH:
                 if (_boolCrossedPlasto > 0 and _stock > 0) {
-                    _phase = PlantState::NEW_PHYTOMER;
+                    _phase = plant::NEW_PHYTOMER;
                 }
                 if (_stock <= 0) {
-                    _phase = PlantState::NOGROWTH2;
+                    _phase = plant::NOGROWTH2;
                 }
                 break;
-            case PlantState::NOGROWTH: {
+            case plant::NOGROWTH: {
                 if (_stock > 0) {
-                    _phase = PlantState::GROWTH;
+                    _phase = plant::GROWTH;
                 }
                 break;
             }
-            case PlantState::KILL: break;
-            case PlantState::NEW_PHYTOMER: {
+            case plant::KILL: break;
+            case plant::NEW_PHYTOMER: {
                 if (_phenoStage == nbleaf_culm_elong) {
-                    _state = PlantState::ELONG;
+                    _state = plant::ELONG;
                 }
-                _phase = PlantState::NEW_PHYTOMER3;
+                _phase = plant::NEW_PHYTOMER3;
                 break;
             }
-            case PlantState::NOGROWTH2: {
+            case plant::NOGROWTH2: {
                 _last_time = t;
-                _phase = PlantState::NOGROWTH3;
+                _phase = plant::NOGROWTH3;
                 break;
             }
-            case PlantState::NOGROWTH3: {
+            case plant::NOGROWTH3: {
                 if (t == _last_time + 1) {
-                    _phase = PlantState::NOGROWTH4;
+                    _phase = plant::NOGROWTH4;
                 }
                 break;
             }
-            case PlantState::NOGROWTH4: {
+            case plant::NOGROWTH4: {
                 if (_stock > 0) {
-                    _phase = PlantState::GROWTH;
+                    _phase = plant::GROWTH;
                 }
                 break;
             }
-            case PlantState::NEW_PHYTOMER3: {
+            case plant::NEW_PHYTOMER3: {
                 if (_boolCrossedPlasto <= 0) {
-                    _phase = PlantState::GROWTH;
+                    _phase = plant::GROWTH;
                 }
                 if (_stock <= 0) {
-                    _phase = PlantState::NOGROWTH2;
+                    _phase = plant::NOGROWTH2;
                 }
                 break;
             }
-            case PlantState::LIG: break;
+            case plant::LIG: break;
             };
         } while (old_phase != _phase);
     }
@@ -187,12 +187,11 @@ public:
         _water_balance_model->put < double >(t, WaterBalanceModel::WATER_SUPPLY, 0);
         (*_water_balance_model)(t);
 
-        /***********************************************/
         // Manager
         step_state(t);
 
         //Phytomer creation
-        if(_phase == PlantState::NEW_PHYTOMER or _phase == PlantState::NEW_PHYTOMER3) //@TODO virer un état
+        if(_phase == plant::NEW_PHYTOMER or _phase == plant::NEW_PHYTOMER3) //@TODO virer un état
             create_phytomer(t);
 
         //CulmModel
@@ -202,7 +201,6 @@ public:
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         _lig = (*it)->get <double, CulmModel>(t, CulmModel::NB_LIG);
 
-//        after day - compute bilans
         //Tillering
         _tillering_model->put < double >(t, TilleringModel::IC, 0);
         _tillering_model->put < double >(t, TilleringModel::BOOL_CROSSED_PLASTO,
@@ -226,17 +224,14 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, 0);
         (*_assimilation_model)(t);
 
-
-        //fin du jour pdt morphogénèse, t-1 à partir de PI ELONG ???
-
         //Root
         _root_model->put < double >(t, RootModel::P, 0);
         _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, 0);
         _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, 0);
         _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, 0);
         _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _root_model->put < double >(t, RootModel::PLANT_PHASE, PlantState::INIT);
-        _root_model->put < double >(t, RootModel::PLANT_STATE, PlantState::VEGETATIVE);
+        _root_model->put < double >(t, RootModel::PLANT_PHASE, plant::INIT);
+        _root_model->put < double >(t, RootModel::PLANT_STATE, plant::VEGETATIVE);
         (*_root_model)(t);
 
 //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
@@ -245,7 +240,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, 0);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, 0);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, PlantState::INIT);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, plant::INIT);
         _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, 0);
         _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
         _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, 0);
@@ -253,14 +248,12 @@ public:
         _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, 0);
         _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, 0);
         _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, 0);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, PlantState::VEGETATIVE);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, plant::VEGETATIVE);
         (*_stock_model)(t);
 
         /***********************************************/
 //        compute_height(t);
         /***********************************************/
-
-
     }
 
 
@@ -296,8 +289,8 @@ public:
             (*it)->put < int > (t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
             (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, predim_leaf_on_mainstem);
             (*it)->put(t, CulmModel::SLA, _thermal_time_model->get < double >(t, ThermalTimeModel::SLA));
-            (*it)->put < int >(t, CulmModel::PLANT_PHASE, PlantState::INIT);//PlantState.get < double >(t, PlantState::PHASE));
-            (*it)->put < int >(t, CulmModel::PLANT_STATE, PlantState::VEGETATIVE);//manager_model.get < double >(t, PlantState::STATE));
+            (*it)->put < int >(t, CulmModel::PLANT_PHASE, plant::INIT);//PlantState.get < double >(t, plantPHASE));
+            (*it)->put < int >(t, CulmModel::PLANT_STATE, plant::VEGETATIVE);//manager_model.get < double >(t, plantSTATE));
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
             (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
             (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
@@ -306,11 +299,6 @@ public:
             (*it)->put(t, CulmModel::PLANT_BLADE_AREA_SUM, _leaf_blade_area_sum);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
             (**it)(t);
-
-            if (it == _culm_models.begin()) {
-//                predim_leaf_on_mainstem = (*it)->get < double, CulmModel>(t, CulmModel::STEM_LEAF_PREDIM);
-
-            }
             ++it;
         }
 
@@ -325,6 +313,8 @@ public:
         _senesc_dw_sum = 0;
 
         it = _culm_models.begin();
+        predim_leaf_on_mainstem = (*it)->get < double, CulmModel>(t, CulmModel::STEM_LEAF_PREDIM);
+
         while (it != _culm_models.end()) {
             _leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
             _leaf_last_demand_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_LAST_DEMAND_SUM);
@@ -337,27 +327,6 @@ public:
             _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM);
             ++it;
         }
-
-//        // stock computations
-//        it = culm_models.begin();
-//        while (it != culm_models.end()) {
-//            (*it)->put(t, culm::CulmModel::PLANT_BIOMASS_SUM,
-//                       _leaf_biomass_sum + _internode_biomass_sum);
-//            (*it)->put(t, culm::CulmModel::PLANT_LEAF_BIOMASS_SUM,
-//                       _leaf_biomass_sum);
-//            (*it)->put(t, culm::CulmModel::PLANT_BLADE_AREA_SUM,
-//                       _leaf_blade_area_sum);
-//            //TODO: strange !!! - dejà calculé avec t-1
-//            if (assimilation_model.is_computed(t, assimilation::PlantAssimilationModel::ASSIM)) {
-//                (*it)->put(t, culm::CulmModel::ASSIM,
-//                           assimilation_model.get < double, assimilation::Assim >(
-//                               t, assimilation::PlantAssimilationModel::ASSIM));
-//            } else {
-//                (*it)->put(t, culm::CulmModel::ASSIM, 0.);
-//            }
-//            (**it)(t);
-//            ++it;
-//        }
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
@@ -421,8 +390,8 @@ private:
     double _realloc_biomass_sum;
 
     //internal states
-    PlantState::plant_phase _phase;
-    PlantState::plant_state _state;
+    plant::plant_phase _phase;
+    plant::plant_state _state;
 
     //    double _demand_sum;
     //    bool _culm_is_computed;

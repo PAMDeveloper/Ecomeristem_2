@@ -26,7 +26,6 @@
 #define ROOT_MODEL_HPP
 
 #include "defines.hpp"
-#include <plant/PlantState.hpp>
 
 namespace model {
 
@@ -72,11 +71,11 @@ public:
             _last_value = _root_demand;
             _root_biomass = _root_demand;
         } else {
-            if (_plant_phase == PlantState::NOGROWTH or _plant_phase == PlantState::NOGROWTH4) {
+            if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH4) {
                 _root_demand = 0;
                 _last_value = 0;
             } else {
-                if (_plant_state == PlantState::ELONG or _plant_state == PlantState::PI) {
+                if (_plant_state == plant::ELONG or _plant_state == plant::PI) {
                     if (_leaf_demand_sum + _leaf_last_demand_sum + _internode_demand_sum
                             + _internode_last_demand_sum == 0) {
                         _root_demand = _last_value * _root_demand_coef;
