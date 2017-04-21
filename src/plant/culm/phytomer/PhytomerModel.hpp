@@ -186,7 +186,6 @@ private:
     double _ftsw;
     int _plant_phase;
     int _plant_state;
-    double _len;
     double _fcstr;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;

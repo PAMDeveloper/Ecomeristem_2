@@ -128,8 +128,8 @@ void MainWindow::addChart(int row, int col,
     QValueAxis *axisY = new QValueAxis;
     axisY->setLabelFormat("%i");
     chart->addAxis(axisY, Qt::AlignLeft);
-    axisY->setMax(maxVal*1.1);
-    axisY->setMin(qMin<double>(0,minVal - (maxVal-minVal)*0.1));
+    axisY->setMax(maxVal*1.1 + 0.001);
+    axisY->setMin(qMin<double>(-0.001,minVal - (maxVal-minVal)*0.1));
     if(refBigger) {
         if(refSeries != NULL)
             refSeries->attachAxis(axisY);

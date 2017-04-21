@@ -49,6 +49,9 @@ public:
 
 
     void compute(double t, bool /* update */) {
+        if (_plant_state != plant::ELONG) {
+            return;
+        }
 
         //MaxReservoirDispo
         _max_reservoir_dispo = _maximum_reserve_in_internode *

@@ -62,6 +62,15 @@ public:
                      PlantModel::INTERNODE_LAST_DEMAND_SUM });
         selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
                      PlantModel::SENESC_DW_SUM });
+        selector("PHT", artis::kernel::DOUBLE, {
+                     PlantModel::PLANT_HEIGHT });
+        selector("PP_PHASE", artis::kernel::INT, {
+                     PlantModel::PLANT_PHASE });
+        selector("P_STATE", artis::kernel::INT, {
+                     PlantModel::PLANT_STATE });
+        selector("PAI", artis::kernel::DOUBLE, {
+                     PlantModel::PAI });
+
 
         //ThermalTimeModel
         selector("LIG", artis::kernel::DOUBLE, {

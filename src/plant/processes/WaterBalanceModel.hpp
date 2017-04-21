@@ -34,7 +34,7 @@ class WaterBalanceModel : public AtomicModel < WaterBalanceModel >
 {
 public:
     enum internals { CSTR, FCSTR, FTSW, TRANSPIRATION, SWC };
-    enum externals { ETP, INTERC, WATER_SUPPLY };
+    enum externals { INTERC };
 
 
     WaterBalanceModel() {
@@ -45,9 +45,7 @@ public:
         Internal(TRANSPIRATION, &WaterBalanceModel::_transpiration);
         Internal(SWC, &WaterBalanceModel::_swc);
 
-        External(ETP, &WaterBalanceModel::_etp);
         External(INTERC, &WaterBalanceModel::_interc);
-        External(WATER_SUPPLY, &WaterBalanceModel::_water_supply);
     }
 
     virtual ~WaterBalanceModel()
@@ -55,6 +53,10 @@ public:
 
 
     void compute(double t, bool /* update */) {
+        //parameters
+        _etp = _parameters.get(t).Etp;
+        _water_supply = _parameters.get(t).Irrigation;
+
         //FTSW
         _ftsw = _swc / RU1;
 
@@ -75,7 +77,7 @@ public:
 
 
 
-    void init(double t, const ecomeristem::ModelParameters& parameters) {
+    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
 
         //    paramaters variables

@@ -37,12 +37,17 @@ class CulmModel : public CoupledModel < CulmModel >
 public:
     enum submodels { CULM_STOCK, PHYTOMERS };
 
-    enum internals { NB_LIG, STEM_LEAF_PREDIM,
+    enum sub_internals {
+
+    };
+
+    enum internals { STOCK, DEFICIT, SURPLUS, NB_LIG, STEM_LEAF_PREDIM,
                      LEAF_BIOMASS_SUM, LEAF_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, INTERNODE_LAST_DEMAND_SUM,
                      INTERNODE_BIOMASS_SUM, INTERNODE_LEN_SUM,
                      LEAF_BLADE_AREA_SUM,
-                     REALLOC_BIOMASS_SUM, SENESC_DW_SUM
+                     REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
+                     LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
@@ -60,6 +65,12 @@ public:
         Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
 
         //    internals
+
+        //@TODO regarder pourquoi ca pointe dans le vide
+        InternalS(STOCK, _culm_stock_model.get(), CulmStockModel::STOCK);
+        InternalS(DEFICIT, _culm_stock_model.get(), CulmStockModel::DEFICIT);
+        InternalS(SURPLUS, _culm_stock_model.get(), CulmStockModel::SURPLUS);
+
         Internal(NB_LIG, &CulmModel::_nb_lig);
         Internal(STEM_LEAF_PREDIM, &CulmModel::_stem_leaf_predim);
         Internal(LEAF_BIOMASS_SUM, &CulmModel::_leaf_biomass_sum);
@@ -72,6 +83,8 @@ public:
         Internal(LEAF_BLADE_AREA_SUM, &CulmModel::_leaf_blade_area_sum);
         Internal(REALLOC_BIOMASS_SUM, &CulmModel::_realloc_biomass_sum);
         Internal(SENESC_DW_SUM, &CulmModel::_senesc_dw_sum);
+        Internal(LAST_LIGULATED_LEAF, &CulmModel::_last_ligulated_leaf);
+        Internal(LAST_LIGULATED_LEAF_LEN, &CulmModel::_last_ligulated_leaf_len);
 
         //    externals
         External(DD, &CulmModel::_dd);
@@ -121,25 +134,23 @@ public:
         }
 
         //StockModel
-        if (_plant_state == plant::ELONG) {
-            compute_stock(t);
-        }
+        compute_stock(t);
     }
 
     void compute_stock(double t) {
-        _culm_stock_model->put(t, CulmStockModel::PLANT_DEFICIT, 0);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_STOCK, 0);
-        _culm_stock_model->put(t, CulmStockModel::LEAF_BIOMASS_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::INTERNODE_BIOMASS_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::ASSIM, 0);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_BIOMASS_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::LEAF_DEMAND_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::INTERNODE_DEMAND_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, 0);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_STATE, plant::VEGETATIVE);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_DEFICIT, _plant_deficit);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_STOCK, _plant_stock);
+        _culm_stock_model->put(t, CulmStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModel::INTERNODE_BIOMASS_SUM, _internode_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _plant_leaf_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModel::ASSIM, _assim);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_BIOMASS_SUM, _plant_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
+        _culm_stock_model->put(t, CulmStockModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
+        _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
+        _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
+        _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_STATE, _plant_state);
         (*_culm_stock_model)(t);
     }
 
@@ -177,16 +188,33 @@ public:
     }
 
     void compute_vars(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
+        _nb_lig = 0;
+        _stem_leaf_predim = 0;
+        _leaf_biomass_sum = 0;
+        _leaf_last_demand_sum = 0;
+        _leaf_demand_sum = 0;
+        _internode_last_demand_sum = 0;
+        _internode_demand_sum = 0;
+        _internode_biomass_sum = 0;
+        _internode_len_sum = 0;
+        _leaf_blade_area_sum = 0;
+        _last_ligulated_leaf = -1;
+        _last_ligulated_leaf_len = 0;
+
         if (not (*it)->is_leaf_dead()) {
             if((*it)->is_leaf_lig(t)) {
                 ++_nb_lig;
             }
 
-            //@TODO inutile de le calculer ailleurs que sur le mainstem (_is_first_culm)
             if (i == 0 or (*it)->is_leaf_lig(t)) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
+            if (i == 0 and (*it)->is_leaf_lig(t)) {
+                _last_ligulated_leaf = i;
+                _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+            }
         }
+
 
         if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS) == 0) {
             _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
@@ -226,6 +254,7 @@ public:
                 (*it)->get < double, LeafModel >(
                     t, PhytomerModel::SENESC_DW);
 
+
     }
 
 
@@ -245,6 +274,9 @@ public:
             _phytomer_models.push_back(phytomer);
         }
     }
+
+    int get_phytomer_number() const
+    { return _phytomer_models.size(); }
 
     //    void CulmModel::delete_leaf(double t, int index)
     //    {
@@ -330,26 +362,6 @@ public:
     //        }
     //    }
 
-    //    int CulmModel::get_last_ligulated_leaf_index(double t) const
-    //    {
-    //        std::deque < PhytomerModel* >::const_iterator it =
-    //                phytomer_models.begin();
-    //        int i = 0;
-    //        int index = -1;
-
-    //        while (it != phytomer_models.end()) {
-    //            if (not (*it)->is_leaf_dead() and
-    //                    (*it)->get < double, leaf::LeafLen >(
-    //                        t, PhytomerModel::LEAF_LEN) ==
-    //                    (*it)->get < double, leaf::LeafPredim >(t, PhytomerModel::PREDIM)) {
-    //                index = i;
-    //            }
-    //            ++it;
-    //            ++i;
-    //        }
-    //        return index;
-    //    }
-
     //    int CulmModel::get_first_alive_leaf_index(double /* t */) const
     //    {
     //        std::deque < PhytomerModel* >::const_iterator it =
@@ -374,13 +386,10 @@ public:
         setsubmodel(PHYTOMERS, first_phytomer);
         first_phytomer->init(t, parameters);
         _phytomer_models.push_back(first_phytomer);
+        _culm_stock_model->init(t, parameters);
 
         //parameters
         _parameters = parameters;
-
-        //    parameters variables
-
-        //    parameters variables (t)
 
         //    internals
         _nb_lig = 0;
@@ -393,7 +402,10 @@ public:
         _internode_biomass_sum = 0;
         _internode_len_sum = 0;
         _leaf_blade_area_sum = 0;
-
+        _last_ligulated_leaf = -1;
+        _last_ligulated_leaf_len = 0;
+        _realloc_biomass_sum = 0;
+        _senesc_dw_sum = 0;
     }
 
 private:
@@ -420,10 +432,13 @@ private:
     double _leaf_blade_area_sum;
     double _realloc_biomass_sum;
     double _senesc_dw_sum;
+    int _last_ligulated_leaf;
+    double _last_ligulated_leaf_len;
     //        double _lig;
     //        double _deleted_leaf_number;
     //        double _deleted_senesc_dw;
     //        bool _deleted_senesc_dw_computed;
+
 
     //    externals
     double _dd;

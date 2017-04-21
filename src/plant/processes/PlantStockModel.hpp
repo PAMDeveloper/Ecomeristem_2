@@ -73,6 +73,87 @@ public:
     virtual ~PlantStockModel()
     {}
 
+    void compute_IC(double t)
+    {
+        if (t != _parameters.beginDate) {
+            double resDiv, mean;
+            double total = 0.;
+            int n = 0;
+
+            if (_day_demand_[0] != 0) {
+                resDiv = (std::max(0., _seed_res_[0]) + _supply_[0]) /
+                        _day_demand_[0];
+                total += resDiv;
+                ++n;
+            }
+
+            if (_day_demand_[0] != 0) {
+                resDiv = (std::max(0., _seed_res_[0]) + _supply_[0]) /
+                        _day_demand_[0];
+                total += resDiv;
+                ++n;
+            }
+
+            if (_day_demand_[1] != 0) {
+                resDiv = (std::max(0., _seed_res_[1]) + _supply_[1]) /
+                        _day_demand_[1];
+                total += resDiv;
+                ++n;
+            }
+
+            if (_day_demand_[2] != 0) {
+                resDiv = (std::max(0., _seed_res_[2]) + _supply_[2]) /
+                        _day_demand_[2];
+                total += resDiv;
+                ++n;
+            }
+
+            if (n != 0) {
+                mean = total / n;
+            } else {
+                mean = _ic_1;
+            }
+
+            double tmp = std::min(5., mean);
+
+            _ic_1 = _ic;
+            if (tmp == 0 and _seed_res_[0] == 0 and _seed_res_[1] == 0 and
+                    _seed_res_[2] == 0) {
+                _ic = 0.001;
+                _test_ic = 0.001;
+            } else {
+                _ic = tmp;
+                _test_ic = std::min(1., std::sqrt(tmp));
+            }
+        }
+        //        if (t != _parameters.beginDate) {
+        //            double mean;
+        //            unsigned int n = 2;
+        //            if (_day_demand != 0) {
+        //                _ic_[0] = std::max(0., _seed_res + _supply / _day_demand); //@TODO vérifier pourquoi négatif
+        //            } else {
+        //                _ic_[0] = _ic;
+        //            }
+
+        //            mean = 2. * _ic_[0];
+
+        //            for (unsigned int i = 1; i < 3; i++) {
+        //                if (_ic_[i] != 0) {
+        //                    mean = mean + _ic_[i];
+        //                    n = n + 1;
+        //                }
+        //            }
+        //            mean = mean / n;
+
+        //            if (mean == 0) {
+        //                _ic = 0.001;
+        //                _test_ic = 0.001;
+        //            } else {
+        //                _ic = std::min(5.,mean);
+        //                _test_ic = std::min(1., std::sqrt(_ic));
+        //            }
+        //        }
+    }
 
     void compute(double t, bool /* update */) {
         //  day_demand
@@ -85,47 +166,14 @@ public:
             } else {
                 _day_demand = _demand_sum + _leaf_last_demand_sum + _internode_last_demand_sum;
             }
-
         }
+        _day_demand_[2] = _day_demand_[1];
+        _day_demand_[1] = _day_demand_[0];
+        _day_demand_[0] = _day_demand;
 
-        //  indice de competition - Proposition
-        if (t != _parameters.beginDate) {
-            double mean;
-            unsigned int n = 2;
-            if (_day_demand != 0) {
-                _ic_[0] = std::max(0., _seed_res + _supply / _day_demand); //@TODO vérifier pourquoi négatif
-            } else {
-                _ic_[0] = _ic;
-            }
-
-            mean = 2. * _ic_[0];
-
-            for (unsigned int i = 1; i < 3; i++) {
-                if (_ic_[i] != 0) {
-                    mean = mean + _ic_[i];
-                    n = n + 1;
-                }
-            }
-            mean = mean / n;
-
-            if (mean == 0) {
-                _ic = 0.001;
-                _test_ic = 0.001;
-            } else {
-                _ic = std::min(5.,mean);
-                _test_ic = std::min(1., std::sqrt(_ic));
-            }
-        }
-
-        // Day step
-        _ic_[2] = _ic_[1];
-        _ic_[1] = _ic_[0];
-
-        //  reservoir_dispo
-        _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
 
         //  seed_res
-        if (t != _parameters.beginDate) {
+        if (t == _parameters.beginDate) {
             _seed_res = _gdw - _day_demand;
         } else {
             if (_seed_res > _day_demand) {
@@ -134,6 +182,22 @@ public:
                 _seed_res = 0;
             }
         }
+        _seed_res_[2] = _seed_res_[1];
+        _seed_res_[1] = _seed_res_[0];
+        _seed_res_[0] = _seed_res;
+
+        //  supply
+        _supply = _assim;
+        _supply_[2] = _supply_[1];
+        _supply_[1] = _supply_[0];
+        _supply_[0] = _supply;
+
+
+        //  indice de competition - Proposition
+        compute_IC(t);
+
+        //  reservoir_dispo
+        _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
 
         //  stock
         if (_state == plant::ELONG) {
@@ -158,9 +222,6 @@ public:
             _stock = std::max(0., _deficit + stock);
             _deficit = std::min(0., _deficit + stock);
         }
-
-        //  supply
-        _supply = _assim;
 
         //  surplus
         if (_state == plant::ELONG) {
@@ -201,14 +262,18 @@ public:
 
         //    computed variables (internal)
         _day_demand = 0;
-        _ic = 0;
-        _test_ic = 0;
+        _ic = 0; //@TODO check initialization value
+        _ic_1 = 0; //@TODO check initialization value
+        _test_ic = 0; //@TODO check initialization value
         _reservoir_dispo = 0;
         _seed_res = 0;
-        _stock = 0;
+        _stock = 1e-10; //@TODO check initialization value
         _deficit = 0;
         _supply = 0;
         _surplus = 0;
+        for (int i = 0; i < 3; ++i) {
+            _ic_[i] = _seed_res_[i] = _supply_[i] = _day_demand_[i] = 0;
+        }
     }
 
 private:
@@ -220,9 +285,16 @@ private:
 
     //    parameters(t)
 
+
+    //local vars
+    double _seed_res_[3];
+    double _supply_[3];
+    double _day_demand_[3];
+
     //    internals - computed
     double _day_demand;
     double _ic;
+    double _ic_1;
     double _test_ic;
     double _ic_[3];
     double _seed_res;
@@ -237,9 +309,6 @@ private:
     double _leaf_last_demand_sum;
     double _internode_last_demand_sum;
     int _plant_phase;
-    double _day_demand_[3];
-    double _seed_res_[3];
-    double _supply_[3];
     double _leaf_biomass_sum;
     double _deleted_leaf_biomass;
     double _realloc_biomass_sum;

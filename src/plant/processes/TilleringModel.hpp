@@ -52,7 +52,7 @@ public:
     virtual ~TilleringModel()
     {}
 
-    void compute(double t, bool /* update */) {
+    void compute(double /*t*/, bool /* update */) {
         // Tillering
         _create = 0;
         if (_ic > _Ict) {
@@ -65,7 +65,7 @@ public:
         }
     }
 
-    void init(double t, const ecomeristem::ModelParameters& parameters) {
+    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
 
         //    parameters variables

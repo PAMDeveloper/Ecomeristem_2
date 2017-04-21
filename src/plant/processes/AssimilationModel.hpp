@@ -59,23 +59,25 @@ public:
     {}
 
     void compute(double t, bool /* update */) {
-        //  assim
-        _assim = std::max(0., _assim_pot / _density - _resp_maint);
-
-        //  assimPot
+        // parameters
+        _Ta = _parameters.get(t).Temperature;
         _radiation = _parameters.get(t).Par;
-        _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
+
+        //  lai
+        _lai = _PAI * (_rolling_B + _rolling_A * _fcstr) * (_density / 1.e4);
+
         //  interc
         _interc = 1. - std::exp(-_kdf * _lai);
 
-        //  lai
-        _lai = _PAI * (_rolling_B + _rolling_A * _fcstr) * _density / 1.e4;
+        //  assimPot
+        _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
 
         //  respMaint (== à _resp_maint ?)
-        _Ta = _parameters.get(t).Temperature;
         _resp_maint = (_Kresp_leaf * _LeafBiomass + _Kresp_internode * _InternodeBiomass) *
                 std::pow(2., (_Ta - _Tresp) / 10.);
 
+        //  assim
+        _assim = std::max(0., _assim_pot / _density - _resp_maint);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {

@@ -51,7 +51,8 @@ public:
     enum internals { LIG, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
-                     INTERNODE_DEMAND_SUM };
+                     INTERNODE_DEMAND_SUM, PLANT_HEIGHT,
+                     PLANT_PHASE, PLANT_STATE, PAI};
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -78,7 +79,10 @@ public:
         Internal( INTERNODE_DEMAND_SUM, &PlantModel::_internode_demand_sum );
         Internal( INTERNODE_LAST_DEMAND_SUM, &PlantModel::_internode_last_demand_sum );
         Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
-
+        Internal( PAI, &PlantModel::_leaf_blade_area_sum );
+        Internal( PLANT_HEIGHT, &PlantModel::_height );
+        Internal( PLANT_STATE, &PlantModel::_state );
+        Internal( PLANT_PHASE, &PlantModel::_phase );
     }
 
     virtual ~PlantModel()
@@ -94,16 +98,16 @@ public:
 
 
     void step_state(double t) {
-        plant::plant_phase old_phase;
+        int old_phase;
 
         double nbleaf_pi = _parameters.get < double >("nbleaf_pi");
         double nbleaf_culm_elong = _parameters.get < double >("nb_leaf_stem_elong");
-        double _stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
-        double _phenoStage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
-        double _boolCrossedPlasto = _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
+        double stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
+        double phenoStage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
+        double boolCrossedPlasto = _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
 
         do {
-            old_phase = _phase;
+            old_phase = (int)_phase;
 
             switch (_phase) {
             case plant::INIT: {
@@ -112,30 +116,31 @@ public:
                 break;
             }
             case plant::INITIAL: {
-                if (_stock > 0 and _phenoStage < nbleaf_pi) {
+                if (stock > 0 and phenoStage < nbleaf_pi) {
                     _phase = plant::GROWTH;
-                } else {
+                }
+                else {
                     _phase = plant::KILL;
                 }
                 break;
             }
             case plant::GROWTH:
-                if (_boolCrossedPlasto > 0 and _stock > 0) {
+                if (boolCrossedPlasto > 0 and stock > 0) {
                     _phase = plant::NEW_PHYTOMER;
                 }
-                if (_stock <= 0) {
+                if (stock <= 0) {
                     _phase = plant::NOGROWTH2;
                 }
                 break;
             case plant::NOGROWTH: {
-                if (_stock > 0) {
+                if (stock > 0) {
                     _phase = plant::GROWTH;
                 }
                 break;
             }
             case plant::KILL: break;
             case plant::NEW_PHYTOMER: {
-                if (_phenoStage == nbleaf_culm_elong) {
+                if (phenoStage == nbleaf_culm_elong) {
                     _state = plant::ELONG;
                 }
                 _phase = plant::NEW_PHYTOMER3;
@@ -153,16 +158,16 @@ public:
                 break;
             }
             case plant::NOGROWTH4: {
-                if (_stock > 0) {
+                if (stock > 0) {
                     _phase = plant::GROWTH;
                 }
                 break;
             }
             case plant::NEW_PHYTOMER3: {
-                if (_boolCrossedPlasto <= 0) {
+                if (boolCrossedPlasto <= 0) {
                     _phase = plant::GROWTH;
                 }
-                if (_stock <= 0) {
+                if (stock <= 0) {
                     _phase = plant::NOGROWTH2;
                 }
                 break;
@@ -182,9 +187,8 @@ public:
         (*_thermal_time_model)(t);
 
         //Water balance
-        _water_balance_model->put < double >(t, WaterBalanceModel::ETP, 0);
-        _water_balance_model->put < double >(t, WaterBalanceModel::INTERC, 0);
-        _water_balance_model->put < double >(t, WaterBalanceModel::WATER_SUPPLY, 0);
+        _water_balance_model->put < double >(t, WaterBalanceModel::INTERC,
+                         _assimilation_model->get < double >(t-1, AssimilationModel::INTERC));
         (*_water_balance_model)(t);
 
         // Manager
@@ -202,10 +206,20 @@ public:
         _lig = (*it)->get <double, CulmModel>(t, CulmModel::NB_LIG);
 
         //Tillering
-        _tillering_model->put < double >(t, TilleringModel::IC, 0);
+        _tillering_model->put < double >(t, TilleringModel::IC,
+                                         _stock_model->get < double >(t-1, PlantStockModel::IC));
         _tillering_model->put < double >(t, TilleringModel::BOOL_CROSSED_PLASTO,
                                          _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO));
-        _tillering_model->put < double >(t, TilleringModel::TAE, 0);
+
+        double n = 0;
+        while(it != _culm_models.end()) {
+            if ((*it)->get_phytomer_number() >=
+                    _nbleaf_enabling_tillering) {
+                ++n;
+            }
+            it++;
+        }
+        _tillering_model->put <double> (t, TilleringModel::TAE, n);
         (*_tillering_model)(t);
 
         //culm creation
@@ -219,41 +233,41 @@ public:
                                             _water_balance_model->get < double >(t, WaterBalanceModel::CSTR));
         _assimilation_model->put < double >(t, AssimilationModel::FCSTR,
                                             _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
-        _assimilation_model->put < double >(t, AssimilationModel::PAI, 0);
-        _assimilation_model->put < double >(t, AssimilationModel::LEAFBIOMASS, 0);
-        _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, 0);
+        _assimilation_model->put < double >(t, AssimilationModel::PAI, _leaf_blade_area_sum);
+        _assimilation_model->put < double >(t, AssimilationModel::LEAFBIOMASS, _leaf_biomass_sum);
+        _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
 
         //Root
-        _root_model->put < double >(t, RootModel::P, 0);
-        _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, 0);
-        _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, 0);
-        _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, 0);
-        _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _root_model->put < double >(t, RootModel::PLANT_PHASE, plant::INIT);
-        _root_model->put < double >(t, RootModel::PLANT_STATE, plant::VEGETATIVE);
+        _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
+        _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
+        _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
+        _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
+        _root_model->put < double >(t, RootModel::PLANT_PHASE, _phase);
+        _root_model->put < double >(t, RootModel::PLANT_STATE, _state);
         (*_root_model)(t);
 
 //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
 
         // Stock
-        _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, 0);
-        _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, 0);
-        _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, 0);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, plant::INIT);
-        _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, 0);
+         double demand_sum = _leaf_demand_sum + _internode_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
+
+        _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
+        _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
+        _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, _phase);
+        _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
         _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
-        _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, 0);
-        _stock_model->put < double >(t, PlantStockModel::ASSIM, 0);
-        _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, 0);
-        _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, 0);
-        _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, 0);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, plant::VEGETATIVE);
+        _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
+        _stock_model->put < double >(t, PlantStockModel::ASSIM,
+                                     _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
+        _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, _culm_stock_sum);
+        _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, _culm_deficit_sum);
+        _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, _state);
         (*_stock_model)(t);
 
-        /***********************************************/
-//        compute_height(t);
-        /***********************************************/
+        compute_height(t);
     }
 
 
@@ -311,9 +325,12 @@ public:
         _leaf_blade_area_sum = 0;
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
+        _culm_stock_sum = 0;
+        _culm_deficit_sum = 0;
+        _culm_surplus_sum = 0;
 
         it = _culm_models.begin();
-        predim_leaf_on_mainstem = (*it)->get < double, CulmModel>(t, CulmModel::STEM_LEAF_PREDIM);
+        predim_leaf_on_mainstem = (*it)->get <double, CulmModel> (t, CulmModel::STEM_LEAF_PREDIM);
 
         while (it != _culm_models.end()) {
             _leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
@@ -325,14 +342,34 @@ public:
             _leaf_blade_area_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_BLADE_AREA_SUM);
             _realloc_biomass_sum += (*it)->get < double, CulmModel>(t, CulmModel::REALLOC_BIOMASS_SUM);
             _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM);
+            _culm_stock_sum += (*it)->get < double, CulmStockModel >(t, CulmModel::STOCK);
+            _culm_deficit_sum += (*it)->get < double, CulmStockModel >(t, CulmModel::DEFICIT);
+            _culm_surplus_sum += (*it)->get < double, CulmStockModel >(t, CulmModel::SURPLUS);
             ++it;
         }
+    }
+
+    void compute_height(double t)
+    {
+        _height = 0;
+        if (_culm_models.empty()) {
+            return;
+        }
+
+        auto it = _culm_models.begin();
+        _height += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM);
+        _height += (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_LEN);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
     {
         //parameters
         _parameters = parameters;
+        _nbleaf_enabling_tillering =
+                parameters.get < double >("nb_leaf_enabling_tillering");
+//        _realocationCoeff = parameters.get < double >("realocationCoeff");
+        _LL_BL = parameters.get < double >("LL_BL_init");
+
         //local init
         CulmModel* meristem = new CulmModel(1);
         setsubmodel(CULMS, meristem);
@@ -355,7 +392,14 @@ public:
         _internode_demand_sum = 0;
         _internode_last_demand_sum = 0;
         _internode_biomass_sum = 0;
+        _leaf_blade_area_sum = 0;
         _senesc_dw_sum = 0;
+        _culm_stock_sum = 0;
+        _culm_deficit_sum = 0;
+        _culm_surplus_sum = 0;
+        _state = plant::VEGETATIVE;
+        _phase = plant::INIT;
+        _height = 0;
 
         //
         _last_time = 0;
@@ -377,6 +421,10 @@ private:
     std::unique_ptr < model::TilleringModel > _tillering_model;
     std::unique_ptr < model::RootModel > _root_model;
 
+    // parameters
+    double _nbleaf_enabling_tillering;
+    double _LL_BL;
+
     // internals
     double _lig;
     double _leaf_biomass_sum;
@@ -388,17 +436,21 @@ private:
     double _internode_last_demand_sum;
     double _senesc_dw_sum;
     double _realloc_biomass_sum;
+    double _culm_stock_sum;
+    double _culm_deficit_sum;
+    double _culm_surplus_sum;
+    double _height;
+
 
     //internal states
-    plant::plant_phase _phase;
-    plant::plant_state _state;
+    int _phase;
+    int _state;
 
     //    double _demand_sum;
     //    bool _culm_is_computed;
     //    double _lig;
     //    double _deleted_leaf_biomass;
     //    double _deleted_leaf_blade_area;
-    //    double _height;
 };
 
 #endif //PLANT_MODEL_HPP

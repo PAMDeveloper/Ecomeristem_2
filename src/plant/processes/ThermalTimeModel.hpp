@@ -169,7 +169,7 @@ public:
 
 
 
-    void init(double t, const ecomeristem::ModelParameters& parameters) {
+    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
 
         //    paramaters variables
