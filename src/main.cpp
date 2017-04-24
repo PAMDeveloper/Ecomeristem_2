@@ -27,23 +27,16 @@
 #include <QDebug>
 #include <QDate>
 
-#include <artis/kernel/Simulator.hpp>
+#include <defines.hpp>
 #include <artis/utils/DateTime.hpp>
 #include <artis/utils/Trace.hpp>
 
-#include <defines.hpp>
 #include <observer/PlantView.hpp>
 #include <plant/PlantModel.hpp>
 #include <utils/ParametersReader.hpp>
 
-using namespace artis::kernel;
+//using namespace artis::kernel;
 
-typedef artis::kernel::Simulator < PlantModel,
-                                   artis::utils::DoubleTime,
-                                   ecomeristem::ModelParameters,
-                                   GlobalParameters > EcomeristemSimulator;
-
-typedef artis::context::Context < artis::utils::DoubleTime > EcomeristemContext;
 
 int main(int argc, char *argv[])
 {

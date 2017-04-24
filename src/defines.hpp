@@ -3,10 +3,13 @@
 
 #include <artis/kernel/AbstractAtomicModel.hpp>
 #include <artis/kernel/AbstractCoupledModel.hpp>
+#include <artis/kernel/Simulator.hpp>
 #include <artis/observer/Observer.hpp>
 #include <artis/observer/View.hpp>
 #include <artis/utils/DoubleTime.hpp>
 #include <ModelParameters.hpp>
+
+class PlantModel;
 
 // Plant enums
 namespace plant {
@@ -25,6 +28,7 @@ enum plant_phase { INIT = 0,
 enum plant_state {  VEGETATIVE = 0, PRE_ELONG, ELONG, PRE_PI, PI, PRE_FLO,
                     FLO, END_FILLING, MATURITY, DEAD };
 }
+
 
 struct GlobalParameters
 { };
@@ -50,5 +54,10 @@ typedef artis::observer::Observer < artis::utils::DoubleTime,
 typedef artis::observer::View < artis::utils::DoubleTime,
                                 ecomeristem::ModelParameters > View;
 
+typedef artis::kernel::Simulator < PlantModel,
+                                   artis::utils::DoubleTime,
+                                   ecomeristem::ModelParameters,
+                                   GlobalParameters > EcomeristemSimulator;
 
+typedef artis::context::Context < artis::utils::DoubleTime > EcomeristemContext;
 #endif // DEFINES_HPP
