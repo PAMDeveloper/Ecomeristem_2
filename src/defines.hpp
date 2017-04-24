@@ -60,4 +60,5 @@ typedef artis::kernel::Simulator < PlantModel,
                                    GlobalParameters > EcomeristemSimulator;
 
 typedef artis::context::Context < artis::utils::DoubleTime > EcomeristemContext;
+
 #endif // DEFINES_HPP

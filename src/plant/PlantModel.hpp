@@ -292,16 +292,14 @@ public:
 
     void compute_culms(double t)
     {
-        double predim_leaf_on_mainstem = 0;
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-
         while (it != _culm_models.end()) {
             (*it)->put(t, CulmModel::DD, _thermal_time_model->get < double >(t, ThermalTimeModel::DD));
             (*it)->put(t, CulmModel::DELTA_T, _thermal_time_model->get < double >(t, ThermalTimeModel::DELTA_T));
             (*it)->put(t, CulmModel::FTSW, _water_balance_model->get < double >(t, WaterBalanceModel::FTSW));
             (*it)->put(t, CulmModel::FCSTR, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
             (*it)->put < int > (t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
-            (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, predim_leaf_on_mainstem);
+            (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
             (*it)->put(t, CulmModel::SLA, _thermal_time_model->get < double >(t, ThermalTimeModel::SLA));
             (*it)->put < int >(t, CulmModel::PLANT_PHASE, plant::INIT);//PlantState.get < double >(t, plantPHASE));
             (*it)->put < int >(t, CulmModel::PLANT_STATE, plant::VEGETATIVE);//manager_model.get < double >(t, plantSTATE));
@@ -330,7 +328,7 @@ public:
         _culm_surplus_sum = 0;
 
         it = _culm_models.begin();
-        predim_leaf_on_mainstem = (*it)->get <double, CulmModel> (t, CulmModel::STEM_LEAF_PREDIM);
+        _predim_leaf_on_mainstem = (*it)->get <double, CulmModel> (t, CulmModel::STEM_LEAF_PREDIM);
 
         while (it != _culm_models.end()) {
             _leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
@@ -384,6 +382,9 @@ public:
         _tillering_model->init(t, parameters);
         _root_model->init(t, parameters);
 
+        //vars
+        _predim_leaf_on_mainstem = 0;
+
         //internal variables (local)
         _lig = 0;
         _leaf_biomass_sum = 0;
@@ -425,6 +426,8 @@ private:
     double _nbleaf_enabling_tillering;
     double _LL_BL;
 
+    // vars
+    double _predim_leaf_on_mainstem;
     // internals
     double _lig;
     double _leaf_biomass_sum;

@@ -136,8 +136,7 @@ public:
 //        utils::Trace::trace().flush();
 //#endif
 
-//        delete leaf_model;
-//        leaf_model = 0;
+        _leaf_model.release();
 //        change_internal(LEAF_BIOMASS, &PhytomerModel::_null);
 //        change_internal(LEAF_BLADE_AREA, &PhytomerModel::_null);
 //        change_internal(LEAF_DEMAND, &PhytomerModel::_null);
@@ -165,7 +164,7 @@ public:
     { return _index; }
 
     bool is_leaf_dead() const
-    { return _leaf_model.get() != nullptr; }
+    { return _leaf_model.get() == nullptr; }
 
     bool is_leaf_lig(double t) const {
         return !is_leaf_dead() &&

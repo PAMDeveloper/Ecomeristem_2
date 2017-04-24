@@ -189,7 +189,6 @@ public:
 
     void compute_vars(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
         _nb_lig = 0;
-        _stem_leaf_predim = 0;
         _leaf_biomass_sum = 0;
         _leaf_last_demand_sum = 0;
         _leaf_demand_sum = 0;

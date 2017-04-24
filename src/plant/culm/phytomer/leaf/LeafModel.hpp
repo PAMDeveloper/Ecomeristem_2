@@ -291,6 +291,7 @@ public:
         _corrected_blade_area = 0;
         _blade_area = 0;
         _biomass = 0;
+        _old_biomass = 0;
         _corrected_biomass = 0;
         _senesc_dw = 0;
         _senesc_dw_sum = 0;
@@ -363,7 +364,6 @@ private:
     double _test_ic;
     double _dd;
     double _delta_t;
-    double _grow;
     double _sla;
 
 };
