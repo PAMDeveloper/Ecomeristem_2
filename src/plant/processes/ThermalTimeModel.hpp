@@ -94,11 +94,13 @@ public:
 
 
     void compute(double t, bool /* update */) {
+        // parameters
+        _Ta = _parameters.get(t).Temperature;
+
         //ThermalTimeManager
         step_state();
 
         //DeltaT
-        _Ta = _parameters.get(t).Temperature;
         _deltaT = _Ta - _Tb;
 
         //TT
@@ -191,6 +193,7 @@ public:
         _DD = 0;
         _EDD = 0;
         _IH = 0;
+        _TT_lig = 0;
     }
 
 private:

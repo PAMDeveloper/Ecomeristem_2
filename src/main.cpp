@@ -52,7 +52,9 @@ int main(int argc, char *argv[])
     w.show();
 
     GlobalParameters globalParameters;
-    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
+//    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
+    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/refmodelecpp";
+
     ecomeristem::ModelParameters parameters;
     utils::ParametersReader reader;
     reader.loadParametersFromFiles(dirName, parameters);

@@ -235,6 +235,7 @@
 #include <artis/utils/DateTime.hpp>
 #include <fstream>
 
+
 using namespace ecomeristem;
 namespace utils {
 
@@ -261,6 +262,7 @@ namespace utils {
 //			parameters.set <double>(line.substr(0, line.find("=")),
 //				std::stod(line.substr(line.find("=") + 1, line.size()).c_str()));
 //#else
+//            std::cout << line.substr(0, line.find("=")) << " " << line.substr(line.find("=") + 1, line.size()) << std::endl;
 			parameters.set <double>(line.substr(0, line.find("=")),
 				boost::lexical_cast<double>(line.substr(line.find("=") + 1, line.size())));
 //#endif
