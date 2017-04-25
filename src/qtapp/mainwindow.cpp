@@ -43,7 +43,7 @@ MainWindow::~MainWindow()
 void MainWindow::show_trace()
 {
     ui->textEdit->clear();
-    auto elements = ::Trace::trace().elements();
+    auto elements = ::Trace::trace().elements().filter_type(artis::utils::AFTER_COMPUTE);
     if(!_date.isEmpty())
         elements = elements.filter_time(artis::utils::DateTime::toJulianDayNumber(_date.toStdString()));
     if(!_model_name.isEmpty())

@@ -26,6 +26,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDate>
+#include <iostream>
 
 #include <defines.hpp>
 #include <artis/utils/DateTime.hpp>
@@ -66,6 +67,11 @@ int main(int argc, char *argv[])
     simulator.attachView("plant", view);
     simulator.init(start.toJulianDay(), parameters);
     simulator.run(context);
+
+//    std::ofstream out("Trace.txt");
+//    out << ::Trace::trace().elements().to_string();
+//    out.close();
+
     w.show_trace();
     w.displayData(view, QString::fromStdString(dirName), &parameters,
                   QString::fromStdString(parameters.get < std::string >("BeginDate")),

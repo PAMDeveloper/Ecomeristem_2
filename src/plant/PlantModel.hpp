@@ -198,19 +198,12 @@ public:
         if(_phase == plant::NEW_PHYTOMER or _phase == plant::NEW_PHYTOMER3) //@TODO virer un état
             create_phytomer(t);
 
-        //CulmModel
-        compute_culms(t);
-
-        //Lig update
-        std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-        _lig = (*it)->get <double, CulmModel>(t, CulmModel::NB_LIG);
-
-        //Tillering
         _tillering_model->put < double >(t, TilleringModel::IC,
                                          _stock_model->get < double >(t-1, PlantStockModel::IC));
         _tillering_model->put < double >(t, TilleringModel::BOOL_CROSSED_PLASTO,
                                          _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO));
 
+        std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         double n = 0;
         while(it != _culm_models.end()) {
             if ((*it)->get_phytomer_number() >=
@@ -227,6 +220,16 @@ public:
                 and _tillering_model->get < double >(t, TilleringModel::NB_TILLERS) > 0) {
             create_culm(t, _tillering_model->get < double >(t, TilleringModel::NB_TILLERS));
         }
+
+
+        //CulmModel
+        compute_culms(t);
+
+        //Lig update
+        std::deque < CulmModel* >::const_iterator first = _culm_models.begin();
+        _lig = (*first)->get <double, CulmModel>(t, CulmModel::NB_LIG);
+
+        //Tillering
 
         //Assimilation
         _assimilation_model->put < double >(t, AssimilationModel::CSTR,
