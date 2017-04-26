@@ -56,6 +56,7 @@ public:
         // Tillering
         _create = 0;
         if (_ic > _Ict) {
+            // @TODO : pourquoi ce calcul ?
             _nb_tillers = _nb_tillers + _nbExistingTillers;
         }
         if (_boolCrossedPlasto > 0 and _nb_tillers >= 1 and _ic > _Ict * ((_P * _resp_Ict) + 1)) {

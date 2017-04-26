@@ -37,7 +37,7 @@ public:
                      BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      CORRECTED_BIOMASS, TIME_FROM_APP,
-                     LIG_T, IS_LIG
+                     LIG_T, IS_LIG, OLD_BIOMASS
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
@@ -77,6 +77,8 @@ public:
         Internal(TIME_FROM_APP, &LeafModel::_time_from_app);
         Internal(LIG_T, &LeafModel::_lig_t);
         Internal(IS_LIG, &LeafModel::_is_lig);
+        Internal(OLD_BIOMASS, &LeafModel::_old_biomass);
+
 
         //externals
         External(PLANT_PHASE, &LeafModel::_plant_phase);
@@ -164,6 +166,7 @@ public:
         if (not _is_lig) {
             if(_leaf_phase == LeafModel::LIG) {
                 _is_lig = true;
+                _TT_Lig += _delta_t;
                 if(_lig_t == 0) {
                     _lig_t = t;
                 }
@@ -194,10 +197,10 @@ public:
         } else {
             if (_leaf_phase != LeafModel::NOGROWTH) {
                 if (not _is_lig) {
+                    _old_biomass = _biomass;
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _corrected_biomass = 0;
                     _realloc_biomass = 0;
-                    _old_biomass = _biomass;
                 } else {
                     if (_corrected_biomass > 0) {
                         _old_biomass = _corrected_biomass;

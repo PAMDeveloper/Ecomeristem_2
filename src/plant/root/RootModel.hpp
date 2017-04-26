@@ -63,7 +63,7 @@ public:
         _P = _parameters.get(t).P;
 
         // Root Demand Coef
-        _root_demand_coef = _coeff1_R_d * std::exp(_coeff2_R_d * (t - _parameters.beginDate)) * (_P * _resp_R_d + 1);
+        _root_demand_coef = _coeff1_R_d * std::exp(_coeff2_R_d * (t - _parameters.beginDate + 1)) * (_P * _resp_R_d + 1);
 
 
         // Root Demand

@@ -121,6 +121,17 @@ public:
         std::deque < PhytomerModel* >::iterator previous_it;
         int i = 0;
         _nb_lig = 0;
+        _nb_lig = 0;
+        _leaf_biomass_sum = 0;
+        _leaf_last_demand_sum = 0;
+        _leaf_demand_sum = 0;
+        _internode_last_demand_sum = 0;
+        _internode_demand_sum = 0;
+        _internode_biomass_sum = 0;
+        _internode_len_sum = 0;
+        _leaf_blade_area_sum = 0;
+        _last_ligulated_leaf = -1;
+        _last_ligulated_leaf_len = 0;
         while (it != _phytomer_models.end()) {
             //Phytomers
             compute_phytomers(it, previous_it, i, t);
@@ -188,17 +199,7 @@ public:
     }
 
     void compute_vars(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
-        _nb_lig = 0;
-        _leaf_biomass_sum = 0;
-        _leaf_last_demand_sum = 0;
-        _leaf_demand_sum = 0;
-        _internode_last_demand_sum = 0;
-        _internode_demand_sum = 0;
-        _internode_biomass_sum = 0;
-        _internode_len_sum = 0;
-        _leaf_blade_area_sum = 0;
-        _last_ligulated_leaf = -1;
-        _last_ligulated_leaf_len = 0;
+
 
         if (not (*it)->is_leaf_dead()) {
             if((*it)->is_leaf_lig(t)) {
