@@ -131,6 +131,9 @@ public:
         selector("ASSIM", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM});
+        selector("ASSIM_NET", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::ASSIM_NET_COR});
         selector("ASSIM_POT", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM_POT});
@@ -144,8 +147,8 @@ public:
                      PlantModel::ASSIMILATION,
                      AssimilationModel::RESP_MAINT});
 
-//        //StockModel
-        selector("DAY_DEMAND", artis::kernel::DOUBLE, {
+        //StockModel
+        selector("DAYDEMAND", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::DAY_DEMAND});
         selector("IC", artis::kernel::DOUBLE, {
@@ -157,7 +160,7 @@ public:
         selector("RESERVOIR_DISPO", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::RESERVOIR_DISPO});
-        selector("SEED_RES", artis::kernel::DOUBLE, {
+        selector("SEEDRES", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::SEED_RES});
         selector("STOCK", artis::kernel::DOUBLE, {

@@ -47,7 +47,8 @@ int main(int argc, char *argv[])
 
     GlobalParameters globalParameters;
 //    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
-    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/refmodelecpp";
+//    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/refmodelecpp";
+    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
 
     ecomeristem::ModelParameters parameters;
     utils::ParametersReader reader;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 //    out << ::Trace::trace().elements().to_string();
 //    out.close();
 
-    w.show_trace();
+//    w.show_trace();
     w.displayData(view, QString::fromStdString(dirName), &parameters,
                   QString::fromStdString(parameters.get < std::string >("BeginDate")),
                   QString::fromStdString(parameters.get < std::string >("EndDate")));

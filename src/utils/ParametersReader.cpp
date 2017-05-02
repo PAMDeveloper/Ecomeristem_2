@@ -236,8 +236,17 @@
 #include <fstream>
 
 
+
 using namespace ecomeristem;
 namespace utils {
+
+inline double round( double val, int decimal )
+{
+    double factor = std::pow(10, decimal);
+    val *= factor;
+    val = std::round(val);
+    return val/factor;
+}
 
 	void ParametersReader::loadParametersFromProstgresql(const std::string &id,
         ModelParameters &parameters)
@@ -296,11 +305,11 @@ namespace utils {
 #ifdef OPTIM_NO_LEXCAST
 			parameters.meteoValues.push_back(
                 Climate(
-					std::stod(values[0]),
-					std::stod(values[1]),
-					std::stod(values[2]),
-					std::stod(values[3]),
-					std::stod(values[4])
+                    round(std::stod(values[0]),9),
+                    round(std::stod(values[1]),9),
+                    round(std::stod(values[2]),9),
+                    round(std::stod(values[3]),9),
+                    round(std::stod(values[4]),9)
 				)
 			);
 #else

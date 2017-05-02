@@ -211,15 +211,17 @@ void MainWindow::displayData(observer::PlantView * view,
     client->setLayout(lay);
     lay->setSpacing(0);
     ui->tabWidget->addTab(scrollArea, "Variables");
+    ui->tabWidget->setCurrentWidget(scrollArea);
+
 
     startDate = QDate::fromString(begin, "dd/MM/yyyy");
     QDate endDate = QDate::fromString(end, "dd/MM/yyyy");
     currentDate = startDate;
-    const int numCol = 3;
+    const int numCol = 2;
 
     QStringList outRefs;
-    if(refFolder.isEmpty() && QDir(dirName+"/ref").exists())
-        refFolder = dirName+"/ref";
+    if(refFolder.isEmpty() && QDir(dirName/*+"/ref"*/).exists())
+        refFolder = dirName;//+"/ref";
 
     if(!refFolder.isEmpty()){
         QDir dir(refFolder);
