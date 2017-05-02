@@ -80,7 +80,6 @@ public:
         //  assim
         _assim = std::max(0., (_assim_pot - _resp_maint) / _density);
         _assim_net_cor = _assim - _resp_maint;
-
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {

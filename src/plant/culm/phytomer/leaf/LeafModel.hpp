@@ -37,7 +37,7 @@ public:
                      BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      CORRECTED_BIOMASS, TIME_FROM_APP,
-                     LIG_T, IS_LIG, OLD_BIOMASS
+                     LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
@@ -77,6 +77,7 @@ public:
         Internal(TIME_FROM_APP, &LeafModel::_time_from_app);
         Internal(LIG_T, &LeafModel::_lig_t);
         Internal(IS_LIG, &LeafModel::_is_lig);
+        Internal(IS_LIG_T, &LeafModel::_is_lig_t);
         Internal(OLD_BIOMASS, &LeafModel::_old_biomass);
 
 
@@ -98,8 +99,6 @@ public:
     {
         _p = _parameters.get(t).P;
 
-        //LeafManager
-        step_state();
 
         //LifeSpan
         if (t == _first_day) {
@@ -155,6 +154,9 @@ public:
             }
         }
 
+        //LeafManager
+        step_state();
+
         //PlastoDelay
         _plasto_delay = std::min(((_delta_t > _exp_time) ? _exp_time :
                                                            _delta_t) * (-1. + _reduction_ler), 0.);
@@ -163,9 +165,11 @@ public:
         _width = _len * _WLR / _LL_BL;
 
         //ThermalTimeSinceLigulation
+        _is_lig_t = false;
         if (not _is_lig) {
             if(_leaf_phase == LeafModel::LIG) {
                 _is_lig = true;
+                _is_lig_t = true;
                 _TT_Lig += _delta_t;
                 if(_lig_t == 0) {
                     _lig_t = t;
@@ -218,7 +222,7 @@ public:
         }
 
         //LeafDemand
-         _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
+//         _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
         if (_first_day == t) {
             _demand = _biomass;
         } else {
@@ -227,6 +231,13 @@ public:
             } else {
                 _demand = 0;
             }
+        }
+
+        // LeafLastDemand @TODO calcul doit être placé avant la mise à jour de _is_lig, solution par _is_lig_t
+        if (_is_lig_t) {
+            _last_demand = _biomass - _old_biomass;
+        } else {
+            _last_demand = 0;
         }
 
         //LeafTimeFromApp
@@ -291,6 +302,7 @@ public:
         _width = 0;
         _TT_Lig = 0;
         _is_lig = false;
+        _is_lig_t = false;
         _corrected_blade_area = 0;
         _blade_area = 0;
         _biomass = 0;
@@ -343,6 +355,7 @@ private:
     double _plasto_delay;
     double _TT_Lig;
     bool   _is_lig;
+    bool _is_lig_t;
     double _blade_area;
     double _corrected_blade_area;
     double _biomass;

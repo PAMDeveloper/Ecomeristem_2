@@ -123,6 +123,7 @@ public:
         _internode_model->put < int >(t, InternodeModel::PLANT_STATE, _plant_state);
         _internode_model->put(t, InternodeModel::LIG, _leaf_model->get < double > (t, LeafModel::LIG_T));
         _internode_model->put(t, InternodeModel::LEAF_PREDIM, _leaf_model->get < double > (t, LeafModel::LEAF_PREDIM));
+        _internode_model->put(t, InternodeModel::IS_LIG, _leaf_model->get < bool > (t, LeafModel::IS_LIG));
         (*_internode_model)(t);
     }
 
