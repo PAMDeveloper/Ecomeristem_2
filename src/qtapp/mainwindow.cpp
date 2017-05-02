@@ -84,13 +84,18 @@ void MainWindow::on_lineEdit_4_textChanged(const QString &arg1)
 void MainWindow::addChart(int row, int col,
                           QLineSeries *series, QLineSeries *refSeries,
                           QGridLayout * lay, QString name){
+    QColor color = series->color();
     QChart *chart = new QChart();
-    chart->addSeries(series);
+    series->setColor(color.darker(200));
     if(refSeries != NULL){
-        refSeries->setColor(series->color().darker(200));
+        QPen pen;
+        pen.setColor(color.lighter(100));
+        pen.setWidth(3);
+        refSeries->setPen(pen);
         name += " + ref";
         chart->addSeries(refSeries);
     }
+    chart->addSeries(series);
     chart->legend()->hide();
     chart->setTitle(name);
 
@@ -220,8 +225,8 @@ void MainWindow::displayData(observer::PlantView * view,
     const int numCol = 2;
 
     QStringList outRefs;
-    if(refFolder.isEmpty() && QDir(dirName/*+"/ref"*/).exists())
-        refFolder = dirName;//+"/ref";
+    if(refFolder.isEmpty() && QDir(dirName+"/ref").exists())
+        refFolder = dirName+"/ref";
 
     if(!refFolder.isEmpty()){
         QDir dir(refFolder);

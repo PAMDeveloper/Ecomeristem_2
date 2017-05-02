@@ -83,15 +83,8 @@ public:
             if (_day_demand_[0] != 0) {
                 resDiv = (std::max(0., _seed_res_[0]) + _supply_[0]) /
                         _day_demand_[0];
-                total += resDiv;
-                ++n;
-            }
-
-            if (_day_demand_[0] != 0) {
-                resDiv = (std::max(0., _seed_res_[0]) + _supply_[0]) /
-                        _day_demand_[0];
-                total += resDiv;
-                ++n;
+                total += 2*resDiv;
+                n += 2;
             }
 
             if (_day_demand_[1] != 0) {
@@ -126,6 +119,8 @@ public:
                 _test_ic = std::min(1., std::sqrt(tmp));
             }
         }
+
+        //Algo florian pour le calcul de l'IC
         //        if (t != _parameters.beginDate) {
         //            double mean;
         //            unsigned int n = 2;
@@ -156,6 +151,9 @@ public:
     }
 
     void compute(double t, bool /* update */) {
+        //  indice de competition - Proposition
+        compute_IC(t);
+
         //  day_demand
         if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3 or
                 _plant_phase == plant::NOGROWTH4) {
@@ -192,9 +190,6 @@ public:
         _supply_[1] = _supply_[0];
         _supply_[0] = _supply;
 
-
-        //  indice de competition - Proposition
-        compute_IC(t);
 
         //  reservoir_dispo
         _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;

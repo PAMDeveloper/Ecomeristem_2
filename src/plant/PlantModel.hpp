@@ -255,7 +255,6 @@ public:
 
         // Stock
          double demand_sum = _leaf_demand_sum + _internode_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
-
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);

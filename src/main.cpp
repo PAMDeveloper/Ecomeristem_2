@@ -39,44 +39,43 @@
 //using namespace artis::kernel;
 
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+int main(int argc, char *argv[]) {
+  QApplication a(argc, argv);
+  MainWindow w;
+  w.show();
 
-    GlobalParameters globalParameters;
+  GlobalParameters globalParameters;
 //    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
-//    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/refmodelecpp";
-    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
+  std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/refmodelecpp";
+//    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
 
-    ecomeristem::ModelParameters parameters;
-    utils::ParametersReader reader;
-    reader.loadParametersFromFiles(dirName, parameters);
+  ecomeristem::ModelParameters parameters;
+  utils::ParametersReader reader;
+  reader.loadParametersFromFiles(dirName, parameters);
 
-    QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
-                                    "dd/MM/yyyy");
-    QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
-                                    "dd/MM/yyyy");
-    parameters.beginDate = start.toJulianDay();
-    qDebug() << parameters.beginDate << end.toJulianDay();
-    EcomeristemContext context( start.toJulianDay(), end.toJulianDay());
+  QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
+                                  "dd/MM/yyyy");
+  QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
+                                "dd/MM/yyyy");
+  parameters.beginDate = start.toJulianDay();
+  qDebug() << parameters.beginDate << end.toJulianDay();
+  EcomeristemContext context(start.toJulianDay(), end.toJulianDay());
 
-    ::Trace::trace().clear();
-    EcomeristemSimulator simulator(new PlantModel, globalParameters);
-    observer::PlantView * view = new observer::PlantView();
-    simulator.attachView("plant", view);
-    simulator.init(start.toJulianDay(), parameters);
-    simulator.run(context);
+  ::Trace::trace().clear();
+  EcomeristemSimulator simulator(new PlantModel, globalParameters);
+  observer::PlantView *view = new observer::PlantView();
+  simulator.attachView("plant", view);
+  simulator.init(start.toJulianDay(), parameters);
+  simulator.run(context);
 
 //    std::ofstream out("Trace.txt");
 //    out << ::Trace::trace().elements().to_string();
 //    out.close();
 
 //    w.show_trace();
-    w.displayData(view, QString::fromStdString(dirName), &parameters,
-                  QString::fromStdString(parameters.get < std::string >("BeginDate")),
-                  QString::fromStdString(parameters.get < std::string >("EndDate")));
+  w.displayData(view, QString::fromStdString(dirName), &parameters,
+                QString::fromStdString(parameters.get < std::string >("BeginDate")),
+                QString::fromStdString(parameters.get < std::string >("EndDate")));
 
-    return a.exec();
+  return a.exec();
 }

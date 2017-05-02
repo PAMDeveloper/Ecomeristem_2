@@ -215,12 +215,11 @@ public:
         }
 
 
-        if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS) == 0) {
+//        if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS) == 0) {
             _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
-        } else {
-            _leaf_biomass_sum +=
-                    (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS);
-        }
+//        } else {
+//            _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS);
+//        }
 
         _leaf_last_demand_sum +=
                 (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LAST_DEMAND);
@@ -235,16 +234,15 @@ public:
         _internode_len_sum += (*it)->get < double, InternodeModel >(
                     t, PhytomerModel::INTERNODE_LEN);
 
-        if ((*it)->get < double, LeafModel >(
-                    t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA) == 0) {
+//        if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA) == 0) {
             _leaf_blade_area_sum +=
                     (*it)->get < double, LeafModel >(
                         t, PhytomerModel::LEAF_BLADE_AREA);
-        } else {
-            _leaf_blade_area_sum +=
-                    (*it)->get < double, LeafModel >(
-                        t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA);
-        }
+//        } else {
+//            _leaf_blade_area_sum +=
+//                    (*it)->get < double, LeafModel >(
+//                        t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA);
+//        }
 
         _realloc_biomass_sum +=
                 (*it)->get < double, LeafModel >(

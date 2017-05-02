@@ -180,49 +180,42 @@ public:
         }
 
         //BladeArea
-        _blade_area = _len * _width * _allo_area / _LL_BL;
-        if (not _is_lig) {
-            _corrected_blade_area = 0;
+        if (not _is_lig || _is_lig_t) {
+            _blade_area = _len * _width * _allo_area / _LL_BL;
         } else {
-            if (_blade_area < 0) {
-                _blade_area = 0;
-            }
-            _corrected_blade_area = _blade_area * (1 - _TT_Lig / _life_span);
+            _blade_area = std::max(_blade_area, 0.) * (1 - _TT_Lig / _life_span);
         }
 
         //Biomass
         _old_biomass = 0;
         if (_first_day == t) {
             _biomass = (1. / _G_L) * _blade_area / _sla;
-            _corrected_biomass = 0;
             _realloc_biomass = 0;
             _sla_cste = _sla;
             _old_biomass = _biomass;
         } else {
             if (_leaf_phase != LeafModel::NOGROWTH) {
-                if (not _is_lig) {
+                if (not _is_lig || _is_lig_t) {
                     _old_biomass = _biomass;
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
-                    _corrected_biomass = 0;
                     _realloc_biomass = 0;
                 } else {
-                    if (_corrected_biomass > 0) {
-                        _old_biomass = _corrected_biomass;
-                    } else {
-                        _old_biomass = _biomass;
-                    }
-                    _corrected_biomass = _biomass * (1. - _TT_Lig / _life_span);
-                    _realloc_biomass = (_old_biomass - _corrected_biomass) *
-                            _realocationCoeff;
-                    _senesc_dw = (_old_biomass - _corrected_biomass) *
-                            (1 - _realocationCoeff);
-                    _senesc_dw_sum = _senesc_dw_sum + _senesc_dw;
+                    //                    if (_corrected_biomass > 0) {
+                    //                        _old_biomass = _corrected_biomass;
+                    //                    } else {
+                    _old_biomass = _biomass;
+                    //                    }
+                        _biomass = _biomass * (1. - _TT_Lig / _life_span);
+                        double delta_biomass = _old_biomass - _biomass;
+                        _realloc_biomass = delta_biomass * _realocationCoeff;
+                        _senesc_dw = delta_biomass * (1 - _realocationCoeff);
+                        _senesc_dw_sum = _senesc_dw_sum + _senesc_dw;
                 }
             }
         }
 
         //LeafDemand
-//         _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
+        //         _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
         if (_first_day == t) {
             _demand = _biomass;
         } else {
