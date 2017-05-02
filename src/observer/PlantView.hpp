@@ -70,12 +70,11 @@ public:
                      PlantModel::PLANT_STATE });
         selector("PAI", artis::kernel::DOUBLE, {
                      PlantModel::PAI });
+        selector("LIG", artis::kernel::DOUBLE, {
+                     PlantModel::LIG });
 
 
         //ThermalTimeModel
-        selector("LIG", artis::kernel::DOUBLE, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::LIG});
         selector("STATE", artis::kernel::INT, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::STATE});
@@ -111,26 +110,29 @@ public:
                      ThermalTimeModel::IH});
 
         //WaterBalanceModel
-        selector("CSTR", artis::kernel::DOUBLE, {
-                     PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::CSTR});
-        selector("FCSTR", artis::kernel::DOUBLE, {
-                     PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::FCSTR});
-        selector("FTSW", artis::kernel::DOUBLE, {
-                     PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::FTSW});
-        selector("TRANSPIRATION", artis::kernel::DOUBLE, {
-                     PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::TRANSPIRATION});
-        selector("SWC", artis::kernel::DOUBLE, {
-                     PlantModel::WATER_BALANCE,
-                     WaterBalanceModel::SWC});
+//        selector("CSTR", artis::kernel::DOUBLE, {
+//                     PlantModel::WATER_BALANCE,
+//                     WaterBalanceModel::CSTR});
+//        selector("FCSTR", artis::kernel::DOUBLE, {
+//                     PlantModel::WATER_BALANCE,
+//                     WaterBalanceModel::FCSTR});
+//        selector("FTSW", artis::kernel::DOUBLE, {
+//                     PlantModel::WATER_BALANCE,
+//                     WaterBalanceModel::FTSW});
+//        selector("TRANSPIRATION", artis::kernel::DOUBLE, {
+//                     PlantModel::WATER_BALANCE,
+//                     WaterBalanceModel::TRANSPIRATION});
+//        selector("SWC", artis::kernel::DOUBLE, {
+//                     PlantModel::WATER_BALANCE,
+//                     WaterBalanceModel::SWC});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM});
+        selector("ASSIM_NET", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::ASSIM_NET_COR});
         selector("ASSIM_POT", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM_POT});
@@ -145,7 +147,7 @@ public:
                      AssimilationModel::RESP_MAINT});
 
 //        //StockModel
-        selector("DAY_DEMAND", artis::kernel::DOUBLE, {
+        selector("DAYDEMAND", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::DAY_DEMAND});
         selector("IC", artis::kernel::DOUBLE, {
@@ -157,7 +159,7 @@ public:
         selector("RESERVOIR_DISPO", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::RESERVOIR_DISPO});
-        selector("SEED_RES", artis::kernel::DOUBLE, {
+        selector("SEEDRES", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::SEED_RES});
         selector("STOCK", artis::kernel::DOUBLE, {
@@ -191,8 +193,10 @@ public:
                      RootModel::SURPLUS});
 
         //CulmStockModel
-        //LeafModel
         //PhytomerModel
+        //LeafModel
+        //InternodeModel
+
     }
 
     virtual ~PlantView()

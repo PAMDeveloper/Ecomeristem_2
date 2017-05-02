@@ -36,10 +36,10 @@ public:
                             REALIZATION_NOGROWTH, MATURITY,
                             MATURITY_NOGROWTH };
 
-    enum internals { INTERNODE_PHASE, INTERNODE_PREDIM, INTERNODE_LEN,
+    enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
-    enum externals { PLANT_PHASE, PLANT_STATE, LIG, LEAF_PREDIM, FTSW,
+    enum externals { PLANT_PHASE, PLANT_STATE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T};
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
@@ -48,6 +48,7 @@ public:
 
     InternodeModel(int index, bool is_on_mainstem) {
         Internal(INTERNODE_PHASE, &InternodeModel::_inter_phase);
+        Internal(INTERNODE_PHASE_1, &InternodeModel::_inter_phase_1);
         Internal(INTERNODE_PREDIM, &InternodeModel::_inter_predim);
         Internal(INTERNODE_LEN, &InternodeModel::_inter_len);
         Internal(REDUCTION_INER, &InternodeModel::_reduction_iner);
@@ -63,6 +64,7 @@ public:
         External(PLANT_PHASE, &InternodeModel::_plant_phase);
         External(PLANT_STATE, &InternodeModel::_plant_state);
         External(LIG, &InternodeModel::_lig);
+        External(IS_LIG, &InternodeModel::_is_lig);
         External(LEAF_PREDIM, &InternodeModel::_leaf_predim);
         External(FTSW, &InternodeModel::_ftsw);
         External(DD, &InternodeModel::_dd);
@@ -96,21 +98,9 @@ public:
         //INER
         _iner = _inter_predim * _reduction_iner / (_plasto + _index *
                                                    (_ligulo - _plasto));
-
-        //
-        if (_inter_phase == VEGETATIVE) {
-
-        } else {
-            if (_inter_phase_1 == VEGETATIVE and
-                _inter_phase == REALIZATION) {
-                _exp_time = (_inter_predim - _inter_len) / _iner;
-            } else {
-
-            }
-        }
-
+        //InternodeManager
+        step_state(t);
         //InternodeLen & InternodeExpTime
-        double inter_len_1 = _inter_len; //@TODO vérif sur Delphi l'ordre des calculs sur exptime
         if (_inter_phase == VEGETATIVE) {
             _inter_len = 0;
             _exp_time = 0;
@@ -122,16 +112,14 @@ public:
             } else {
                 if (_inter_phase != REALIZATION_NOGROWTH and
                         _inter_phase != MATURITY_NOGROWTH) {
+                    _exp_time = (_inter_predim - _inter_len) / _iner;
                     _inter_len = std::min(_inter_predim,
                                           _inter_len + _iner * std::min(_delta_t,
                                                                         _exp_time));
-                    _exp_time = (_inter_predim - inter_len_1) / _iner;
                 }
             }
         }
 
-        //InternodeManager
-        step_state(t);
 
         //DiameterPredim
         _inter_diameter = _IN_length_to_IN_diam * _inter_predim + _coef_lin_IN_diam;
@@ -168,7 +156,7 @@ public:
         if (_inter_phase == INIT) {
             _inter_phase = VEGETATIVE;
         } else if (_inter_phase == VEGETATIVE and
-                   _plant_state == plant::ELONG and _lig == t) {
+                   _plant_state == plant::ELONG and _is_lig) {
             _inter_phase = REALIZATION;
         } else if (_inter_phase == REALIZATION and _inter_len >= _inter_predim) {
             _inter_phase = MATURITY;
@@ -274,6 +262,7 @@ private:
     int _plant_state;
     double _leaf_predim;
     double _lig;
+    bool _is_lig;
     double _ftsw;
     double _p;
     double _dd;

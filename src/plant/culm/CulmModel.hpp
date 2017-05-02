@@ -121,7 +121,6 @@ public:
         std::deque < PhytomerModel* >::iterator previous_it;
         int i = 0;
         _nb_lig = 0;
-        _nb_lig = 0;
         _leaf_biomass_sum = 0;
         _leaf_last_demand_sum = 0;
         _leaf_demand_sum = 0;
@@ -206,10 +205,10 @@ public:
                 ++_nb_lig;
             }
 
-            if (i == 0 or (*it)->is_leaf_lig(t)) {
+            if (_index == 1 or (*it)->is_leaf_lig(t)) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
-            if (i == 0 and (*it)->is_leaf_lig(t)) {
+            if (_index == 1 and (*it)->is_leaf_lig(t)) {
                 _last_ligulated_leaf = i;
                 _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
             }

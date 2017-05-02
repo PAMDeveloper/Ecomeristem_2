@@ -33,7 +33,7 @@ namespace model {
 class AssimilationModel : public AtomicModel < AssimilationModel >
 {
 public:
-    enum internals { ASSIM, ASSIM_POT, INTERC, LAI, RESP_MAINT };
+    enum internals { ASSIM, ASSIM_NET_COR, ASSIM_POT, INTERC, LAI, RESP_MAINT };
 
     enum externals { CSTR, FCSTR, PAI, LEAFBIOMASS, INTERNODEBIOMASS };
 
@@ -41,6 +41,7 @@ public:
     AssimilationModel() {
         //  computed variables
         Internal(ASSIM, &AssimilationModel::_assim);
+        Internal(ASSIM_NET_COR, &AssimilationModel::_assim_net_cor);
         Internal(ASSIM_POT, &AssimilationModel::_assim_pot);
         Internal(RESP_MAINT, &AssimilationModel::_resp_maint);
         Internal(ASSIM_POT, &AssimilationModel::_assim_pot);
@@ -78,6 +79,7 @@ public:
 
         //  assim
         _assim = std::max(0., (_assim_pot - _resp_maint) / _density);
+        _assim_net_cor = _assim - _resp_maint;
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
@@ -103,6 +105,7 @@ public:
 
         //  computed variables (internal)
         _assim = 0;
+        _assim_net_cor = 0;
         _resp_maint = 0;
         _assim_pot = 0;
         _interc = 0;
@@ -133,6 +136,7 @@ private:
 
     //  internals - computed
     double _assim;
+    double _assim_net_cor;
     double _resp_maint;
     double _assim_pot;
     double _interc;

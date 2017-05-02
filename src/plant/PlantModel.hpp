@@ -52,7 +52,7 @@ public:
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PLANT_HEIGHT,
-                     PLANT_PHASE, PLANT_STATE, PAI};
+                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT};
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -80,6 +80,7 @@ public:
         Internal( INTERNODE_LAST_DEMAND_SUM, &PlantModel::_internode_last_demand_sum );
         Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
         Internal( PAI, &PlantModel::_leaf_blade_area_sum );
+        Internal( HEIGHT, &PlantModel::_height );
         Internal( PLANT_HEIGHT, &PlantModel::_height );
         Internal( PLANT_STATE, &PlantModel::_state );
         Internal( PLANT_PHASE, &PlantModel::_phase );
@@ -198,6 +199,7 @@ public:
         if(_phase == plant::NEW_PHYTOMER or _phase == plant::NEW_PHYTOMER3) //@TODO virer un état
             create_phytomer(t);
 
+        //Tillering
         _tillering_model->put < double >(t, TilleringModel::IC,
                                          _stock_model->get < double >(t-1, PlantStockModel::IC));
         _tillering_model->put < double >(t, TilleringModel::BOOL_CROSSED_PLASTO,
@@ -229,7 +231,6 @@ public:
         std::deque < CulmModel* >::const_iterator first = _culm_models.begin();
         _lig = (*first)->get <double, CulmModel>(t, CulmModel::NB_LIG);
 
-        //Tillering
 
         //Assimilation
         _assimilation_model->put < double >(t, AssimilationModel::CSTR,
@@ -304,8 +305,8 @@ public:
             (*it)->put < int > (t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
             (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
             (*it)->put(t, CulmModel::SLA, _thermal_time_model->get < double >(t, ThermalTimeModel::SLA));
-            (*it)->put < int >(t, CulmModel::PLANT_PHASE, plant::INIT);//PlantState.get < double >(t, plantPHASE));
-            (*it)->put < int >(t, CulmModel::PLANT_STATE, plant::VEGETATIVE);//manager_model.get < double >(t, plantSTATE));
+            (*it)->put < int >(t, CulmModel::PLANT_PHASE, _phase);
+            (*it)->put < int >(t, CulmModel::PLANT_STATE, _state);
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
             (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
             (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
