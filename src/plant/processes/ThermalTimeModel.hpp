@@ -38,12 +38,11 @@ public:
     enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
                      PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD, IH };
 
-    enum externals {  PLANT_PHASE, PLASTO_DELAY, LIG };
+    enum externals {  PLANT_PHASE, PLASTO_DELAY, LIG, PLASTO };
 
 
     ThermalTimeModel() {
         //    computed variables
-
         Internal(STATE, &ThermalTimeModel::_tt_state);
         Internal(DELTA_T, &ThermalTimeModel::_deltaT);
         Internal(TT, &ThermalTimeModel::_TT);
@@ -61,6 +60,7 @@ public:
         External(LIG, &ThermalTimeModel::_lig);
         External(PLASTO_DELAY, &ThermalTimeModel::_plasto_delay);
         External(PLANT_PHASE, &ThermalTimeModel::_plant_phase);
+        External(PLASTO, &ThermalTimeModel::_plasto);
 
     }
 
@@ -177,7 +177,6 @@ public:
         //    paramaters variables
         _Tb = _parameters.get < double >("Tb");
         _coef_ligulo = _parameters.get < double >("coef_ligulo1");
-        _plasto = _parameters.get < double >("plasto_init");
         _FSLA = _parameters.get < double >("FSLA");
         _SLAp = _parameters.get < double >("SLAp");
 
@@ -200,7 +199,6 @@ private:
     ecomeristem::ModelParameters _parameters;
     //    parameters
     double _Tb;
-    double _plasto;
     double _coef_ligulo;
     double _FSLA;
     double _SLAp;
@@ -211,7 +209,7 @@ private:
     // vars
     double _lig_1;
 
-    //    internals - computed.
+    //    internals
     double _TT_lig;
     int _tt_state;
     double _deltaT;
@@ -226,6 +224,7 @@ private:
     double _IH;
 
     //    externals
+    double _plasto;
     double _lig;
     double _plasto_delay;
     int _plant_phase;

@@ -52,7 +52,7 @@ public:
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PLANT_HEIGHT,
-                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT};
+                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO};
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -84,6 +84,7 @@ public:
         Internal( PLANT_HEIGHT, &PlantModel::_height );
         Internal( PLANT_STATE, &PlantModel::_state );
         Internal( PLANT_PHASE, &PlantModel::_phase );
+        Internal( PLASTO, &PlantModel::_plasto );
     }
 
     virtual ~PlantModel()
@@ -180,8 +181,11 @@ public:
 
 
     void compute(double t, bool /* update */) {
+        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+
         //Thermal time
-        _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0);
+        _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
+        _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
         _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, _phase);
         _thermal_time_model->put < double >(t, ThermalTimeModel::LIG, _lig);
         (*_thermal_time_model)(t);
@@ -193,6 +197,28 @@ public:
 
         // Manager
         step_state(t);
+
+        //LLBL - Plasto
+        std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
+
+        int nb_leaves = (*mainstem)->get_phytomer_number();
+        if ( nb_leaves == _nb_leaf_param2 - 1 and
+             _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
+             _stock_model->get <double> (t-1, PlantStockModel::STOCK) > 0)
+        {
+
+            _plasto = _plasto * _coeff_Plasto_PI;
+            _ligulo = _ligulo * _coeff_Ligulo_PI;
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves - 1 -_nb_leaf_param2);
+            _MGR = _MGR * _coeff_MGR_PI;
+        } else if ( nb_leaves >= _nb_leaf_param2 - 1 and
+                    _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
+                     nb_leaves < _nb_Leaf_PI + _nb_Leaf_Max_After_PI + 1)
+        {
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves - 1 -_nb_leaf_param2);
+        }
+
+
 
         //Phytomer creation
         if(_phase == plant::NEW_PHYTOMER or _phase == plant::NEW_PHYTOMER3) //@TODO virer un état
@@ -222,13 +248,12 @@ public:
             create_culm(t, _tillering_model->get < double >(t, TilleringModel::NB_TILLERS));
         }
 
-
         //CulmModel
         compute_culms(t);
 
         //Lig update
-        std::deque < CulmModel* >::const_iterator first = _culm_models.begin();
-        _lig = (*first)->get <double, CulmModel>(t, CulmModel::NB_LIG);
+        mainstem = _culm_models.begin();
+        _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG);
 
 
         //Assimilation
@@ -312,6 +337,10 @@ public:
             (*it)->put(t, CulmModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
             (*it)->put(t, CulmModel::PLANT_BLADE_AREA_SUM, _leaf_blade_area_sum);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
+            (*it)->put(t, CulmModel::LL_BL, _LL_BL);
+            (*it)->put(t, CulmModel::PLASTO, _plasto);
+            (*it)->put(t, CulmModel::LIGULO, _ligulo);
+            (*it)->put(t, CulmModel::MGR, _MGR);
             (**it)(t);
             ++it;
         }
@@ -368,7 +397,15 @@ public:
         _nbleaf_enabling_tillering =
                 parameters.get < double >("nb_leaf_enabling_tillering");
 //        _realocationCoeff = parameters.get < double >("realocationCoeff");
-        _LL_BL = parameters.get < double >("LL_BL_init");
+        _LL_BL_init = parameters.get < double >("LL_BL_init");
+        _nb_leaf_param2 = parameters.get < double >("nb_leaf_param2");
+        _slope_LL_BL_at_PI = parameters.get < double >("slope_LL_BL_at_PI");
+        _nb_Leaf_PI = parameters.get < double >("nbleaf_pi");
+        _nb_Leaf_Max_After_PI = parameters.get < double >("nb_leaf_max_after_PI");
+        _coef_ligulo = parameters.get < double >("coef_ligulo1");
+        _coeff_Plasto_PI = parameters.get < double >("coef_plasto_PI");
+        _coeff_Ligulo_PI = parameters.get < double >("coef_ligulo_PI");
+        _coeff_MGR_PI = parameters.get < double >("coef_MGR_PI");
 
         //local init
         CulmModel* meristem = new CulmModel(1);
@@ -403,12 +440,17 @@ public:
         _state = plant::VEGETATIVE;
         _phase = plant::INIT;
         _height = 0;
+        _LL_BL = _LL_BL_init;
+        _plasto = parameters.get < double >("plasto_init");
+        _ligulo = _plasto * _coef_ligulo;
+        _MGR = parameters.get < double >("MGR_init");
 
         //
         _last_time = 0;
     }
     bool is_dead() const
     { /*return not culm_models.empty() and culm_models[0]->is_dead();*/ }
+
 
 private:
     //@TODO vérif
@@ -425,12 +467,24 @@ private:
     std::unique_ptr < model::RootModel > _root_model;
 
     // parameters
+    double _coeff_Plasto_PI;
+    double _coeff_Ligulo_PI;
+    double _coeff_MGR_PI;
     double _nbleaf_enabling_tillering;
-    double _LL_BL;
+    double _nb_leaf_param2;
+    double _slope_LL_BL_at_PI;
+    double _nb_Leaf_PI;
+    double _nb_Leaf_Max_After_PI;
+    double _LL_BL_init;
+    double _coef_ligulo;
 
     // vars
     double _predim_leaf_on_mainstem;
     // internals
+    double _plasto;
+    double _ligulo;
+    double _MGR;
+    double _LL_BL;
     double _lig;
     double _leaf_biomass_sum;
     double _leaf_demand_sum;

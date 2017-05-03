@@ -62,15 +62,19 @@ int main(int argc, char *argv[]) {
   EcomeristemContext context(start.toJulianDay(), end.toJulianDay());
 
   ::Trace::trace().clear();
+//  qDebug() << ::Trace::trace().elements().max_size();
+//  return a.exec();
+
   EcomeristemSimulator simulator(new PlantModel, globalParameters);
   observer::PlantView *view = new observer::PlantView();
   simulator.attachView("plant", view);
   simulator.init(start.toJulianDay(), parameters);
   simulator.run(context);
 
-//    std::ofstream out("Trace.txt");
-//    out << ::Trace::trace().elements().to_string();
-//    out.close();
+
+    std::ofstream out("Trace.txt");
+    out << ::Trace::trace().elements().to_string();
+    out.close();
 
 //    w.show_trace();
   w.displayData(view, QString::fromStdString(dirName), &parameters,

@@ -42,13 +42,14 @@ public:
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
-                     SLA, PLANT_PHASE, TEST_IC };
+                     SLA, PLANT_PHASE, TEST_IC, LL_BL, PLASTO,
+                     LIGULO, MGR };
 
 
     virtual ~LeafModel()
     { }
 
-    LeafModel::LeafModel(int index, bool is_on_mainstem) :
+    LeafModel(int index, bool is_on_mainstem) :
         _index(index),
         _is_first_leaf(_index == 1),
         _is_on_mainstem(is_on_mainstem)
@@ -91,11 +92,15 @@ public:
         External(DD, &LeafModel::_dd);
         External(DELTA_T, &LeafModel::_delta_t);
         External(SLA, &LeafModel::_sla);
+        External(LL_BL, &LeafModel::_LL_BL);
+        External(PLASTO, &LeafModel::_plasto);
+        External(LIGULO, &LeafModel::_ligulo);
+        External(MGR, &LeafModel::_MGR);
     }
 
 
 
-    void LeafModel::compute(double t, bool /* update */)
+    void compute(double t, bool /* update */)
     {
         _p = _parameters.get(t).P;
 
@@ -263,22 +268,18 @@ public:
         }
     }
 
-    void LeafModel::init(double t,
+    void init(double t,
                          const ecomeristem::ModelParameters& parameters)
     {
         _parameters = parameters;
+
         //parameters
         _coeffLifespan = parameters.get < double >("coeff_lifespan");
         _mu = parameters.get < double >("mu");
         _Lef1 = parameters.get < double >("Lef1");
-        _MGR = parameters.get < double >("MGR_init");
         _thresLER = parameters.get < double >("thresLER");
         _respLER = parameters.get < double >("resp_LER");
-        _coef_ligulo = parameters.get < double >("coef_ligulo1");
-        _plasto = parameters.get < double >("plasto_init");
-        _ligulo = _plasto * _coef_ligulo;
         _WLR = parameters.get < double >("WLR");
-        _LL_BL = parameters.get < double >("LL_BL_init");
         _allo_area = parameters.get < double >("allo_area");
         _G_L = parameters.get < double >("G_L");
         _realocationCoeff = parameters.get < double >("realocationCoeff");
@@ -321,14 +322,9 @@ private:
     double _coeffLifespan;
     double _mu;
     double _Lef1;
-    double _MGR;
     double _thresLER;
     double _respLER;
-    double _coef_ligulo;
-    double _ligulo;
-    double _plasto;
     double _WLR;
-    double _LL_BL;
     double _allo_area;
     double _G_L;
     double _realocationCoeff;
@@ -351,7 +347,7 @@ private:
     double _plasto_delay;
     double _TT_Lig;
     bool   _is_lig;
-    bool _is_lig_t;
+    bool   _is_lig_t;
     double _blade_area;
     double _corrected_blade_area;
     double _biomass;
@@ -369,6 +365,10 @@ private:
     double _last_leaf_biomass;
 
     // external variables
+    double _plasto;
+    double _ligulo;
+    double _MGR;
+    double _LL_BL;
     double _ftsw;
     double _p;
     int _plant_phase;

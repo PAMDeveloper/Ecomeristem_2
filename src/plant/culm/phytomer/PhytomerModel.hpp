@@ -155,11 +155,11 @@ public:
 //    double get_blade_area() const
 //    { return leaf_model->get_blade_area(); }
 
-//    const LeafModel& leaf() const
-//    { return *leaf_model; }
+    LeafModel * leaf() const
+    { return _leaf_model.get(); }
 
-//    const InternodeModel& internode() const
-//    { return *internode_model; }
+    InternodeModel * internode() const
+    { return _internode_model.get(); }
 
     int get_index() const
     { return _index; }

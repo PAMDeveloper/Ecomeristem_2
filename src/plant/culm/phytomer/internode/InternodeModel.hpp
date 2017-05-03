@@ -40,13 +40,15 @@ public:
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
     enum externals { PLANT_PHASE, PLANT_STATE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
-                     DD, DELTA_T};
+                     DD, DELTA_T, PLASTO, LIGULO};
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
     //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
     //                     LIG };
 
-    InternodeModel(int index, bool is_on_mainstem) {
+    InternodeModel(int index, bool is_on_mainstem):
+    _index(index), _is_on_mainstem(is_on_mainstem)
+    {
         Internal(INTERNODE_PHASE, &InternodeModel::_inter_phase);
         Internal(INTERNODE_PHASE_1, &InternodeModel::_inter_phase_1);
         Internal(INTERNODE_PREDIM, &InternodeModel::_inter_predim);
@@ -69,6 +71,8 @@ public:
         External(FTSW, &InternodeModel::_ftsw);
         External(DD, &InternodeModel::_dd);
         External(DELTA_T, &InternodeModel::_delta_t);
+        External(PLASTO, &InternodeModel::_plasto);
+        External(LIGULO, &InternodeModel::_ligulo);
     }
 
     virtual ~InternodeModel()
@@ -76,16 +80,18 @@ public:
 
     void compute(double t, bool /* update */){
         _p = _parameters.get(t).P;
+
         //InternodePredim
-        if (_index - 1 - _nb_leaf_param2 < 0) {
+        if(_index < _nb_leaf_param2) {
             _LL_BL = _LL_BL_init;
         } else {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (_index - 1 -
-                                                         _nb_leaf_param2);
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (_index + 1. - _nb_leaf_param2);
         }
-        _inter_predim = std::max(1e-4, _slope_length_IN *
-                                 _leaf_predim - _leaf_length_to_IN_length);
+        _inter_predim = std::max(1e-4, (1. - (_coeff_species*(1/_LL_BL))) * _leaf_predim - _leaf_length_to_IN_length);
 
+        if(t > _parameters.beginDate + 41) {
+            _inter_predim = _inter_predim;
+        }
         //ReductionINER
         if (_ftsw < _thresINER) {
             _reduction_iner = std::max(1e-4, (1. - (_thresINER - _ftsw) *
@@ -96,8 +102,8 @@ public:
         }
 
         //INER
-        _iner = _inter_predim * _reduction_iner / (_plasto + _index *
-                                                   (_ligulo - _plasto));
+        _iner = _inter_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
+
         //InternodeManager
         step_state(t);
         //InternodeLen & InternodeExpTime
@@ -105,17 +111,13 @@ public:
             _inter_len = 0;
             _exp_time = 0;
         } else {
-            if (_inter_phase_1 == VEGETATIVE and
-                    _inter_phase == REALIZATION) {
+            if (_inter_phase_1 == VEGETATIVE and _inter_phase == REALIZATION) {
                 _inter_len = _iner * _dd;
                 _exp_time = (_inter_predim - _inter_len) / _iner;
             } else {
-                if (_inter_phase != REALIZATION_NOGROWTH and
-                        _inter_phase != MATURITY_NOGROWTH) {
+                if (_inter_phase != REALIZATION_NOGROWTH and _inter_phase != MATURITY_NOGROWTH) {
                     _exp_time = (_inter_predim - _inter_len) / _iner;
-                    _inter_len = std::min(_inter_predim,
-                                          _inter_len + _iner * std::min(_delta_t,
-                                                                        _exp_time));
+                    _inter_len = std::min(_inter_predim, _inter_len + _iner * std::min(_delta_t, _exp_time));
                 }
             }
         }
@@ -183,28 +185,24 @@ public:
               const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
         //parameters
-        _LL_BL_init = parameters.get < double >("LL_BL_init");
-        _slope_LL_BL_at_PI = parameters.get < double >("slope_LL_BL_at_PI");
-        _nb_leaf_param2 = parameters.get < double >("nb_leaf_param2");
         _slope_length_IN = parameters.get < double >("slope_length_IN");
         _leaf_length_to_IN_length = parameters.get < double >("leaf_length_to_IN_length");
+        _LL_BL_init = parameters.get < double >("LL_BL_init");
+        _nb_leaf_param2 = parameters.get < double >("nb_leaf_param2");
+        _slope_LL_BL_at_PI = parameters.get < double >("slope_LL_BL_at_PI");
         _thresINER = parameters.get < double >("thresINER");
         _respINER = parameters.get < double >("resp_LER");
         _slopeINER = parameters.get < double >("slopeINER");
-        _coef_ligulo = parameters.get < double >("coef_ligulo1");
-        _plasto = parameters.get < double >("plasto_init");
-        _ligulo = _plasto * _coef_ligulo;
         _IN_length_to_IN_diam =
             parameters.get < double >("IN_length_to_IN_diam");
         _coef_lin_IN_diam = parameters.get < double >("coef_lin_IN_diam");
         _density = parameters.get < double >("density_IN");
+        _coeff_species = parameters.get <double> ("coeff_species");
 
         //internals
         _inter_phase = INIT;
         _inter_phase_1 = INIT;
         _inter_len = 0;
-        _inter_predim = 0;
-        _LL_BL = 0;
         _reduction_iner = 0;
         _iner = 0;
         _exp_time = 0;
@@ -215,6 +213,7 @@ public:
         _last_demand = 0;
         _first_day = t;
         _time_from_app = 0;
+
     }
 
 private:
@@ -226,26 +225,24 @@ private:
 
     // parameters
     double _LL_BL_init;
-    double _slope_LL_BL_at_PI;
     double _nb_leaf_param2;
+    double _slope_LL_BL_at_PI;
     double _slope_length_IN;
     double _leaf_length_to_IN_length;
     double _thresINER;
     double _respINER;
     double _slopeINER;
-    double _coef_ligulo;
-    double _ligulo;
-    double _plasto;
     double _IN_length_to_IN_diam;
     double _coef_lin_IN_diam;
     double _density;
+    double _coeff_species;
 
     // internals
+    double _LL_BL;
     double _inter_phase;
     double _inter_phase_1;
     double _inter_len;
     double _inter_predim;
-    double _LL_BL;
     double _reduction_iner;
     double _iner;
     double _exp_time;
@@ -258,6 +255,8 @@ private:
     double _first_day; //@TODO unused
 
     // externals
+    double _ligulo;
+    double _plasto;
     int _plant_phase;
     int _plant_state;
     double _leaf_predim;
