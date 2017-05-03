@@ -170,7 +170,6 @@ public:
             if(_leaf_phase == LeafModel::LIG) {
                 _is_lig = true;
                 _is_lig_t = true;
-                _TT_Lig += _delta_t;
                 if(_lig_t == 0) {
                     _lig_t = t;
                 }
@@ -182,8 +181,11 @@ public:
         //BladeArea
         if (not _is_lig || _is_lig_t) {
             _blade_area = _len * _width * _allo_area / _LL_BL;
+            if (_is_lig_t) {
+                _last_blade_area = _blade_area;
+            }
         } else {
-            _blade_area = std::max(_blade_area, 0.) * (1 - _TT_Lig / _life_span);
+            _blade_area = _last_blade_area * (1 - _TT_Lig / _life_span);
         }
 
         //Biomass
@@ -199,17 +201,16 @@ public:
                     _old_biomass = _biomass;
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _realloc_biomass = 0;
+                    if (_is_lig_t) {
+                        _last_leaf_biomass = _biomass;
+                    }
                 } else {
-                    //                    if (_corrected_biomass > 0) {
-                    //                        _old_biomass = _corrected_biomass;
-                    //                    } else {
                     _old_biomass = _biomass;
-                    //                    }
-                        _biomass = _biomass * (1. - _TT_Lig / _life_span);
-                        double delta_biomass = _old_biomass - _biomass;
-                        _realloc_biomass = delta_biomass * _realocationCoeff;
-                        _senesc_dw = delta_biomass * (1 - _realocationCoeff);
-                        _senesc_dw_sum = _senesc_dw_sum + _senesc_dw;
+                    _biomass = _last_leaf_biomass * (1. - _TT_Lig / _life_span);
+                    double delta_biomass = _old_biomass - _biomass;
+                    _realloc_biomass = delta_biomass * _realocationCoeff;
+                    _senesc_dw = delta_biomass * (1 - _realocationCoeff);
+                    _senesc_dw_sum = _senesc_dw_sum + _senesc_dw;
                 }
             }
         }
@@ -307,6 +308,8 @@ public:
         _last_demand = 0;
         _time_from_app = 0;
         _lig_t = 0;
+        _last_blade_area = 0;
+        _last_leaf_biomass = 0;
     }
 
     //    double get_blade_area() const
@@ -362,6 +365,8 @@ private:
     double _time_from_app;
     double _sla_cste;
     double _lig_t;
+    double _last_blade_area;
+    double _last_leaf_biomass;
 
     // external variables
     double _ftsw;

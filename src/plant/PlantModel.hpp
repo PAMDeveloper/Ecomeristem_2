@@ -180,7 +180,6 @@ public:
 
 
     void compute(double t, bool /* update */) {
-
         //Thermal time
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0);
         _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, _phase);
