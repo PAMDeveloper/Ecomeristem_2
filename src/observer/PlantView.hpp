@@ -48,22 +48,22 @@ public:
     PlantView()
     {
         //PlantModel
-//        selector("LEAF_BIOMASS_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::LEAF_BIOMASS_SUM });
-//        selector("LEAF_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::LEAF_DEMAND_SUM });
-//        selector("LEAF_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::LEAF_LAST_DEMAND_SUM });
-//        selector("INTERNODE_BIOMASS_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::INTERNODE_BIOMASS_SUM });
-//        selector("INTERNODE_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::INTERNODE_DEMAND_SUM });
-//        selector("INTERNODE_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::INTERNODE_LAST_DEMAND_SUM });
-//        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
-//                     PlantModel::SENESC_DW_SUM });
-//        selector("PHT", artis::kernel::DOUBLE, {
-//                     PlantModel::PLANT_HEIGHT });
+        selector("LEAF_BIOMASS_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_BIOMASS_SUM });
+        selector("LEAF_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_DEMAND_SUM });
+        selector("LEAF_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::LEAF_LAST_DEMAND_SUM });
+        selector("INTERNODE_BIOMASS_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_BIOMASS_SUM });
+        selector("INTERNODE_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_DEMAND_SUM });
+        selector("INTERNODE_LAST_DEMAND_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_LAST_DEMAND_SUM });
+        selector("SENESC_DW_SUM", artis::kernel::DOUBLE, {
+                     PlantModel::SENESC_DW_SUM });
+        selector("PHT", artis::kernel::DOUBLE, {
+                     PlantModel::PLANT_HEIGHT });
         selector("PP_PHASE", artis::kernel::INT, {
                      PlantModel::PLANT_PHASE });
         selector("P_STATE", artis::kernel::INT, {
@@ -78,36 +78,36 @@ public:
         selector("STATE", artis::kernel::INT, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::STATE});
-//        selector("DELTA_T", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::DELTA_T});
-//        selector("TT", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::TT});
-//        selector("BOOL_CROSSED_PLASTO", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::BOOL_CROSSED_PLASTO});
-//        selector("TT_LIG", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::TT_LIG});
-//        selector("PLASTO_VISU", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::PLASTO_VISU});
-//        selector("LIGULO_VISU", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::LIGULO_VISU});
-//        selector("PHENOSTAGE", artis::kernel::INT, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::PHENO_STAGE});
+        selector("DELTA_T", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::DELTA_T});
+        selector("TT", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::TT});
+        selector("BOOL_CROSSED_PLASTO", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::BOOL_CROSSED_PLASTO});
+        selector("TT_LIG", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::TT_LIG});
+        selector("PLASTO_VISU", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::PLASTO_VISU});
+        selector("LIGULO_VISU", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::LIGULO_VISU});
+        selector("PHENOSTAGE", artis::kernel::INT, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::PHENO_STAGE});
         selector("DD", artis::kernel::DOUBLE, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::DD});
         selector("EDD", artis::kernel::DOUBLE, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::EDD});
-//        selector("IH", artis::kernel::DOUBLE, {
-//                     PlantModel::THERMAL_TIME,
-//                     ThermalTimeModel::IH});
+        selector("IH", artis::kernel::DOUBLE, {
+                     PlantModel::THERMAL_TIME,
+                     ThermalTimeModel::IH});
 
         //WaterBalanceModel
 //        selector("CSTR", artis::kernel::DOUBLE, {
@@ -130,21 +130,21 @@ public:
         selector("ASSIM", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM});
-//        selector("ASSIM_NET", artis::kernel::DOUBLE, {
-//                     PlantModel::ASSIMILATION,
-//                     AssimilationModel::ASSIM_NET_COR});
-//        selector("ASSIM_POT", artis::kernel::DOUBLE, {
-//                     PlantModel::ASSIMILATION,
-//                     AssimilationModel::ASSIM_POT});
-//        selector("INTERC", artis::kernel::DOUBLE, {
-//                     PlantModel::ASSIMILATION,
-//                     AssimilationModel::INTERC});
+        selector("ASSIM_NET", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::ASSIM_NET_COR});
+        selector("ASSIM_POT", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::ASSIM_POT});
+        selector("INTERC", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::INTERC});
         selector("LAI", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::LAI});
-//        selector("RESP_MAINT", artis::kernel::DOUBLE, {
-//                     PlantModel::ASSIMILATION,
-//                     AssimilationModel::RESP_MAINT});
+        selector("RESP_MAINT", artis::kernel::DOUBLE, {
+                     PlantModel::ASSIMILATION,
+                     AssimilationModel::RESP_MAINT});
 
 //        //StockModel
         selector("DAYDEMAND", artis::kernel::DOUBLE, {
@@ -174,23 +174,20 @@ public:
 
 
         //TilleringModel
-//        selector("NBTILLER", artis::kernel::DOUBLE, {
-//                     PlantModel::TILLERING,
-//                     TilleringModel::NB_TILLERS});
-//        selector("CREATE_TILLER", artis::kernel::DOUBLE, {
-//                     PlantModel::TILLERING,
-//                     TilleringModel::CREATE});
+        selector("CREATE_TILLER", artis::kernel::DOUBLE, {
+                     PlantModel::TILLERING,
+                     TilleringModel::CREATE});
 
         //RootModel
-//        selector("ROOT_DEMAND_COEF", artis::kernel::DOUBLE, {
-//                     PlantModel::ROOT,
-//                     RootModel::ROOT_DEMAND_COEF});
-//        selector("ROOT_DEMAND", artis::kernel::DOUBLE, {
-//                     PlantModel::ROOT,
-//                     RootModel::ROOT_DEMAND});
-//        selector("SURPLUS", artis::kernel::DOUBLE, {
-//                     PlantModel::ROOT,
-//                     RootModel::SURPLUS});
+        selector("ROOT_DEMAND_COEF", artis::kernel::DOUBLE, {
+                     PlantModel::ROOT,
+                     RootModel::ROOT_DEMAND_COEF});
+        selector("ROOT_DEMAND", artis::kernel::DOUBLE, {
+                     PlantModel::ROOT,
+                     RootModel::ROOT_DEMAND});
+        selector("SURPLUS", artis::kernel::DOUBLE, {
+                     PlantModel::ROOT,
+                     RootModel::SURPLUS});
 
         //CulmStockModel
         //PhytomerModel

@@ -273,6 +273,7 @@ public:
         _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
         _root_model->put < double >(t, RootModel::PLANT_PHASE, _phase);
         _root_model->put < double >(t, RootModel::PLANT_STATE, _state);
+        _root_model->put < double >(t, RootModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
         (*_root_model)(t);
 
 //        search_deleted_leaf(t); //on passe avant pour le realloc biomass

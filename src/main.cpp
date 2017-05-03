@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
 
   QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
                                   "dd/MM/yyyy");
+//  parameters.set <std::string>("EndDate", "10/02/2014");
   QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
                                 "dd/MM/yyyy");
   parameters.beginDate = start.toJulianDay();
@@ -71,9 +72,8 @@ int main(int argc, char *argv[]) {
   simulator.init(start.toJulianDay(), parameters);
   simulator.run(context);
 
-
     std::ofstream out("Trace.txt");
-    out << ::Trace::trace().elements().to_string();
+    out << std::fixed << ::Trace::trace().elements().to_string();
     out.close();
 
 //    w.show_trace();

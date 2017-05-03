@@ -285,6 +285,7 @@ public:
         _realocationCoeff = parameters.get < double >("realocationCoeff");
 
         //internals
+        _realloc_biomass = 0;
         _first_day = t;
         _life_span = 0;
         _leaf_phase = LeafModel::INIT;

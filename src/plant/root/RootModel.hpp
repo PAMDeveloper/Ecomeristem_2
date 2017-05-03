@@ -36,7 +36,8 @@ public:
     enum internals { ROOT_DEMAND_COEF, ROOT_DEMAND, SURPLUS };
 
     enum externals { LEAF_DEMAND_SUM, LEAF_LAST_DEMAND_SUM, INTERNODE_DEMAND_SUM,
-                     INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, PLANT_STATE };
+                     INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, PLANT_STATE,
+                     CULM_SURPLUS_SUM };
 
 
     RootModel() {
@@ -52,6 +53,7 @@ public:
         External(INTERNODE_LAST_DEMAND_SUM, &RootModel::_internode_last_demand_sum);
         External(PLANT_PHASE, &RootModel::_plant_phase);
         External(PLANT_STATE, &RootModel::_plant_state);
+        External(CULM_SURPLUS_SUM, &RootModel::_culm_surplus_sum);
     }
 
     virtual ~RootModel()
