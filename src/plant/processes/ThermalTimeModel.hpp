@@ -35,10 +35,10 @@ class ThermalTimeModel : public AtomicModel < ThermalTimeModel >
 public:
     enum tt_state { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
 
-    enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO, TT_LIG,
-                     PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD, IH };
+    enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO,
+                     PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD };
 
-    enum externals {  PLANT_PHASE, PLASTO_DELAY, LIG, PLASTO };
+    enum externals {  PLANT_PHASE, PLASTO_DELAY, PLASTO };
 
 
     ThermalTimeModel() {
@@ -46,7 +46,6 @@ public:
         Internal(STATE, &ThermalTimeModel::_tt_state);
         Internal(DELTA_T, &ThermalTimeModel::_deltaT);
         Internal(TT, &ThermalTimeModel::_TT);
-        Internal(TT_LIG, &ThermalTimeModel::_TT_lig);
         Internal(BOOL_CROSSED_PLASTO, &ThermalTimeModel::_boolCrossedPlasto);
         Internal(PLASTO_VISU, &ThermalTimeModel::_plastoVisu);
         Internal(LIGULO_VISU, &ThermalTimeModel::_liguloVisu);
@@ -54,10 +53,8 @@ public:
         Internal(SLA, &ThermalTimeModel::_sla);
         Internal(DD, &ThermalTimeModel::_DD);
         Internal(EDD, &ThermalTimeModel::_EDD);
-        Internal(IH, &ThermalTimeModel::_IH);
 
         //    external variables
-        External(LIG, &ThermalTimeModel::_lig);
         External(PLASTO_DELAY, &ThermalTimeModel::_plasto_delay);
         External(PLANT_PHASE, &ThermalTimeModel::_plant_phase);
         External(PLASTO, &ThermalTimeModel::_plasto);
@@ -125,17 +122,6 @@ public:
             }
         }
 
-        //TT_Lig
-        if (t != _parameters.beginDate) {
-            if (_lig_1 == _lig) {
-                if (_tt_state == STOCK_AVAILABLE) {
-                    _TT_lig = _TT_lig + _EDD;
-                }
-            } else {
-                _TT_lig = 0;
-            }
-        }
-
         //PhenoStage
         if (_tt_state == STOCK_AVAILABLE) {
             if (_boolCrossedPlasto >= 0) {
@@ -159,14 +145,6 @@ public:
         } else {
             _liguloVisu = _liguloVisu + _EDD;
         }
-
-        //IH
-        if (_tt_state == STOCK_AVAILABLE) {
-            _IH = _lig + std::min(1., _TT_lig / _liguloVisu);
-        }
-
-        //Day step
-        _lig_1 = _lig;
     }
 
 
@@ -191,8 +169,6 @@ public:
         _sla = 0;
         _DD = 0;
         _EDD = 0;
-        _IH = 0;
-        _TT_lig = 0;
     }
 
 private:
@@ -206,11 +182,7 @@ private:
     //    parameters(t)
     double _Ta;
 
-    // vars
-    double _lig_1;
-
     //    internals
-    double _TT_lig;
     int _tt_state;
     double _deltaT;
     double _TT;
@@ -221,11 +193,9 @@ private:
     double _sla;
     double _DD;
     double _EDD;
-    double _IH;
 
     //    externals
     double _plasto;
-    double _lig;
     double _plasto_delay;
     int _plant_phase;
 };

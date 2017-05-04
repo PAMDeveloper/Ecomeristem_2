@@ -51,8 +51,8 @@ public:
     enum internals { LIG, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
-                     INTERNODE_DEMAND_SUM, PLANT_HEIGHT,
-                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO};
+                     INTERNODE_DEMAND_SUM,
+                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH};
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -81,10 +81,11 @@ public:
         Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
         Internal( PAI, &PlantModel::_leaf_blade_area_sum );
         Internal( HEIGHT, &PlantModel::_height );
-        Internal( PLANT_HEIGHT, &PlantModel::_height );
         Internal( PLANT_STATE, &PlantModel::_state );
         Internal( PLANT_PHASE, &PlantModel::_phase );
         Internal( PLASTO, &PlantModel::_plasto );
+        Internal( TT_LIG, &PlantModel::_TT_lig );
+        Internal( IH, &PlantModel::_IH );
     }
 
     virtual ~PlantModel()
@@ -187,7 +188,6 @@ public:
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
         _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, _phase);
-        _thermal_time_model->put < double >(t, ThermalTimeModel::LIG, _lig);
         (*_thermal_time_model)(t);
 
         //Water balance
@@ -251,10 +251,24 @@ public:
         //CulmModel
         compute_culms(t);
 
-        //Lig update
+        //Lig update @TODO : vérifier placement équations TT_lig et IH
+        _lig_1 = _lig;
         mainstem = _culm_models.begin();
         _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG);
-
+        //TT_Lig
+        if (t != _parameters.beginDate) {
+            if (_lig_1 == _lig) {
+                if (_thermal_time_model->get < int >(t, ThermalTimeModel::STATE) == ThermalTimeModel::STOCK_AVAILABLE) {
+                    _TT_lig = _TT_lig + _thermal_time_model->get < double >(t, ThermalTimeModel::EDD);
+                }
+            } else {
+                _TT_lig = 0;
+            }
+        }
+        //IH
+        if (_thermal_time_model->get < int >(t, ThermalTimeModel::STATE) == ThermalTimeModel::STOCK_AVAILABLE) {
+            _IH = _lig + std::min(1., _TT_lig / _thermal_time_model->get < double >(t, ThermalTimeModel::LIGULO_VISU));
+        }
 
         //Assimilation
         _assimilation_model->put < double >(t, AssimilationModel::CSTR,
@@ -427,6 +441,7 @@ public:
 
         //internal variables (local)
         _lig = 0;
+        _lig_1 = 0;
         _leaf_biomass_sum = 0;
         _leaf_demand_sum = 0;
         _leaf_last_demand_sum = 0;
@@ -445,6 +460,8 @@ public:
         _plasto = parameters.get < double >("plasto_init");
         _ligulo = _plasto * _coef_ligulo;
         _MGR = parameters.get < double >("MGR_init");
+        _TT_lig = 0;
+        _IH = 0;
 
         //
         _last_time = 0;
@@ -500,7 +517,9 @@ private:
     double _culm_deficit_sum;
     double _culm_surplus_sum;
     double _height;
-
+    double _lig_1;
+    double _TT_lig;
+    double _IH;
 
     //internal states
     int _phase;

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
                                   "dd/MM/yyyy");
-//  parameters.set <std::string>("EndDate", "10/02/2014");
+  parameters.set <std::string>("EndDate", "10/02/2014");
   QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
                                 "dd/MM/yyyy");
   parameters.beginDate = start.toJulianDay();
@@ -63,9 +63,6 @@ int main(int argc, char *argv[]) {
   EcomeristemContext context(start.toJulianDay(), end.toJulianDay());
 
   ::Trace::trace().clear();
-//  qDebug() << ::Trace::trace().elements().max_size();
-//  return a.exec();
-
   EcomeristemSimulator simulator(new PlantModel, globalParameters);
   observer::PlantView *view = new observer::PlantView();
   simulator.attachView("plant", view);
@@ -73,7 +70,7 @@ int main(int argc, char *argv[]) {
   simulator.run(context);
 
     std::ofstream out("Trace.txt");
-    out << std::fixed << ::Trace::trace().elements().filter_type(artis::utils::INIT).to_string();
+    out << std::fixed << ::Trace::trace().elements().to_string();
     out.close();
 
 //    w.show_trace();
