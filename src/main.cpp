@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   simulator.run(context);
 
     std::ofstream out("Trace.txt");
-    out << std::fixed << ::Trace::trace().elements().to_string();
+    out << std::fixed << ::Trace::trace().elements().filter_type(artis::utils::INIT).to_string();
     out.close();
 
 //    w.show_trace();

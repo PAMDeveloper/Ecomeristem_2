@@ -127,6 +127,7 @@ public:
         }
 
 
+        //@TODO Ajouter le calcul avec TestIC dans l'ancienne Génération et pas seulement dans NG
         //ReductionLER
         if (_ftsw < _thresLER) {
             _reduction_ler = std::max(1e-4, ((1. / _thresLER) * _ftsw) *
@@ -163,8 +164,8 @@ public:
         step_state();
 
         //PlastoDelay
-        _plasto_delay = std::min(((_delta_t > _exp_time) ? _exp_time :
-                                                           _delta_t) * (-1. + _reduction_ler), 0.);
+        _plasto_delay = std::min(((_delta_t > _exp_time) ? _exp_time :_delta_t)
+                                 * (-1. + _reduction_ler), 0.);
 
         //Width
         _width = _len * _WLR / _LL_BL;

@@ -213,6 +213,7 @@ public:
         _last_demand = 0;
         _first_day = t;
         _time_from_app = 0;
+        _inter_predim = 0;
 
     }
 

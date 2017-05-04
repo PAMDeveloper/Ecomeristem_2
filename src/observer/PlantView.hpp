@@ -127,10 +127,10 @@ public:
 //                     WaterBalanceModel::SWC});
 
         //AssimilationModel
-        selector("ASSIM", artis::kernel::DOUBLE, {
+        selector("ASSIM_NET", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM});
-        selector("ASSIM_NET", artis::kernel::DOUBLE, {
+        selector("ASSIM", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::ASSIM_NET_COR});
         selector("ASSIM_POT", artis::kernel::DOUBLE, {
