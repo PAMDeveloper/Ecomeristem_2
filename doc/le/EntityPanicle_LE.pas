@@ -196,6 +196,9 @@ begin
   parameterTmp := TParameter.Create('grain_per_cm', grain_per_cm);
   entityPanicle.AddTAttribute(parameterTmp);
 
+  attributeTmp := TAttributeTmp.Create('reservoir_dispo_panicle');
+  entityPanicle.AddTAttribute(attributeTmp);
+
   entityPanicle.InternalConnect(['DDInitiation',
                                  'DDRealization',
                                  'testIc',
@@ -238,36 +241,6 @@ begin
   // connection port <-> attribut pour 'computePanicleFertileGrainNb'
   procTmp.ExternalConnect(['grain_nb','fertile_grain_number']);
 
-{  // creation de 'computePanicleDayDemand'
-  procTmp := TProcInstanceInternal.Create('computePanicleDayDemand', Mult2ValuesDyn,['inValue1','kIn','inValue2','kIn','outValue','kOut']);
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(40);
-  procTmp.SetActiveState(1);
-  entityPanicle.AddTInstance(procTmp);
-
-  // connection port <-> attribut pour 'computePanicleDayDemand'
-  procTmp.ExternalConnect(['gdw_empty','grain_nb','day_demand_panicle']);
-
-  // creation de 'computePanicleWeight'
-  procTmp := TProcInstanceInternal.Create('computePanicleWeight', UpdateAddDyn,['quantity','kIn','attributeValue','kInOut']);
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(50);
-  procTmp.SetActiveState(1);
-  entityPanicle.AddTInstance(procTmp);
-
-  // connection port <-> attribut pour 'computePanicleWeight'
-  procTmp.ExternalConnect(['day_demand_panicle','weight_panicle']);
-
-  // creation de 'computePanicleLength'
-  procTmp := TProcInstanceInternal.Create('computePanicleLength', DivideDyn,['inValue1','kIn','inValue2','kIn','outValue','kOut']);
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(60);
-  procTmp.SetActiveState(1);
-  entityPanicle.AddTInstance(procTmp);
-
-  // connection port <-> attribut pour 'computePanicleLength'
-  procTmp.ExternalConnect(['grain_nb','grain_per_cm','length_panicle']);     }
-
   // --------------------------------------------------------------------------
   // procedure à l'état 2 (TRANSITION_TO_FLO)
   // --------------------------------------------------------------------------
@@ -286,25 +259,35 @@ begin
   // procedures à l'état 3 (FLO)
   // --------------------------------------------------------------------------
 
-  procTmp := TProcInstanceInternal.Create('computePanicleDayDemandFlo_LE', ComputePanicleDayDemandFlo_LEDyn,['fillingRate', 'kIn', 'Tair', 'kIn', 'Tb', 'kIn', 'fcstr', 'kIn', 'testIc', 'kIn', 'panicleDayDemand', 'kOut']);
+  procTmp := TProcInstanceInternal.Create('computePanicleReservoirDispo',ComputePanicleReservoirDispoDyn,['fertileGrainNumber', 'kIn', 'gdw', 'kIn', 'weight', 'kIn', 'reservoirDispo', 'kOut']);
+  procTmp.SetExeStep(1);
+  procTmp.SetExeOrder(900);
+  procTmp.SetActiveState(3);
+  entityPanicle.AddTInstance(procTmp);
+
+  // connection port <-> attribut pour 'computePanicleReservoirDispo'
+  procTmp.ExternalConnect(['fertile_grain_number', 'gdw', 'weight_panicle', 'reservoir_dispo_panicle']);
+
+
+  procTmp := TProcInstanceInternal.Create('computePanicleDayDemandFlo_LE',ComputePanicleDayDemandFlo_LEDyn,['grainFillingRate', 'kIn', 'Tair', 'kIn', 'Tb', 'kIn', 'fcstr', 'kIn', 'testIc', 'kIn', 'reservoirDispo', 'kIn', 'panicleDayDemand', 'kOut']);
   procTmp.SetExeStep(1);
   procTmp.SetExeOrder(1000);
   procTmp.SetActiveState(3);
   entityPanicle.AddTInstance(procTmp);
 
   // connection port <-> attribut pour 'computePanicleDayDemandFlo_LE'
-  procTmp.ExternalConnect(['grain_filling_rate','Tair','Tb','fcstr','testIc','day_demand_panicle']);
+  procTmp.ExternalConnect(['grain_filling_rate','Tair','Tb','fcstr','testIc','reservoir_dispo_panicle','day_demand_panicle']);
 
 
   // creation de 'computePanicleWeight'
-  procTmp := TProcInstanceInternal.Create('computePanicleWeightFlo_LE', ComputePanicleWeightFlo_LEDyn,['gdwEmpty', 'kIn', 'grainNb', 'kIn', 'panicleDayDemand', 'kIn', 'firstDayOfFLO', 'kInOut', 'panicleWeight', 'kInOut']);
+  procTmp := TProcInstanceInternal.Create('computePanicleWeightFlo_LE', ComputePanicleWeightFlo_LEDyn,['panicleDayDemand', 'kIn', 'panicleWeight', 'kInOut']);
   procTmp.SetExeStep(1);
   procTmp.SetExeOrder(1100);
   procTmp.SetActiveState(3);
   entityPanicle.AddTInstance(procTmp);
 
   // connection port <-> attribut pour 'computePanicleWeightFlo'
-  procTmp.ExternalConnect(['gdw_empty','grain_nb','day_demand_panicle','firstDayOfFLO','weight_panicle']);
+  procTmp.ExternalConnect(['day_demand_panicle','weight_panicle']);
 
   procTmp := TProcInstanceInternal.Create('computePanicleFilledGrainNbFlo_LE', ComputePanicleFilledGrainNbFlo_LEDyn,['fertileGrainNb', 'kIn', 'panicleWeight', 'kIn', 'gdw', 'kIn', 'filledGrainNb', 'kOut']);
   procTmp.SetExeStep(1);

@@ -96,8 +96,11 @@ procedure TillerManagerCreateFirstLeaf(var instance : TEntityInstance; const dat
 procedure TillerManagerCreateFirstIN(var instance : TEntityInstance; const date : TDateTime = 0);
 procedure TillerManagerCreateOthersLeaf(var instance : TEntityInstance; const date : TDateTime = 0; const n : Integer = 0);
 procedure TillerManagerCreateOthersIN(var instance : TEntityInstance; const date : TDateTime = 0; const n : Integer = 0);
-procedure TillersTransitionToPre_PI_LE(var instance : TEntityInstance);
-procedure TillersTransitionToState(var instance : TEntityInstance; const state : Integer);
+procedure TillersTransitionToEndfilling_LE(var instance : TEntityInstance; const oldState : Integer);
+procedure TillersTransitionToMaturity_LE(var instance : TEntityInstance; const oldState : Integer);
+procedure TillersTransitionToPre_PI_LE(var instance : TEntityInstance; const oldState : Integer);
+procedure TillersTransitionToPI_LE(var instance : TEntityInstance; const oldState : Integer);
+procedure TillersTransitionToState(var instance : TEntityInstance; const state : Integer; const oldState : Integer);
 procedure TillersTransitionToElong(var instance : TEntityInstance);
 procedure TillersStockIndividualization(var instance : TEntityInstance; const date : TDateTime);
 procedure TillerManagerPhytomerPanicleActivation(var instance : TEntityInstance);
@@ -109,6 +112,10 @@ procedure RootTransitionToPI(var instance : TEntityInstance);
 procedure RootTransitionToFLO(var instance : TEntityInstance);
 procedure PanicleTransitionToFLO(var instance : TEntityInstance);
 procedure PeduncleTransitionToFLO(var instance : TEntityInstance);
+procedure PanicleTransitionToEndFilling(var instance : TEntityInstance);
+procedure PeduncleTransitionToEndfilling(var instance : TEntityInstance);
+procedure PanicleTransitionToMaturity(var instance : TEntityInstance);
+procedure PeduncleTransitionToMaturity(var instance : TEntityInstance);
 procedure CreateInitialPhytomers_LE(var instance : TEntityInstance; const date : TDateTime = 0);
 procedure EcoMeristemFirstINCreation(var instance : TEntityInstance; const date : TDateTime = 0);
 procedure EcoMeristemFirstLeafCreation(var instance : TEntityInstance; const date : TDateTime = 0);
@@ -120,6 +127,7 @@ procedure StoreThermalTimeAtPI(var instance : TEntityInstance; const date : TDat
 procedure StorePhenostageAtPre_Flo(var instance : TEntityInstance; const date : TDateTime = 0; const phenostage : Double = 0);
 procedure SetAllInstanceToEndFilling(var instance : TEntityInstance);
 procedure TillerStorePhenostageAtPre_Flo(var instance : TEntityInstance; const date : TDateTime = 0; const phenostage : Double = 0);
+procedure TillerStorePhenostageAtPI(var instance : TEntityInstance; const date : TDateTime = 0; const phenostage : Double = 0);
 function FindLastLigulatedLeafNumberOnCulm(var instance : TEntityInstance) : String;
 function FindLeafOnSameRankWidth(var instance : TEntityInstance; rank : String) : Double;
 function FindLeafOnSameRankLength(var instance : TEntityInstance; rank : String) : Double;
@@ -393,6 +401,8 @@ var
    stock : Double;
    newStateStr, oldStateStr : string;
 begin
+
+  newState := 0;
 
   if (state <> DEAD) then
   begin
@@ -726,10 +736,12 @@ var
   newLeaf : TEntityInstance;
   attributeTmp : TAttribute;
   exeOrder : Integer;
-  pos : Integer;
+//  pos : Integer;
   rank : Integer;
   previousLeafPredimName, currentLeafPredimName : String;
 begin
+  rank := 0;
+//  pos := -1;
   if IsInitiation then
   begin
     // creation d'une premiere feuille
@@ -737,7 +749,7 @@ begin
     instance.GetTAttribute('leafNb').SetSample(sample);
     name := 'L1_' + instance.GetName();
     exeOrder := 2000;
-    pos := 1;
+//    pos := 1;
   end
   else
   begin
@@ -745,7 +757,7 @@ begin
     rank := FindGreatestSuffixforASpecifiedCategory(instance,'Leaf') + 1;
     name := 'L' + FloatToStr(rank) + '_' + instance.GetName();
     exeOrder := FindFirstEmptyPlaceAfterASpecifiedCategory(instance,'Leaf');
-    pos := 0;
+//    pos := 0;
   end;
   refMeristem := instance.GetFather() as TEntityInstance;
   Lef1 := refMeristem.GetTAttribute('Lef1').GetSample(date).value;
@@ -997,21 +1009,21 @@ var
   sample : TSample;
   exeOrder, pos : Integer;
   internodeNumber : Integer;
-  rank : Double;
+//  rank : Double;
   name : String;
   TT : Double;
   TT_PI_Attribute : TAttribute;
-  attributeTmp : TAttribute;
+//  attributeTmp : TAttribute;
   refMeristem : TEntityInstance;
   newInternode : TEntityInstance;
   MGR, plasto, Tb, resp_LER, resp_INER, LIN1, IN_A, IN_B, density_IN : Double;
   MaximumReserveInInternode : Double;
   leaf_width_to_IN_diameter, leaf_length_to_IN_length : Double;
   leafLength, leafWidth : Double;
-  previousInternodePredimName, currentInternodePredimName : String;
-  sampleTmp : TSample;
+//  previousInternodePredimName, currentInternodePredimName : String;
+//  sampleTmp : TSample;
 
-  i : integer;
+//  i : integer;
 
 begin
   refMeristem := instance.GetFather() as TEntityInstance;
@@ -1053,7 +1065,7 @@ begin
     exeOrder := FindFirstEmptyPlaceAfterASpecifiedCategory(instance,'Internode');
     pos := 0;
   end;
-  rank := instance.GetTAttribute('leafNb').GetSample(date).value - 1;
+//  rank := instance.GetTAttribute('leafNb').GetSample(date).value - 1;
   internodeNumber := StrToInt(FindLastLigulatedLeafNumberOnCulm(instance));
   name := 'IN' + IntToStr(internodeNumber) + '_' + instance.GetName();
   leafLength := FindLeafOnSameRankLength(instance, intToStr(internodeNumber));
@@ -1104,14 +1116,15 @@ end;
 procedure TillerManagerPhytomerInternodeCreation(var instance : TEntityInstance; const date : TDateTime; const IsFirstDayOfPI : Boolean = False; const plantStock : Double = 0);
 var
   refMeristem, newInterNode : TEntityInstance;
-  nb_leaf_max_after_PI, internodeNb : Double;
+//  nb_leaf_max_after_PI,
+  internodeNb : Double;
   exeOrder : Integer;
   sample : TSample;
   name : String;
 begin
   refMeristem := instance.GetFather() as TEntityInstance;
 
-  nb_leaf_max_after_PI := refMeristem.GetTAttribute('nb_leaf_max_after_PI').GetSample(date).value;
+//  nb_leaf_max_after_PI := refMeristem.GetTAttribute('nb_leaf_max_after_PI').GetSample(date).value;
   internodeNb := instance.GetTAttribute('internodeNb').GetSample(date).value;
   SRwriteln('Nombre d''entrenoeud : ' + FloatToStr(internodeNb));
 
@@ -1123,7 +1136,7 @@ begin
   SRwriteln('****  creation de l''entrenoeud : ' + name + '  ****');
   SRwriteln('ExeOrder : ' + IntToStr(ExeOrder));
 
-  newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
   sample.date := date;
   sample.value := internodeNb + 1;
@@ -1163,23 +1176,24 @@ var
   sample : TSample;
   exeOrder, pos : Integer;
   internodeNumber : Integer;
-  rank : Double;
+//  rank : Double;
   name, instanceName : String;
   TT : Double;
   TT_PI_Attribute : TAttribute;
-  attributeTmp : TAttribute;
+//  attributeTmp : TAttribute;
   refMeristem : TEntityInstance;
   newInternode : TEntityInstance;
   MGR, plasto, Tb, resp_LER, resp_INER, LIN1, IN_A, IN_B, density_IN : Double;
-  MaximumReserveInInternode, stock_mainstem : Double;
+  MaximumReserveInInternode : Double;
   leaf_width_to_IN_diameter, leaf_length_to_IN_length : Double;
-  leafLength, leafWidth : Double;
-  previousInternodePredimName, currentInternodePredimName : String;
-  sampleTmp : TSample;
+  leafLength : Double;
+//  previousInternodePredimName, currentInternodePredimName : String;
+//  sampleTmp : TSample;
 
-  i : integer;
+//  i : integer;
 
 begin
+  internodeNumber := 0;
   refMeristem := instance.GetFather() as TEntityInstance;
   sumOfTillerLeafBiomass := instance.GetTAttribute('sumOfTillerLeafBiomass').GetSample(date).value;
   SumOfPlantBiomass := refMeristem.GetTAttribute('sumOfLeafBiomass').GetSample(date).value;
@@ -1207,7 +1221,7 @@ begin
 
   name := 'Ped' + instanceName;
   leafLength := FindLeafOnSameRankLength(instance, intToStr(internodeNumber));
-  leafWidth := FindLeafOnSameRankWidth(instance, intToStr(internodeNumber));
+//  leafWidth := FindLeafOnSameRankWidth(instance, intToStr(internodeNumber));
   MGR := refMeristem.GetTAttribute('MGR').GetSample(date).value;
   plasto := refMeristem.GetTAttribute('plasto').GetSample(date).value;
   Tb := refMeristem.GetTAttribute('Tb').GetSample(date).value;
@@ -1218,7 +1232,7 @@ begin
   IN_B := refMeristem.GetTAttribute('IN_B').GetSample(date).value;
   density_IN := refMeristem.GetTAttribute('density_IN').GetSample(date).value;
   MaximumReserveInInternode := refMeristem.GetTAttribute('maximumReserveInInternode').GetSample(date).value;
-  stock_mainstem := refMeristem.GetTAttribute('stock_mainstem').GetSample(date).value;
+//  stock_mainstem := refMeristem.GetTAttribute('stock_mainstem').GetSample(date).value;
 
   leaf_width_to_IN_diameter := refMeristem.GetTAttribute('leaf_width_to_IN_diameter').GetSample(date).value;
   leaf_length_to_IN_length := refMeristem.GetTAttribute('leaf_length_to_IN_length').GetSample(date).value;
@@ -1255,25 +1269,21 @@ end;
 
 procedure TillerManagerPhytomerPeduncleCreation(var instance : TEntityInstance; const date : TDateTime; const IsFirstDayOfPI : Boolean = False; const plantStock : Double = 0);
 var
-  sumOfTillerLeafBiomass, SumOfPlantBiomass : Double;
+//  sumOfTillerLeafBiomass, SumOfPlantBiomass : Double;
   sample : TSample;
-  exeOrder, pos : Integer;
-  internodeNumber : Integer;
-  rank : Double;
+  exeOrder : Integer;
+//  internodeNumber : Integer;
+//  rank : Double;
   name, instanceName : String;
   TT : Double;
   TT_PI_Attribute : TAttribute;
-  attributeTmp : TAttribute;
+//  attributeTmp : TAttribute;
   refMeristem : TEntityInstance;
   newInternode : TEntityInstance;
-  MGR, plasto, Tb, resp_LER, resp_INER, LIN1, IN_A, IN_B, density_IN : Double;
-  MaximumReserveInInternode, stock_mainstem : Double;
-  leaf_width_to_IN_diameter, leaf_length_to_IN_length : Double;
-  leafLength, leafWidth : Double;
-  previousInternodePredimName, currentInternodePredimName : String;
-  sampleTmp : TSample;
+//  previousInternodePredimName, currentInternodePredimName : String;
+//  sampleTmp : TSample;
 
-  i : integer;
+//  i : integer;
 
 begin
   refMeristem := instance.GetFather() as TEntityInstance;
@@ -1288,7 +1298,7 @@ begin
   TT_PI_Attribute.SetSample(Sample);
   SRwriteln('TT_PI : ' + floattostr(Sample.value));
 
-  pos := 1;
+//  pos := 1;
 
   instanceName := instance.GetName();
   Delete(instanceName, 1, 2);
@@ -1432,7 +1442,7 @@ begin
       phenoStageAtPI := instance.GetTAttribute('phenoStageAtPI').GetSample(date).value;
       currentPhenoStage := instance.GetTAttribute('phenoStage').GetSample(date).value;
 
-      if (plantStock >= 0) then
+      if (plantStock > 0) then
       begin
         if (boolCrossedPlasto >= 0) then
         begin
@@ -1572,10 +1582,14 @@ begin
   SRwriteln('****  creation de la feuille : ' + name + '  ****');
 
   slope_LL_BL_at_PI := refMeristem.GetTAttribute('slope_LL_BL_at_PI').GetSample(date).value;
-  if (currentPhenoStage > phenoStageAtPi) then
-    LL_BL_New := LL_BL + slope_LL_BL_at_PI * (currentPhenoStage - phenoStageAtPI)
+  if ((currentPhenoStage > phenoStageAtPI) and (phenoStageAtPI <> 0)) then
+  begin
+    LL_BL_New := LL_BL + slope_LL_BL_at_PI * (currentPhenoStage - phenoStageAtPI);
+  end
   else
+  begin
     LL_BL_New := LL_BL;
+  end;
 
   newLeaf := ImportLeaf_LE(name, Lef1, MGR, plasto, ligulo, WLR, LL_BL_New, allo_area, G_L, Tb, resp_LER, coeffLifespan, mu, pos, 0);
 
@@ -1723,7 +1737,7 @@ begin
                            'P']);
 
   sample := instance.GetTAttribute('leafNb').GetCurrentSample();
-  sample.value := sample.value+1;
+  sample.value := sample.value + 1;
   sample.date := date;
   instance.GetTAttribute('leafNb').SetSample(sample);
   instance.SortTInstance();
@@ -1799,6 +1813,7 @@ const
   ELONG = 9;
   PRE_ELONG = 10;
   ENDFILLING = 12;
+  MATURITY = 13;
   DEAD = 1000;
 var
   newState : Integer;
@@ -1817,6 +1832,7 @@ var
   nameOfLastLigulatedLeafOnTiller : String;
   fatherState : Integer;
   sample : TSample;
+  previousState : Double;
   phenoStageAtPreFlo, phenostage_PRE_FLO_to_FLO, phenostage : Double;
 begin
   case state of
@@ -1885,6 +1901,7 @@ begin
         newState := state;
         newStateStr := 'FERTILECAPACITY';
       end;
+
     PRE_PI :
       begin
         SRwriteln('PRE_PI');
@@ -1892,8 +1909,10 @@ begin
         // initiation d'une nouvelle feuille a chaque nouveau plasto
         boolCrossedPlasto := instance.GetTAttribute('boolCrossedPlasto').GetSample(date).value;
         plantStock := instance.GetTAttribute('plantStock').GetSample(date).value;
+        previousState := instance.GetTAttribute('previousState').GetSample(date).value;
         SRwriteln('boolCrossedPlasto --> ' + FloatToStr(boolCrossedPlasto));
         SRwriteln('plantStock        --> ' + FloatToStr(plantStock));
+        SRwriteln('previousState     --> ' + FloatToStr(previousState));
         if ((boolCrossedPlasto >= 0) and (plantStock > 0)) then // New plastochron et stock disponible
         begin
           // creation d'une nouvelle feuille
@@ -1902,11 +1921,17 @@ begin
           TillerManagerPhytomerInternodeCreation(instance, date, false, plantStock);
           SRwriteln('TillerManagerPhytomerLeafCreation');
           TillerManagerPhytomerLeafCreation(instance, date, false, false);
+          if (previousState = 9)then
+          begin
+            SRwriteln('previous state --> ' + FloatToStr(previousState) + ' on allonge des IN meme a PRE_PI');
+            TillerManagerStartInternodeElongation(instance, date, Trunc(currentPhenoStage));
+          end;
         end;
         // pas de changement d etat
         newState := state;
         newStateStr := 'PRE_PI';
       end;
+
     PI :
       begin
         oldStateStr := 'PI';
@@ -1970,7 +1995,7 @@ begin
               begin
                 SRwriteln('currentPhenoStage = (phenoStageAtPI + nb_leaf_max_after_PI + 1)');
                 SRwriteln('--- Appel de TillerManagerStartInternodeElongation ---');
-                TillerManagerStartInternodeElongation(instance, date, Trunc(currentPhenoStage));
+                //TillerManagerStartInternodeElongation(instance, date, Trunc(currentPhenoStage));
                 SRwriteln('--- Appel de TillerManagerPhytomerPeduncleActivation ---');
                 TillerManagerPhytomerPeduncleActivation(instance, date);
                 TillerStorePhenostageAtPre_Flo(instance, date, currentPhenoStage);
@@ -1996,6 +2021,7 @@ begin
         // pas de changement d'etat
         // ------------------------
       end;
+
     PRE_FLO :
       begin
         oldStateStr := 'PRE_FLO';
@@ -2019,12 +2045,14 @@ begin
           newStateStr := 'PRE_FLO';
         end;
       end;
+
     FLO :
       begin
         oldStateStr := 'FLO';
         newState := FLO;
         newStateStr := 'FLO';
       end;
+
     DEAD :
       begin
         oldStateStr := 'DEAD';
@@ -2048,6 +2076,7 @@ begin
           boolCrossedPlasto := instance.GetTAttribute('boolCrossedPlasto').GetSample(date).value;
           plantStock := instance.GetTAttribute('plantStock').GetSample(date).value;
           currentPhenoStage := instance.GetTAttribute('phenoStage').GetSample(date).value;
+          SRwriteln('currentPhenoStage --> ' + FloatToStr(currentPhenoStage));
           if ((boolCrossedPlasto >= 0) and (plantStock > 0)) then // New plastochron et stock disponible
           begin
             TillerManagerPhytomerInternodeCreation(instance, date, false, plantStock);
@@ -2066,9 +2095,22 @@ begin
         begin
           oldStateStr := 'PRE_ELONG';
           nameOfLastLigulatedLeafOnTiller := FindLastLigulatedLeafNumberOnCulm(instance);
-          if (nameOfLastLigulatedLeafOnTiller = '') then
+          if (nameOfLastLigulatedLeafOnTiller = '-1') then
           begin
             SRwriteln('Pas de feuille ligulee sur la talle, on reste en PRE_ELONG');
+
+            boolCrossedPlasto := instance.GetTAttribute('boolCrossedPlasto').GetSample(date).value;
+            plantStock := instance.GetTAttribute('plantStock').GetSample(date).value;
+            currentPhenoStage := instance.GetTAttribute('phenoStage').GetSample(date).value;
+            if ((boolCrossedPlasto >= 0) and (plantStock > 0)) then
+            begin
+              TillerManagerPhytomerInternodeCreation(instance, date, false, plantStock);
+              SRwriteln('Internode creation');
+              TillerManagerPhytomerLeafCreation(instance, date, false, false);
+              SRwriteln('Leaf creation');
+            end;
+
+
             newState := PRE_ELONG;
             newStateStr := 'PRE_ELONG';
           end
@@ -2103,6 +2145,13 @@ begin
           oldStateStr := 'ENDFILLING';
           newState := ENDFILLING;
           newStateStr := 'ENDFILLING';
+        end;
+
+      MATURITY :
+        begin
+          oldStateStr := 'MATURITY';
+          newState := MATURITY;
+          newStateStr := 'MATURITY';
         end;
 
       // ETAT NON DEFINI :
@@ -2155,9 +2204,13 @@ begin
   slope_LL_BL_at_PI := instance.GetTAttribute('slope_LL_BL_at_PI').GetSample(date).value;
   nbleaf_pi := instance.GetTAttribute('nbleaf_pi').GetSample(date).value;
   if LL_BL_MODIFIED then
-    LL_BL_New := LL_BL + slope_LL_BL_at_PI * (n - nbleaf_pi)
+  begin
+    LL_BL_New := LL_BL + slope_LL_BL_at_PI * (n - nbleaf_pi);
+  end
   else
+  begin
     LL_BL_New := LL_BL;
+  end;
 
   SRwriteln('LL_BL_New --> ' + FloatToStr(LL_BL_New));
   SRwriteln('****  creation de la feuille : ' + name + '  ****');
@@ -2203,16 +2256,16 @@ begin
   // l'attribut 'predimOfNewLeaf' et realise une connectique
   // port 'predimOfCurrentLeaf' de feuille L(n-1) <-> attribut 'predimOfNewLeaf'
   // TODO -u Model : ce qui a ci-dessous risque de crasher lorsque trop de destruction de feuille...
-  if(n>=3) then
+  if(n >= 3) then
   begin
-    if (instance.GetTInstance('L' + FloatToStr(n-2)) <> nil) then
+    if (instance.GetTInstance('L' + FloatToStr(n - 2)) <> nil) then
     begin
-      refPort := instance.GetTInstance('L' + FloatToStr(n-2)).GetTPort('predimOfCurrentLeaf');
+      refPort := instance.GetTInstance('L' + FloatToStr(n - 2)).GetTPort('predimOfCurrentLeaf');
       refPort.ExternalUnconnect(1);
     end;
 
     refAttribute := instance.GetTAttribute('predimOfNewLeaf');
-    instance.GetTInstance('L' + FloatToStr(n-1)).GetTPort('predimOfCurrentLeaf').ExternalConnect(refAttribute);
+    instance.GetTInstance('L' + FloatToStr(n - 1)).GetTPort('predimOfCurrentLeaf').ExternalConnect(refAttribute);
   end;
 end;
 
@@ -2634,7 +2687,7 @@ begin
 
   SRwriteln('****  creation de l''entrenoeud : ' + name + '  ****');
 
-  newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+  newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
 
   sample.date := date;
   sample.value := n + nb_leaf_max_after_PI;
@@ -3329,7 +3382,7 @@ begin
               MeristemManagerLeafCreation(instance, date, n, false);
               MeristemManagerInternodeCreation(instance, date, true, n , stock);
               MeristemManagerPanicleCreation(instance, date);
-              TillersTransitionToPre_PI_LE(instance);
+              TillersTransitionToPre_PI_LE(instance, 0);
               RootTransitionToPI(instance);
               newState := PI;
             end
@@ -3370,7 +3423,7 @@ begin
               MeristemManagerLeafCreation(instance, date, n, false);
               MeristemManagerInternodeCreation(instance, date, true, n , stock);
               MeristemManagerPanicleCreation(instance, date);
-              TillersTransitionToPre_PI_LE(instance);
+              TillersTransitionToPre_PI_LE(instance, 0);
               RootTransitionToPI(instance);
               newState := PI;              
 	          end;
@@ -3634,112 +3687,123 @@ var
   stock, SumOfBiomassLeafMainstem, SumOfPlantBiomass, activeLeavesNb : Double;
   leaf_length_to_IN_length, slope_length_IN : Double;
   IN_length_to_IN_diam, coef_lin_IN_diam : Double;
+  phenosStageAtCreation : Integer;
   sample : TSample;
   StockMainstem_Attribute : TAttribute;
 begin
   refMeristem := (instance.GetFather() as TEntityInstance);
   activeLeavesNb := instance.GetTAttribute('activeLeavesNb').GetSample(date).value;
+  phenosStageAtCreation := Trunc((instance as TEntityInstance).GetTAttribute('phenoStageAtCreation').GetCurrentSample().value);
   internodeNumber := FindLastLigulatedLeafNumberOnCulm(instance);
-  SRwriteln('internode number : ' + internodeNumber);
-  name := 'IN' + internodeNumber;
+  SRwriteln('internodeNumber --> ' + internodeNumber);
+  if (internodeNumber = '-1') then
+  begin
+    SRwriteln('Pas de feuille ligulee sur la talle, je passe mon tour');
+  end
+  else
+  begin
+    internodeNumber := IntToStr(n - phenosStageAtCreation);
+    SRwriteln('internode number : ' + internodeNumber);
+    name := 'IN' + internodeNumber;
 
-  entityInternode := FindInternodeAtRank(instance, internodeNumber);
+    entityInternode := FindInternodeAtRank(instance, internodeNumber);
 
-  SRwriteln('L''entrenoeud : ' + entityInternode.GetName() + ' commence de s''allonger');
+    SRwriteln('L''entrenoeud : ' + entityInternode.GetName() + ' commence de s''allonger');
 
-  leafLength := FindLeafOnSameRankLength(instance, internodeNumber);
-  leafWidth := FindLeafOnSameRankWidth(instance, internodeNumber);
-  MGR := refMeristem.GetTAttribute('MGR').GetSample(date).value;
-  plasto := refMeristem.GetTAttribute('plasto').GetSample(date).value;
-  ligulo := refMeristem.GetTAttribute('ligulo').GetSample(date).value;
-  Tb := refMeristem.GetTAttribute('Tb').GetSample(date).value;
-  resp_LER := refMeristem.GetTAttribute('resp_LER').GetSample(date).value;
-  resp_INER := resp_LER;
-  LIN1 := refMeristem.GetTAttribute('LIN1').GetSample(date).value;
-  IN_A := refMeristem.GetTAttribute('IN_A').GetSample(date).value;
-  IN_B := refMeristem.GetTAttribute('IN_B').GetSample(date).value;
-  density_IN := refMeristem.GetTAttribute('density_IN').GetSample(date).value;
-  MaximumReserveInInternode := refMeristem.GetTAttribute('maximumReserveInInternode').GetSample(date).value;
-  stock_tiller := instance.GetTAttribute('stock_tiller').GetSample(date).value;
-  leaf_width_to_IN_diameter := refMeristem.GetTAttribute('leaf_width_to_IN_diameter').GetSample(date).value;
-  leaf_length_to_IN_length := refMeristem.GetTAttribute('leaf_length_to_IN_length').GetSample(date).value;
-  slope_length_IN := refMeristem.GetTAttribute('slope_length_IN').GetSample(date).value;
-  IN_length_to_IN_diam := refMeristem.GetTAttribute('IN_length_to_IN_diam').GetSample(date).value;
-  coef_lin_IN_diam := refMeristem.GetTAttribute('coef_lin_IN_diam').GetSample(date).value;
+    leafLength := FindLeafOnSameRankLength(instance, internodeNumber);
+    leafWidth := FindLeafOnSameRankWidth(instance, internodeNumber);
+    MGR := refMeristem.GetTAttribute('MGR').GetSample(date).value;
+    plasto := refMeristem.GetTAttribute('plasto').GetSample(date).value;
+    ligulo := refMeristem.GetTAttribute('ligulo').GetSample(date).value;
+    Tb := refMeristem.GetTAttribute('Tb').GetSample(date).value;
+    resp_LER := refMeristem.GetTAttribute('resp_LER').GetSample(date).value;
+    resp_INER := resp_LER;
+    LIN1 := refMeristem.GetTAttribute('LIN1').GetSample(date).value;
+    IN_A := refMeristem.GetTAttribute('IN_A').GetSample(date).value;
+    IN_B := refMeristem.GetTAttribute('IN_B').GetSample(date).value;
+    density_IN := refMeristem.GetTAttribute('density_IN').GetSample(date).value;
+    MaximumReserveInInternode := refMeristem.GetTAttribute('maximumReserveInInternode').GetSample(date).value;
+    stock_tiller := instance.GetTAttribute('stock_tiller').GetSample(date).value;
+    leaf_width_to_IN_diameter := refMeristem.GetTAttribute('leaf_width_to_IN_diameter').GetSample(date).value;
+    leaf_length_to_IN_length := refMeristem.GetTAttribute('leaf_length_to_IN_length').GetSample(date).value;
+    slope_length_IN := refMeristem.GetTAttribute('slope_length_IN').GetSample(date).value;
+    IN_length_to_IN_diam := refMeristem.GetTAttribute('IN_length_to_IN_diam').GetSample(date).value;
+    coef_lin_IN_diam := refMeristem.GetTAttribute('coef_lin_IN_diam').GetSample(date).value;
 
-  sample.date := date;
-  sample.value := leafLength;
-  entityInternode.GetTAttribute('leafLength').SetSample(sample);
+    sample.date := date;
+    sample.value := leafLength;
+    entityInternode.GetTAttribute('leafLength').SetSample(sample);
 
-  sample.date := date;
-  sample.value := leafWidth;
-  entityInternode.GetTAttribute('leafWidth').SetSample(sample);
+    sample.date := date;
+    sample.value := leafWidth;
+    entityInternode.GetTAttribute('leafWidth').SetSample(sample);
 
-  sample.date := date;
-  sample.value := MGR;
-  entityInternode.GetTAttribute('MGR').SetSample(sample);
+    sample.date := date;
+    sample.value := MGR;
+    entityInternode.GetTAttribute('MGR').SetSample(sample);
 
-  sample.date := date;
-  sample.value := plasto;
-  entityInternode.GetTAttribute('plasto').SetSample(sample);
+    sample.date := date;
+    sample.value := plasto;
+    entityInternode.GetTAttribute('plasto').SetSample(sample);
 
-  sample.date := date;
-  sample.value := ligulo;
-  entityInternode.GetTAttribute('ligulo').SetSample(sample);
+    sample.date := date;
+    sample.value := ligulo;
+    entityInternode.GetTAttribute('ligulo').SetSample(sample);
 
-  sample.date := date;
-  sample.value := Tb;
-  entityInternode.GetTAttribute('Tb').SetSample(sample);
+    sample.date := date;
+    sample.value := Tb;
+    entityInternode.GetTAttribute('Tb').SetSample(sample);
 
-  sample.date := date;
-  sample.value := resp_INER;
-  entityInternode.GetTAttribute('resp_INER').SetSample(sample);
+    sample.date := date;
+    sample.value := resp_INER;
+    entityInternode.GetTAttribute('resp_INER').SetSample(sample);
 
-  sample.date := date;
-  sample.value := LIN1;
-  entityInternode.GetTAttribute('LIN1').SetSample(sample);
+    sample.date := date;
+    sample.value := LIN1;
+    entityInternode.GetTAttribute('LIN1').SetSample(sample);
 
-  sample.date := date;
-  sample.value := IN_A;
-  entityInternode.GetTAttribute('IN_A').SetSample(sample);
+    sample.date := date;
+    sample.value := IN_A;
+    entityInternode.GetTAttribute('IN_A').SetSample(sample);
 
-  sample.date := date;
-  sample.value := IN_B;
-  entityInternode.GetTAttribute('IN_B').SetSample(sample);
+    sample.date := date;
+    sample.value := IN_B;
+    entityInternode.GetTAttribute('IN_B').SetSample(sample);
 
-  sample.date := date;
-  sample.value := density_IN;
-  entityInternode.GetTAttribute('density_IN').SetSample(sample);
+    sample.date := date;
+    sample.value := density_IN;
+    entityInternode.GetTAttribute('density_IN').SetSample(sample);
 
-  sample.date := date;
-  sample.value := MaximumReserveInInternode;
-  entityInternode.GetTAttribute('MaximumReserveInInternode').SetSample(sample);
+    sample.date := date;
+    sample.value := MaximumReserveInInternode;
+    entityInternode.GetTAttribute('MaximumReserveInInternode').SetSample(sample);
 
-  sample.date := date;
-  sample.value := stock_tiller;
-  entityInternode.GetTAttribute('stock_culm').SetSample(sample);
+    sample.date := date;
+    sample.value := stock_tiller;
+    entityInternode.GetTAttribute('stock_culm').SetSample(sample);
 
-  sample.date := date;
-  sample.value := leaf_width_to_IN_diameter;
-  entityInternode.GetTAttribute('leaf_width_to_IN_diameter').SetSample(sample);
+    sample.date := date;
+    sample.value := leaf_width_to_IN_diameter;
+    entityInternode.GetTAttribute('leaf_width_to_IN_diameter').SetSample(sample);
 
-  sample.date := date;
-  sample.value := leaf_length_to_IN_length;
-  entityInternode.GetTAttribute('leaf_length_to_IN_length').SetSample(sample);
+    sample.date := date;
+    sample.value := leaf_length_to_IN_length;
+    entityInternode.GetTAttribute('leaf_length_to_IN_length').SetSample(sample);
 
-  sample.date := date;
-  sample.value := slope_length_IN;
-  entityInternode.GetTAttribute('slope_length_IN').SetSample(sample);
+    sample.date := date;
+    sample.value := slope_length_IN;
+    entityInternode.GetTAttribute('slope_length_IN').SetSample(sample);
 
-  sample.date := date;
-  sample.value := IN_length_to_IN_diam;
-  entityInternode.GetTAttribute('IN_length_to_IN_diam').SetSample(sample);
+    sample.date := date;
+    sample.value := IN_length_to_IN_diam;
+    entityInternode.GetTAttribute('IN_length_to_IN_diam').SetSample(sample);
 
-  sample.date := date;
-  sample.value := coef_lin_IN_diam;
-  entityInternode.GetTAttribute('coef_lin_IN_diam').SetSample(sample);
+    sample.date := date;
+    sample.value := coef_lin_IN_diam;
+    entityInternode.GetTAttribute('coef_lin_IN_diam').SetSample(sample);
 
-  entityInternode.SetCurrentState(1);
+    entityInternode.SetCurrentState(1);
+  end;
   
 end;
 
@@ -3859,7 +3923,7 @@ begin
                 MeristemManagerPhytomerPanicleCreation(instance, date);
                 MeristemManagerPhytomerPeduncleCreation(instance, date);
                 MeristemManagerPhytomerPanicleActivation(instance);
-                TillersTransitionToPre_PI_LE(instance);
+                TillersTransitionToPre_PI_LE(instance, state);
                 StoreThermalTimeAtPI(instance, date);
                 RootTransitionToPI(instance);
                 newState := PI;
@@ -3927,11 +3991,11 @@ begin
                   MeristemManagerPhytomerLeafCreation(instance, date, n, false);
                   MeristemManagerPhytomerInternodeCreation(instance, date, true, n , stock);
                   TillersStockIndividualization(instance, date);
-                  MeristemManagerStartInternodeElongation(instance, date, Trunc(n), false);
+                  MeristemManagerStartInternodeElongation(instance, date, Trunc(n), true);
                   MeristemManagerPhytomerPanicleCreation(instance, date);
                   MeristemManagerPhytomerPeduncleCreation(instance, date);
                   MeristemManagerPhytomerPanicleActivation(instance);
-                  TillersTransitionToPre_PI_LE(instance);
+                  TillersTransitionToPre_PI_LE(instance, state);
                   StoreThermalTimeAtPI(instance, date);
                   RootTransitionToPI(instance);
                   newState := PI;
@@ -4093,7 +4157,9 @@ begin
       begin
         if (n = phenostage_to_end_filling) then
         begin
-          SetAllInstanceToEndFilling(instance);
+          TillersTransitionToEndfilling_LE(instance, FLO);
+          PanicleTransitionToEndfilling(instance);
+          PeduncleTransitionToEndfilling(instance);
           newState := ENDFILLING;
           newStateStr := 'ENDFILLING';
         end
@@ -4121,6 +4187,9 @@ begin
         begin
           newState := ENDFILLING;
           newStateStr := 'ENDFILLING';
+          TillersTransitionToEndfilling_LE(instance, FLO);
+          PanicleTransitionToEndfilling(instance);
+          PeduncleTransitionToEndfilling(instance);
         end
         else
         begin
@@ -4178,12 +4247,13 @@ begin
                 SRwriteln('n = nbleaf_pi, on passe a PI');
                 MeristemManagerPhytomerLeafCreation(instance, date, n, false);
                 MeristemManagerPhytomerInternodeCreation(instance, date, true, n , stock);
-                MeristemManagerStartInternodeElongation(instance, date, Trunc(n), true);
+                MeristemManagerStartInternodeElongation(instance, date, Trunc(n), false);
                 MeristemManagerPhytomerPanicleCreation(instance, date);
                 MeristemManagerPhytomerPeduncleCreation(instance, date);
                 MeristemManagerPhytomerPanicleActivation(instance);
-                TillersTransitionToPre_PI_LE(instance);
+                TillersTransitionToPI_LE(instance, state);
                 StoreThermalTimeAtPI(instance, date);
+                TillerStorePhenostageAtPI(instance, date, n);
                 RootTransitionToPI(instance);
                 newState := PI;
                 newStateStr := 'PI';
@@ -4241,8 +4311,9 @@ begin
                 MeristemManagerPhytomerPanicleCreation(instance, date);
                 MeristemManagerPhytomerPeduncleCreation(instance, date);
                 MeristemManagerPhytomerPanicleActivation(instance);
-                TillersTransitionToPre_PI_LE(instance);
+                TillersTransitionToPI_LE(instance, state);
                 StoreThermalTimeAtPI(instance, date);
+                TillerStorePhenostageAtPI(instance, date, n);
                 RootTransitionToPI(instance);
                 newState := PI;
                 newStateStr := 'PI';
@@ -4274,6 +4345,9 @@ begin
         begin
           newState := MATURITY;
           newStateStr := 'MATURITY';
+          TillersTransitionToMaturity_LE(instance, MATURITY);
+          PanicleTransitionToMaturity(instance);
+          PeduncleTransitionToMaturity(instance);
         end
         else
         begin
@@ -4294,6 +4368,9 @@ begin
         begin
           newState := MATURITY;
           newStateStr := 'MATURITY';
+          TillersTransitionToMaturity_LE(instance, MATURITY);
+          PanicleTransitionToMaturity(instance);
+          PeduncleTransitionToMaturity(instance);
         end
         else
         begin
@@ -4412,11 +4489,13 @@ begin
   result := newState;
 end;
 
-procedure TillersTransitionToState(var instance : TEntityInstance; const state : Integer);
+procedure TillersTransitionToState(var instance : TEntityInstance; const state : Integer; const oldState : Integer);
 var
   le, i : Integer;
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
+  refTAttribute : TAttribute;
+  sample : TSample;
   category : String;
 begin
   le := instance.LengthTInstanceList();
@@ -4431,10 +4510,41 @@ begin
         currentTEntityInstance := (currentInstance as TEntityInstance);
         currentTEntityInstance.SetCurrentState(state);
         SRwriteln('La talle : ' + currentInstance.GetName() + ' passe a l''etat ' + IntToStr(state));
+        refTAttribute := currentTEntityInstance.GetTAttribute('previousState');
+        sample := refTAttribute.GetCurrentSample();
+        sample.value := oldState;
+        refTAttribute.SetSample(sample);
+        SRwriteln('previousState --> ' + IntToStr(oldState));
       end;
     end;
   end;
 
+end;
+
+procedure TillerStorePhenostageAtPI(var instance : TEntityInstance; const date : TDateTime = 0; const phenostage : Double = 0);
+var
+  le, i : Integer;
+  currentInstance : TInstance;
+  category : string;
+  refAttribute : TAttribute;
+  sample : TSample;
+begin
+  le := instance.LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := instance.GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      category := (currentInstance as TEntityInstance).GetCategory();
+      if (category = 'Tiller') then
+      begin
+        refAttribute := (currentInstance as TEntityInstance).GetTAttribute('phenoStageAtPI');
+        sample := refAttribute.GetCurrentSample();
+        sample.value := phenostage;
+        refAttribute.SetSample(sample);
+      end;
+    end;
+  end;
 end;
 
 procedure TillersTransitionToElong(var instance : TEntityInstance);
@@ -4454,7 +4564,7 @@ begin
       if (currentTEntityInstance.GetCategory() = 'Tiller') then
       begin
         nameOfLastLigulatedLeafOnTiller := FindLastLigulatedLeafNumberOnCulm(currentTEntityInstance);
-        if (nameOfLastLigulatedLeafOnTiller = '') then
+        if (nameOfLastLigulatedLeafOnTiller = '-1') then
         begin
           SRwriteln('La talle : ' + currentTEntityInstance.GetName() + ' n''a pas de feuille ligulée, elle passe à l''etat PRE_ELONG');
           currentTEntityInstance.SetCurrentState(10);
@@ -4505,9 +4615,24 @@ begin
   end;
 end;
 
-procedure TillersTransitionToPre_PI_LE(var instance : TEntityInstance);
+procedure TillersTransitionToPre_PI_LE(var instance : TEntityInstance; const oldState : Integer);
 begin
-  TillersTransitionToState(instance, 5);
+  TillersTransitionToState(instance, 5, oldState);
+end;
+
+procedure TillersTransitionToPI_LE(var instance : TEntityInstance; const oldState : Integer);
+begin
+  TillersTransitionToState(instance, 4, oldState);
+end;
+
+procedure TillersTransitionToEndfilling_LE(var instance : TEntityInstance; const oldState : Integer);
+begin
+  TillersTransitionToState(instance, 12, oldState);
+end;
+
+procedure TillersTransitionToMaturity_LE(var instance : TEntityInstance; const oldState : Integer);
+begin
+  TillersTransitionToState(instance, 13, oldState);
 end;
 
 procedure RootTransitionToState(var instance : TEntityInstance; const state : Integer);
@@ -4544,34 +4669,204 @@ end;
 
 procedure PanicleTransitionToFLO(var instance : TEntityInstance);
 var
-  le : Integer;
-  i : Integer;
-  currentInstance : TInstance;
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
 begin
-  le := instance.LengthTInstanceList();
-  for i := 0 to le - 1 do
+  le1 := instance.LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
   begin
-    currentInstance := instance.GetTInstance(i);
-    if (currentInstance is TEntityInstance) and ((currentInstance as TEntityInstance).GetCategory() = 'Panicle') then
+    currentInstance1 := instance.GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
     begin
-      (currentInstance as TEntityInstance).SetCurrentState(2);
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Panicle') then
+      begin
+        (currentInstance1 as TEntityInstance).SetCurrentState(2);
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Panicle') then
+            begin
+              (currentInstance2 as TEntityInstance).SetCurrentState(2);
+            end;
+          end;
+        end;
+      end;
     end;
   end;
 end;
 
 procedure PeduncleTransitionToFLO(var instance : TEntityInstance);
 var
-  le : Integer;
-  i : Integer;
-  currentInstance : TInstance;
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
 begin
-  le := instance.LengthTInstanceList();
-  for i := 0 to le - 1 do
+  le1 := instance.LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
   begin
-    currentInstance := instance.GetTInstance(i);
-    if (currentInstance is TEntityInstance) and ((currentInstance as TEntityInstance).GetCategory() = 'Peduncle') then
+    currentInstance1 := instance.GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
     begin
-      (currentInstance as TEntityInstance).SetCurrentState(500);
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Peduncle') then
+      begin
+        (currentInstance1 as TEntityInstance).SetCurrentState(500);
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Peduncle') then
+            begin
+              (currentInstance2 as TEntityInstance).SetCurrentState(500);
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure PanicleTransitionToEndFilling(var instance : TEntityInstance);
+var
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
+begin
+  le1 := instance.LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
+  begin
+    currentInstance1 := instance.GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Panicle') then
+      begin
+        (currentInstance1 as TEntityInstance).SetCurrentState(12);
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Panicle') then
+            begin
+              (currentInstance2 as TEntityInstance).SetCurrentState(12);
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure PeduncleTransitionToEndfilling(var instance : TEntityInstance);
+var
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
+begin
+  le1 := instance.LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
+  begin
+    currentInstance1 := instance.GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Peduncle') then
+      begin
+        (currentInstance1 as TEntityInstance).SetCurrentState(12);
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Peduncle') then
+            begin
+              (currentInstance2 as TEntityInstance).SetCurrentState(12);
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure PanicleTransitionToMaturity(var instance : TEntityInstance);
+var
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
+begin
+  le1 := instance.LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
+  begin
+    currentInstance1 := instance.GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Panicle') then
+      begin
+        (currentInstance1 as TEntityInstance).SetCurrentState(15);
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Panicle') then
+            begin
+              (currentInstance2 as TEntityInstance).SetCurrentState(15);
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure PeduncleTransitionToMaturity(var instance : TEntityInstance);
+var
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
+begin
+  le1 := instance.LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
+  begin
+    currentInstance1 := instance.GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Peduncle') then
+      begin
+        (currentInstance1 as TEntityInstance).SetCurrentState(4);
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Peduncle') then
+            begin
+              (currentInstance2 as TEntityInstance).SetCurrentState(4);
+            end;
+          end;
+        end;
+      end;
     end;
   end;
 end;
@@ -4629,6 +4924,7 @@ begin
   else
   begin
     SRwriteln('Pas de feuille ligulee sur l''axe : ' + instance.GetName());
+    minName := '-1';
   end;
   Result := minName;
 end;
@@ -4851,6 +5147,8 @@ const
   ENDFILLING = 12;
   PI_NOSTOCK = 11;
   FLO_NOSTOCK = 13;
+  DEAD = 1000;
+  MATURITY = 15;
 
   VEGETATIVE = 2000;
 var
@@ -4952,6 +5250,22 @@ begin
         newState := ENDFILLING;
         newStateStr := 'ENDFILLING';
      end;
+
+     MATURITY :
+     begin
+        oldStateStr := 'MATURITY';
+        newState := MATURITY;
+        newStateStr := 'MATURITY';
+     end;
+
+    DEAD:
+      begin
+        oldStateStr := 'DEAD';
+        newState := DEAD;
+        newStateStr := 'DEAD';
+      end;
+
+
   end;
   SRwriteln('Panicle Manager, transition de : ' + oldStateStr + ' --> ' + newStateStr);
   Result := newState;
@@ -5299,7 +5613,7 @@ begin
 
     SRwriteln('****  creation de l''entrenoeud : ' + name + '  ****');
 
-    newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1);
+    newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1);
 
     sample.date := date;
     sample.value := 1;
@@ -5345,7 +5659,7 @@ begin
 
   SRwriteln('****  creation de l''entrenoeud : ' + name + '  ****');
 
-  newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+  newInternode := ImportInternode_LE(name, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
 
   sample.date := date;
   sample.value := n + 1;

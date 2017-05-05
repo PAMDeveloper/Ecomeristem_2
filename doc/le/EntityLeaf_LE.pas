@@ -283,6 +283,9 @@ begin
   attributeTmp := TAttributeTmp.Create('slopeLER');
   entityLeaf.AddTAttribute(attributeTmp);
 
+  attributeTmp := TAttributeTmp.Create('thermalTimeAtInitiation');
+  entityLeaf.AddTAttribute(attributeTmp);
+
   attributeTmp := TAttributeTmp.Create('FTSW');
   entityLeaf.AddTAttribute(attributeTmp);
 
@@ -327,7 +330,13 @@ begin
   entityLeaf.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('dailySenescedLeafBiomass');
-  entityLeaf.AddTAttribute(attributeTmp);  
+  entityLeaf.AddTAttribute(attributeTmp);
+
+  attributeTmp := TAttributeTmp.Create('dailySenescedDwLeafBiomass');
+  entityLeaf.AddTAttribute(attributeTmp);
+
+  attributeTmp := TAttributeTmp.Create('dailyComputedReallocBiomass');
+  entityLeaf.AddTAttribute(attributeTmp);
 
   /////////////////////////////////////////////////////////////////////////////
   // Connections internes des ports
@@ -368,11 +377,22 @@ begin
   // connection port <-> attribut pour 'initTimeFromApp' de 'EntityLeaf'
   procTmp.ExternalConnect(['DDInitiation','time_from_app']);
 
+  // creation de 'storeThermalTimeAtInitiation'
+  procTmp := TProcInstanceInternal.Create('storeThermalTimeAtInitiation',IdentityDyn,['inValue','kIn','outValue','kOut']);
+  procTmp.SetProcName('Identity');
+  procTmp.SetExeStep(1); // pas journalier
+  procTmp.SetExeOrder(20);
+  procTmp.SetActiveState(1);
+  entityLeaf.AddTInstance(procTmp);
+
+  // connection port <-> attribut pour 'initTimeFromApp' de 'EntityLeaf'
+  procTmp.ExternalConnect(['DDInitiation','thermalTimeAtInitiation']);
+
   // creation de initLeafBiomassStructAtInitiation
   procTmp := TProcInstanceInternal.Create('initLeafBiomassStructAtInitiation',IdentityDyn,['inValue','kIn','outValue','kOut']);
   procTmp.SetProcName('Identity');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(20);
+  procTmp.SetExeOrder(30);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -384,7 +404,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initLeafPredim',ComputeLeafPredimensionnement_LEDyn,['isFirstLeaf','kIn','isOnMainstem','kIn','predimOfPreviousLeaf','kIn','predimLeafOnMainstem','kIn','Lef1','kIn','MGR','kIn','testIc','kIn','fcstr','kIn','predimOfCurrentLeaf','kOut']);
   procTmp.SetProcName('ComputeLeafPredimensionnement_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(30);
+  procTmp.SetExeOrder(40);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -395,7 +415,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initReductionLER',ComputeLER_LEDyn,['FTSW','kIn','Thres','kIn','slope','kIn','P','kIn','resp_LER','kIn','reductionLER','kOut']);
   procTmp.SetProcName('ComputeLER_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(40);
+  procTmp.SetExeOrder(50);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -406,7 +426,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initLER',ComputeLeafLER_LEDyn,['predimOfCurrentLeaf','kIn','reductionLER','kIn','plasto','kIn','phenoStage',',kIn','ligulo','kIn','LER','kOut']);
   procTmp.SetProcName('ComputeLeafLER_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(50);
+  procTmp.SetExeOrder(60);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -417,7 +437,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initLen',Mult2ValuesDyn,['inValue1','kIn','inValue2','kIn','outValue','kOut']);
   procTmp.SetProcName('Mult2Values');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(60);
+  procTmp.SetExeOrder(70);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -428,7 +448,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initWidth',ComputeLeafWidth_LEDyn,['len','kIn','WLR','kIn','LL_BL','kIn','width','kOut']);
   procTmp.SetProcName('ComputeLeafWidth_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(70);
+  procTmp.SetExeOrder(80);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -439,7 +459,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initBladeArea',ComputeLeafBladeArea_LEDyn,['len','kIn','width','kIn','allo_area','kIn','LL_BL','kIn','bladeArea','kOut']);
   procTmp.SetProcName('ComputeLeafBladeArea_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(80);
+  procTmp.SetExeOrder(90);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -450,7 +470,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initExp_Time',ComputeLeafExpTime_LEDyn,['isFirstLeaf','kIn','isOnMainstem','kIn','predim','kIn','len','kIn','LER','kIn','exp_time','kOut']);
   procTmp.SetProcName('ComputeLeafExpTime_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(90);
+  procTmp.SetExeOrder(100);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -461,7 +481,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initBiomass',ComputeLeafBiomass_LEDyn,['bladeArea','kIn','leafBiomassStructAtInitiation','kIn','G_L','kIn','biomass','kOut']);
   procTmp.SetProcName('ComputeLeafBiomass_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(100);
+  procTmp.SetExeOrder(110);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -472,7 +492,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initDemand',IdentityDyn,['inValue','kIn','outValue','kOut']);
   procTmp.SetProcName('Identity');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(110);
+  procTmp.SetExeOrder(120);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -484,7 +504,7 @@ begin
   procTmp := TProcInstanceInternal.Create('initLifespan',ComputeLifespan_LEDyn,['coeffLifespan', 'kIn', 'mu', 'kIn', 'rank', 'kIn', 'lifespan', 'kOut']);
   procTmp.SetProcName('ComputeLifespan_LE');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(120);
+  procTmp.SetExeOrder(130);
   procTmp.SetActiveState(1);
   entityLeaf.AddTInstance(procTmp);
 
@@ -618,7 +638,7 @@ begin
   procTmp.ExternalConnect(['reductionLER','deltaT','exp_time','plasto_delay']);
 
   // creation de 'transitionToLiguleState'
-  XprocTmp := TExtraProcInstanceInternal.Create('transitionToLiguleState',TransitionToLiguleStateDyn,['len','kIn','predim','kIn','isOnMainstem','kIn']);
+  XprocTmp := TExtraProcInstanceInternal.Create('transitionToLiguleState',TransitionToLiguleStateDyn,['len','kIn','predim','kIn','isOnMainstem','kIn','demand','kInOut','lastDemand','kInOut']);
   XprocTmp.SetProcName('TransitionToLiguleState');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(1500);
@@ -626,7 +646,7 @@ begin
   entityLeaf.AddTInstance(XprocTmp);
 
   // connection port <-> attribut pour 'transitionToLiguleState'
-  XprocTmp.ExternalConnect(['len','predim','isOnMainstem']);
+  XprocTmp.ExternalConnect(['len','predim','isOnMainstem','demand','lastdemand']);
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -653,7 +673,7 @@ begin
   entityLeaf.AddTInstance(procTmp);
 
   // connection port <-> attribut pour 'computeLastDemand' de 'EntityLeaf'
-  procTmp.ExternalConnect(['demand','lastdemand']);
+  procTmp.ExternalConnect(['zero','lastdemand']);
 
   // creation de 'finalizeDemand'
   procTmp := TProcInstanceInternal.Create('finalizeDemand',IdentityDyn,['inValue','kIn','outValue','kOut']);
@@ -689,6 +709,17 @@ begin
   // connection port <-> attribut pour 'demand' de 'EntityLeaf'
   procTmp.ExternalConnect(['zero','demand']);
 
+      // creation de 'cancelLastDemand3'
+  procTmp := TProcInstanceInternal.Create('cancelLastDemand3',IdentityDyn,['inValue','kIn','outValue','kOut']);
+  procTmp.SetProcName('Identity');
+  procTmp.SetExeStep(1); // pas journalier
+  procTmp.SetExeOrder(2045);
+  procTmp.SetActiveState(3);
+  entityLeaf.AddTInstance(procTmp);
+
+  // connection port <-> attribut pour 'demand' de 'EntityLeaf'
+  procTmp.ExternalConnect(['zero','lastdemand']);
+
 
   // creation de 'cancelDemand5'
   procTmp := TProcInstanceInternal.Create('cancelDemand5',IdentityDyn,['inValue','kIn','outValue','kOut']);
@@ -701,6 +732,16 @@ begin
   // connection port <-> attribut pour 'demand' de 'EntityLeaf'
   procTmp.ExternalConnect(['zero','demand']);
 
+    // creation de 'cancelLastDemand5'
+  procTmp := TProcInstanceInternal.Create('cancelLastDemand5',IdentityDyn,['inValue','kIn','outValue','kOut']);
+  procTmp.SetProcName('Identity');
+  procTmp.SetExeStep(1); // pas journalier
+  procTmp.SetExeOrder(2055);
+  procTmp.SetActiveState(5);
+  entityLeaf.AddTInstance(procTmp);
+
+  // connection port <-> attribut pour 'demand' de 'EntityLeaf'
+  procTmp.ExternalConnect(['zero','lastdemand']);
 
   // creation de computeThermalTimeSinceLigulation
   XprocTmp := TExtraProcInstanceInternal.Create('computeThermalTimeSinceLigulation4',ComputeThermalTimeSinceLigulation_LEDyn,['thermalTimeSinceLigulation', 'kInOut']);
@@ -745,7 +786,7 @@ begin
  // connection port <-> attribut pour 'correctedBladeArea'
   XprocTmp.ExternalConnect(['correctedLeafBiomass']);
 
-  // creation de ComputeDeadLeafBiomass
+{  // creation de ComputeDeadLeafBiomass
   XprocTmp := TExtraProcInstanceInternal.Create('computeDeadLeafBiomass',ComputeDeadLeafBiomassDyn,['deadLeafBiomass','kOut']);
   XprocTmp.SetProcName('ComputeDeadLeafBiomass');
   XprocTmp.SetExeStep(1); // pas journalier
@@ -753,7 +794,7 @@ begin
   entityLeaf.AddTInstance(XprocTmp);
 
  // connection port <-> attribut pour 'correctedBladeArea'
-  XprocTmp.ExternalConnect(['deadLeafBiomass']);
+  XprocTmp.ExternalConnect(['deadLeafBiomass']);}
 
 
   ////////////////////////////////////////////////////////

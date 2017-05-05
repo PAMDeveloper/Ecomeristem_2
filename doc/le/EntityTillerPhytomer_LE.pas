@@ -51,7 +51,7 @@ uses
   DefinitionConstant,
   ClassTExtraProcInstanceInternal;
 
-function ImportTillerPhytomer_LE(name : string; thresINER, slopeINER, leafStockMax : Double) : TEntityInstance;
+function ImportTillerPhytomer_LE(name : string; thresINER, slopeINER, leafStockMax, phenoStageAtCreation : Double) : TEntityInstance;
 
 
 
@@ -89,7 +89,7 @@ implementation
 /// @return nouvelle entité talle de nom 'name' et de parametre
 // ---------------------------------------------------------------------------
 
-function ImportTillerPhytomer_LE(name : string; thresINER, slopeINER, leafStockMax : Double) : TEntityInstance;
+function ImportTillerPhytomer_LE(name : string; thresINER, slopeINER, leafStockMax, phenoStageAtCreation : Double) : TEntityInstance;
 var
   entityTiller : TEntityInstance;
   attributeTmp : TAttributeTmp;
@@ -99,9 +99,6 @@ var
   managerTmp : TManagerInternal;
   initSample : TSample;
 begin
-
-	SRwriteln('ImportTillerPhytomer_LE');
-
   // ---------------------------
   // creation de 'EntityTiller'
   // ---------------------------
@@ -194,6 +191,9 @@ begin
   parameterTmp := TParameter.Create('leafStockMax', leafStockMax);
   entityTiller.AddTAttribute(parameterTmp);
 
+  parameterTmp := TParameter.Create('phenoStageAtCreation', phenoStageAtCreation);
+  entityTiller.AddTAttribute(parameterTmp);
+
   attributeTmp := TAttributeTmp.Create('plasto_delay');
   entityTiller.AddTAttribute(attributeTmp);
 
@@ -220,6 +220,11 @@ begin
 
   parameterTmp := TParameter.Create('isFirstDayOfPi',1);
   entityTiller.AddTAttribute(parameterTmp);
+
+  attributeTmp := TAttributeTmp.Create('ifFirstDayOfPre_Elong');
+  initSample.date := 0; initSample.value := 1;
+  attributeTmp.SetSample(initSample);
+  entityTiller.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('one',1);
   entityTiller.AddTAttribute(parameterTmp);
@@ -254,10 +259,6 @@ begin
   attributeTmp := TAttributeTmp.Create('tmp_tiller');
   entityTiller.AddTAttribute(attributeTmp);
 
-  // attributeOut := TAttributeTableOut.Create('stock_tiller');
-  // attributeOut.SetFileNameOut(GetCurrentDir() + '\stock_tiller_' + entityTiller.GetName() + '_out.txt', true);
-  // entityTiller.AddTAttribute(attributeOut);
-
   attributeTmp := TAttributeTmp.Create('stock_tiller');
   entityTiller.AddTAttribute(attributeTmp);
 
@@ -272,7 +273,6 @@ begin
 
   attributeTmp := TAttributeTmp.Create('TTAtPI');
   entityTiller.AddTAttribute(attributeTmp);
-
 
   attributeTmp := TAttributeTmp.Create('sumOfDemandInOrganOnTiller');
   entityTiller.AddTAttribute(attributeTmp);
@@ -317,10 +317,14 @@ begin
   attributeTmp := TAttributeTmp.Create('leaf_internode_biomass_tiller');
   entityTiller.AddTAttribute(attributeTmp);
 
-   attributeTmp := TAttributeTmp.Create('sumOfDailySenescedLeafBiomassTiller');
+  attributeTmp := TAttributeTmp.Create('sumOfDailySenescedLeafBiomassTiller');
   entityTiller.AddTAttribute(attributeTmp);
 
+  attributeTmp := TAttributeTmp.Create('sumOfDailyComputedReallocBiomassTiller');
+  entityTiller.AddTAttribute(attributeTmp);
 
+  attributeTmp := TAttributeTmp.Create('previousState');
+  entityTiller.AddTAttribute(attributeTmp);
 
 
 
@@ -395,11 +399,22 @@ begin
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
 
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm1', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10007);
+  XprocTmp.SetActiveState(1);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
+
   // calcule de la somme des biomass des feuille sur la talle
   XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec2',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
   XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
   XprocTmp.SetExeStep(1); // pas journalier
-  XprocTmp.SetExeOrder(10007);
+  XprocTmp.SetExeOrder(10008);
   XprocTmp.SetActiveState(2);
   entityTiller.AddTInstance(XprocTmp);
 
@@ -409,18 +424,29 @@ begin
   XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailySenescedLeafBiomassOnCulm2', SumOfDailySenescedLeafBiomassOnCulmDyn,['sumOfDailySenescedLeafBiomass', 'kOut']);
   XprocTmp.SetProcName('SumOfDailySenescedLeafBiomassOnCulm');
   XprocTmp.SetExeStep(1); // pas journalier
-  XprocTmp.SetExeOrder(10008);
+  XprocTmp.SetExeOrder(10009);
   XprocTmp.SetActiveState(2);
   entityTiller.AddTInstance(XprocTmp);
 
   // connection port <-> attribut pour 'day_demand_tiller'
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
+
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm2', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10010);
+  XprocTmp.SetActiveState(2);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
   // calcule de la somme des biomass des feuille sur la talle
   XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec3',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
   XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
   XprocTmp.SetExeStep(1); // pas journalier
-  XprocTmp.SetExeOrder(10008);
+  XprocTmp.SetExeOrder(10011);
   XprocTmp.SetActiveState(3);
   entityTiller.AddTInstance(XprocTmp);
 
@@ -430,7 +456,7 @@ begin
   XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailySenescedLeafBiomassOnCulm3', SumOfDailySenescedLeafBiomassOnCulmDyn,['sumOfDailySenescedLeafBiomass', 'kOut']);
   XprocTmp.SetProcName('SumOfDailySenescedLeafBiomassOnCulm');
   XprocTmp.SetExeStep(1); // pas journalier
-  XprocTmp.SetExeOrder(10009);
+  XprocTmp.SetExeOrder(10012);
   XprocTmp.SetActiveState(3);
   entityTiller.AddTInstance(XprocTmp);
 
@@ -438,15 +464,26 @@ begin
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
 
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm3', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10013);
+  XprocTmp.SetActiveState(3);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
+
 
   //---------------------------------------//
   // procedure a l etat 4, c est a dire PI //
   //---------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec4', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBladeAreaOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeaf4', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
+  XprocTmp.SetProcName('ComputeBladeAreaLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
-  XprocTmp.SetExeOrder(10010);
+  XprocTmp.SetExeOrder(10015);
   XprocTmp.SetActiveState(4);
   entityTiller.AddTInstance(XprocTmp);
 
@@ -455,8 +492,8 @@ begin
 
 
   // calcule de la somme des biomass des feuille sur la talle
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec4',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('ComputeBiomassLeavesTiller4',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+  XprocTmp.SetProcName('ComputeBiomassLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10020);
   XprocTmp.SetActiveState(4);
@@ -588,12 +625,23 @@ begin
   // connection port <-> attribut pour 'day_demand_tiller'
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
+
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm4', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10160);
+  XprocTmp.SetActiveState(4);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
   //-------------------------------------------//
   // procedure a l etat 5, c est a dire PRE_PI //
   //-------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec5', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBladeAreaOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeaf5', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
+  XprocTmp.SetProcName('ComputeBladeAreaLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10210);
   XprocTmp.SetActiveState(5);
@@ -604,8 +652,8 @@ begin
 
 
   // calcule de la somme des biomass des feuille sur la talle
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec5',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('ComputeBiomassLeavesTiller5',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+  XprocTmp.SetProcName('ComputeBiomassLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10220);
   XprocTmp.SetActiveState(5);
@@ -733,12 +781,23 @@ begin
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
 
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm5', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10380);
+  XprocTmp.SetActiveState(5);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
+
   //--------------------------------------------//
   // procedure a l etat 6, c est a dire PRE_FLO //
   //--------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec6', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBladeAreaOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeaf6', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
+  XprocTmp.SetProcName('ComputeBladeAreaLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10410);
   XprocTmp.SetActiveState(6);
@@ -749,8 +808,8 @@ begin
 
 
   // calcule de la somme des biomass des feuille sur la talle
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec6',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('ComputeBiomassLeavesTiller6',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+  XprocTmp.SetProcName('ComputeBiomassLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10420);
   XprocTmp.SetActiveState(6);
@@ -877,12 +936,23 @@ begin
   // connection port <-> attribut pour 'day_demand_tiller'
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
+
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm6', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10580);
+  XprocTmp.SetActiveState(6);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
   //----------------------------------------//
   // procedure a l etat 7, c est a dire FLO //
   //-------------------------------- -------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec7', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBladeAreaOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeaf7', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
+  XprocTmp.SetProcName('ComputeBladeAreaLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10610);
   XprocTmp.SetActiveState(7);
@@ -893,11 +963,11 @@ begin
 
 
   // calcule de la somme des biomass des feuille sur la talle
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec7',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('ComputeBiomassLeavesTiller7',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+  XprocTmp.SetProcName('ComputeBiomassLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10620);
-  XprocTmp.SetActiveState(7);
+  XprocTmp.SetActiveState(6);
   entityTiller.AddTInstance(XprocTmp);
 
   // connection port <-> attribut pour 'sumOfTillerLeafBiomass'
@@ -1021,12 +1091,23 @@ begin
   // connection port <-> attribut pour 'day_demand_tiller'
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
+
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm7', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10780);
+  XprocTmp.SetActiveState(7);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
   //------------------------------------------//
   // procedure a l etat 9, c est a dire ELONG //
   //------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec9', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBladeAreaOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeaf9', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
+  XprocTmp.SetProcName('ComputeBladeAreaLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10810);
   XprocTmp.SetActiveState(9);
@@ -1037,8 +1118,8 @@ begin
 
 
   // calcule de la somme des biomass des feuille sur la talle
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec9',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('ComputeBiomassLeavesTiller9',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+  XprocTmp.SetProcName('ComputeBiomassLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10820);
   XprocTmp.SetActiveState(9);
@@ -1165,14 +1246,36 @@ begin
   // connection port <-> attribut pour 'day_demand_tiller'
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
 
+
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm9', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(10980);
+  XprocTmp.SetActiveState(9);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
+
   //-----------------------------------------------//
   // procedure a l etat 10, c est a dire PRE_ELONG //
   //-----------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec10', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBladeAreaOnTillerInLeafRec');
+  procTmp := TProcInstanceInternal.Create('dispStock_Tiller10', DispDyn, ['value', 'kIn']);
+  procTmp.SetProcName('Disp');
+  procTmp.SetExeStep(1); // pas journalier
+  procTmp.SetExeOrder(11000);
+  procTmp.SetActiveState(10);
+  entityTiller.AddTInstance(procTmp);
+
+  // connection port <-> attribut pour 'leafStockMax', 'sumOfTillerLeafBiomass', 'stockLeafTiller', 'reservoirDispoLeafTiller'
+  procTmp.ExternalConnect(['stock_tiller']);
+
+
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeaf10', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
+  XprocTmp.SetProcName('ComputeBladeAreaLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
-  XprocTmp.SetExeOrder(11000);
+  XprocTmp.SetExeOrder(11005);
   XprocTmp.SetActiveState(10);
   entityTiller.AddTInstance(XprocTmp);
 
@@ -1181,8 +1284,8 @@ begin
 
 
   // calcule de la somme des biomass des feuille sur la talle
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBiomassOnTillerInLeafRec10',SumOfBiomassOnTillerInLeafRecDyn,['total', 'kOut']);
-  XprocTmp.SetProcName('SumOfBiomassOnTillerInLeafRec');
+  XprocTmp := TExtraProcInstanceInternal.Create('ComputeBiomassLeavesTiller10',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+  XprocTmp.SetProcName('ComputeBiomassLeavesTiller');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(11010);
   XprocTmp.SetActiveState(10);
@@ -1246,6 +1349,17 @@ begin
   // connection port <-> attribut pour 'last_demand_tiller'
   XprocTmp.ExternalConnect(['last_demand_tiller']);
 
+
+  XprocTmp := TExtraProcInstanceInternal.Create('setUpTillerStockPre_Elong10', SetUpTillerStockPre_ElongDyn,[]);
+  XprocTmp.SetProcName('SetUpTillerStockPre_Elong');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(11065);
+  XprocTmp.SetActiveState(10);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour ''
+  XprocTmp.ExternalConnect([]);
+
   procTmp := TProcInstanceInternal.Create('computeStockLeafCulm_LE10', ComputeStockLeafCulm2_LEDyn, ['leafStockMax', 'kIn', 'sumOfBiomassInLeafCulm', 'kIn', 'stockCulm', 'kIn', 'sumOfCulmStockIN', 'kIn', 'sumOfCulmDecifitIN', 'kIn', 'sumOfCulmDemandNonIN', 'kIn', 'sumOfCulmLastDemand', 'kIn', 'sumOfCulmDemandIN', 'kIn', 'stockLeafCulm', 'kOut']);
   procTmp.SetProcName('computeStockLeafCulm2_LE');
   procTmp.SetExeStep(1); // pas journalier
@@ -1308,6 +1422,17 @@ begin
 
   // connection port <-> attribut pour 'day_demand_tiller'
   XprocTmp.ExternalConnect(['sumOfDailySenescedLeafBiomassTiller']);
+
+
+  XprocTmp := TExtraProcInstanceInternal.Create('SumOfDailyComputedReallocBiomassOnCulm10', SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+  XprocTmp.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(11130);
+  XprocTmp.SetActiveState(10);
+  entityTiller.AddTInstance(XprocTmp);
+
+  // connection port <-> attribut pour 'sumOfDailyComputedReallocBiomassTiller'
+  XprocTmp.ExternalConnect(['sumOfDailyComputedReallocBiomassTiller']);
 
 
 

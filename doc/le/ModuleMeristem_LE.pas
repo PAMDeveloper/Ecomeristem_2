@@ -48,7 +48,11 @@ uses
   ClassTProcInstanceDLL,
   ClassTProcLibrary,
   ClassTExtraProcInstanceInternal,
-  UsefullFunctionsForMeristemModel,    Dialogs, Classes,
+  UsefullFunctionsForMeristemModel,
+  Dialogs,
+  Classes,
+  Windows,
+  ShellAPI,
   DefinitionConstant;
 
 type
@@ -83,7 +87,7 @@ Procedure UpdateLeafLength_LE(const LER, deltaT, exp_time : double ; var len : d
 Procedure ComputeReservoirDispo_LE(const leafStockMax,sumOfLeavesBiomass,stock : double ; var reservoirDispo : double);
 Procedure UpdateSeedres_LE(var seedres, dayDemand : double);
 Procedure UpdateSeedres2_LE(const reservoirDispo, supply : double; var restDayDemand, seedres, dayDemand, deficit, stock : double);
-procedure UpdateStock_LE(const dayDemand, reservoirDispo, supply, dailySenescedLeafBiomass : Double; var stock, deficit, seedres, surplus : Double);
+procedure UpdateStock_LE(const dayDemand, reservoirDispo, supply, dailyComputedReallocBiomass: Double; var stock, deficit, seedres, surplus : Double);
 Procedure UpdateSurplus_LE(const reservoirDispo, supply, seedres, restDayDemand, dayDemand : double; var surplus : double);
 Procedure ComputeIC_LE(const seedres,seedres_previous1,seedres_previous2,seedres_previous3,supply,supply_previous1,supply_previous2,supply_previous3,dayDemand,dayDemand_previous1,dayDemand_previous2,dayDemand_previous3, Ic_previous1 : double ; var Ic, testIc : double);
 Procedure UpdateNbTillerCount_LE(const Ic,IcThreshold,nbExistingTiller : Double; var nbTiller : Double);
@@ -109,8 +113,8 @@ procedure UpdateRootDemand_LE(var rootDemand, surplusPlant : Double);
 procedure ComputeInternodeDiameterPredim_LE(const leafWidthToINDiameter, leafOnSameRankWidth : Double; var diameter : Double);
 procedure ComputePanicleGrainNb_LE(const spikeCreationRate, Tair, Tb, fcstr, testIc : Double; var grainNb : Double);
 procedure ComputePanicleFertileGrainNumber_LE(const fcstr, testIc : Double; var fertileGrainNumber : Double);
-procedure ComputePanicleDayDemandFlo_LE(const fillingRate, Tair, Tb, fcstr, testIc : Double; var panicleDayDemand : Double);
-procedure ComputePanicleWeightFlo_LE(const gdwEmpty, grainNb, panicleDayDemand : Double; var firstDayOfFLO, panicleWeight : Double);
+procedure ComputePanicleDayDemandFlo_LE(const grainFillingRate, Tair, Tb, fcstr, testIc, reservoirDispo : Double; var panicleDayDemand : Double);
+procedure ComputePanicleWeightFlo_LE(const panicleDayDemand : Double; var panicleWeight : Double);
 procedure ComputePanicleFilledGrainNbFlo_LE(const fertileGrainNb, panicleWeight, gdw : Double; var filledGrainNb : Double);
 procedure ComputeStockLeafCulm_LE(const leafStockMax, sumOfBiomassInLeafCulm, stockCulm, sumOfCulmDemandIN, sumOfCulmStockIN : Double; var stockLeafCulm : Double);
 procedure ComputeStockLeafCulm2_LE(const leafStockMax, sumOfBiomassInLeafCulm, stockCulm, sumOfCulmStockIN, sumOfCulmDecifitIN, sumOfCulmDemandNonIN, sumOfCulmLastDemand, sumOfCulmDemandIN : Double; var stockLeafCulm : Double);
@@ -121,6 +125,13 @@ procedure ComputeNewPlasto_Ligulo_LL_BL_MGR(const n, boolCrossedPlasto, nbLeafPa
 procedure ComputeLifespan_LE(const coeffLifespan, mu, rank : Double; var lifespan : Double);
 procedure ComputeInternodeDiameterPredim2(const INLengthToINDiam, coefLinINDIam, internodeLengthPredim : Double; var internodeDiameterPredim : Double);
 procedure ComputeBiomLeaf(const stock, stockInternodePlant, biomLeafStruct : Double; var structLeaf : Double);
+procedure ComputeBiomBlade(const sumOfLeafBiomass : Double ; const G_L : Double; var biomBlade : Double);
+procedure ComputePanicleReservoirDispo(const fertileGrainNumber : Double; const gdw : Double; const weight : Double; var reservoirDispo : Double);
+procedure ComputeBiomLeafTot(const biomLeaf : double; const senescDw : double; var biomLeafTot : Double);
+procedure ComputeStockLeaf(const stock : Double; const stockInternode : Double; var stockLeaf : Double);
+procedure ComputeIntercFromR(var interc : Double);
+procedure ComputeIntercAssimFromR(var interc, assim : Double);
+
 
 
 
@@ -188,19 +199,25 @@ procedure ComputeNewPlasto_Ligulo_LL_BL_MGRDyn(var T : TPointerProcParam);
 procedure ComputeLifespan_LEDyn(var T : TPointerProcParam);
 procedure ComputeInternodeDiameterPredim2Dyn(var T : TPointerProcParam);
 procedure ComputeBiomLeafDyn(var T : TPointerProcParam);
+procedure ComputeBiomBladeDyn(var T : TPointerProcParam);
+procedure ComputePanicleReservoirDispoDyn(var T : TPointerProcParam);
+procedure ComputeBiomLeafTotDyn(var T : TPointerProcParam);
+procedure ComputeStockLeafDyn(var T : TPointerProcParam);
+procedure ComputeIntercFromRDyn(var T : TPointerProcParam);
+procedure ComputeIntercAssimFromRDyn(var T : TPointerProcParam);
 
 
 
 
 
 // Liste des modules 'extra'
-Procedure TransitionToLiguleState(var instance : TInstance; const len, predim, isOnMainstem : double);
+Procedure TransitionToLiguleState(var instance : TInstance; const len, predim, isOnMainstem : double; var demand, lastDemand : Double);
 Procedure TransitionToMatureState(var instance : TInstance; const len, predim, isOnMainstem : double);
 Procedure SumOfLastdemandInLeafRec(var instance : TInstance; var total : Double);
 Procedure EnableNbTillerCount_LE(var instance : TInstance; const stadePheno, nbLeafEnablingTillering : Double);
 Procedure CountNbTiller_LE(var instance : TInstance; var total : double);
 Procedure CreateTillers_LE(var instance : TInstance; const boolCrossedPlasto,Ic,Ict,exeOrder,P,resp_Ict, thresINER, slopeINER, leafStockMax : double; var nbTiller : double);
-Procedure CreateTillersPhytomer_LE(var instance : TInstance; const boolCrossedPlasto,Ic,Ict,exeOrder,P,resp_Ict, thresINER, slopeINER, leafStockMax : double; var nbTiller : double);
+Procedure CreateTillersPhytomer_LE(var instance : TInstance; const boolCrossedPlasto,Ic,Ict,exeOrder,P,resp_Ict, thresINER, slopeINER, leafStockMax, phenoStageAtCreation : double; var nbTiller : double);
 Procedure ChangeOrganExeOrder_LE(var instance : TInstance);
 Procedure KillOldestLeaf_LE(var instance : TInstance ; const realocationCoeff : Double; var deficit, stock, senesc_dw, deadleafNb, computedReallocBiomass : Double);
 procedure KillYoungestTillerOldestLeaf_LE(var instance : TInstance ; const reallocationCoeff, nbLeafEnablingTillering : Double; var deficit, stock, senesc_dw, deadleafNb, deadtillerNb, computedReallocBiomass : Double);
@@ -243,11 +260,12 @@ procedure ComputeLengthPeduncles(var instance : TInstance; var heightPanicleMain
 procedure ComputeCorrectedBladeArea(var instance : TInstance; var correctedBladeArea : Double);
 procedure ComputeCorrectedLeafBiomass(var instance : TInstance; var correctedLeafBiomass : Double);
 procedure ComputeDeadLeafBiomass(var instance : TInstance; var deadLeafBiomass : Double);
-procedure ComputeLeavesSenescenceStock(var instance : TInstance; const reallocCoef : Double; var senesc_dw, stock : Double);
 procedure ComputeBiomassInAllLeaves(var instance : TInstance; var biomLeafStruct : Double);
 procedure ComputeBiomassLeavesMainstem(var instance : TInstance; var sumOfMainstemLeafBiomass : Double);
+procedure ComputeBiomassLeavesTiller(var instance : TInstance; var sumOfTillerLeafBiomass : Double);
 procedure ComputeBladeAreaInAllLeaves(var instance : TInstance; var PAI : Double);
 procedure ComputeBladeAreaLeavesMainstem(var instance : TInstance; var sumOfBladeAreaOnMainstem : Double);
+procedure ComputeBladeAreaLeavesTiller(var instance : TInstance; var sumOfBladeAreaOnTiller : Double);
 procedure KillSenescLeaves(var instance : TInstance; var deadLeafNb : Double);
 procedure ComputeThermalTimeSinceLigulation_LE(var instance : TInstance; var ThermalTimeSinceLigulation : Double);
 procedure ComputeInternodeLengthPredim(var instance : TInstance; const slopeLengthIN, leafLengthToINLength : Double; var internodeLengthPredim : Double);
@@ -257,8 +275,18 @@ procedure ComputeStructLeaf(var instance : TInstance; var structLeaf : Double);
 procedure ComputeSumOfBiomass(var instance : TInstance; var sumOfBiomass : Double);
 procedure ComputeWeightPanicle(var instance : TInstance; var weightPanicle, weightPanicleMainstem : Double);
 procedure SumOfDailySenescedLeafBiomassOnCulm(var instance : TInstance; var sumOfDailySenescedLeafBiomass : Double);
+procedure SumOfDailyComputedReallocBiomassOnCulm(var instance : TInstance; var sumOfDailyComputedReallocBiomass : Double);
 procedure SumOfDailySenescedLeafBiomass(var instance : TInstance; var total : Double);
-
+procedure SumOfDailyComputedReallocBiomass(var instance : TInstance; var total : Double);
+procedure ComputeBiomassInternodeStruct(var instance : TInstance; var biomInternodeStruct : Double; var biomInternodeStructMainstem : Double; var biomInternodeStructTiller : Double);
+procedure ComputeBiomLeafMainstem(var instance : TInstance; var biomLeafMainstem : Double);
+procedure ComputeNbLeafMainstem(var instance : TInstance; var NbLeafMainstem : Double);
+procedure SetUpTillerStockPre_Elong(var instance : TInstance);
+procedure DeficitSurplusCorrection(var instance : TInstance);
+procedure ComputeSLAStruct(var instance : TInstance; const PLA : Double; tmp : Double; var SLAStruct : Double);
+procedure DataForR(var instance : TInstance);
+procedure ComputeBiomMainstem_LE(var instance : TInstance; var biomMainstem : Double);
+procedure ComputeBiomStem_LE(var instance : TInstance; var biomStem : Double);
 
 
 
@@ -317,11 +345,12 @@ procedure ComputeLengthPedunclesDyn(var instance : TInstance; var T : TPointerPr
 procedure ComputeCorrectedBladeAreaDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeCorrectedLeafBiomassDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeDeadLeafBiomassDyn(var instance : TInstance; var T : TPointerProcParam);
-procedure ComputeLeavesSenescenceStockDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeBiomassInAllLeavesDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeBiomassLeavesMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeBiomassLeavesTillerDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeBladeAreaInAllLeavesDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeBladeAreaLeavesMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeBladeAreaLeavesTillerDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure KillSenescLeavesDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeThermalTimeSinceLigulation_LEDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeInternodeLengthPredimDyn(var instance : TInstance; var T : TPointerProcParam);
@@ -331,8 +360,18 @@ procedure ComputeStructLeafDyn(var instance : TInstance; var T : TPointerProcPar
 procedure ComputeSumOfBiomassDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure ComputeWeightPanicleDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure SumOfDailySenescedLeafBiomassOnCulmDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure SumOfDailyComputedReallocBiomassOnCulmDyn(var instance : TInstance; var T : TPointerProcParam);
 procedure SumOfDailySenescedLeafBiomassDyn(var instance : TInstance; var T : TPointerProcParam);
-
+procedure SumOfDailyComputedReallocBiomassDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeBiomassInternodeStructDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeBiomLeafMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeNbLeafMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure SetUpTillerStockPre_ElongDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure DeficitSurplusCorrectionDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeSLAStructDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure DataForRDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeBiomMainstem_LEDyn(var instance : TInstance; var T : TPointerProcParam);
+procedure ComputeBiomStem_LEDyn(var instance : TInstance; var T : TPointerProcParam);
 
 
 
@@ -356,8 +395,6 @@ implementation
 
 uses EntityTiller_LE, EntityTillerPhytomer_LE;
 
-const
-  PI = 3.1416;
 
 //----------------------------------------------------------------------------
 // Procedure ComputeRootDemand_LE
@@ -382,6 +419,10 @@ const
 Procedure ComputeRootDemand_LE(const A, K, numOfSimulationDay, resp_R_d, P : Double; var R_d: Double);
 begin
   R_d := A * exp(K * numOfSimulationDay) * ((P * resp_R_d) + 1);
+  SRwriteln('coeff1_R_d         --> ' + FloatToStr(A));
+  SRwriteln('coeff2_R_d         --> ' + FloatToStr(K));
+  SRwriteln('numOfSimulationDay --> ' + FloatToStr(numOfSimulationDay));
+  SRwriteln('R_d                --> ' + FloatToStr(R_d));
 end;
 
 
@@ -505,7 +546,7 @@ Procedure ComputeInternodePredimensionnement_LE(const leafLength, leafLengthToIN
 begin
   //for sugarcane:
   //predimOfCurrentInternode := max(2, (diameter * INDiameterToLength) * fcstr * testIc);
-  predimOfCurrentInternode := max(2, (leafLength * leafLengthTOINLength) * fcstr * testIc);
+  predimOfCurrentInternode := max(0.4, (leafLength * leafLengthTOINLength) * fcstr * testIc);
    // for rice below:
   //predimOfCurrentInternode := (diameter * INDiameterToLength + 48) * fcstr * testIc;
   SRwriteln('leafLength               --> ' + FloatToStr(leafLength));
@@ -615,9 +656,9 @@ end;
 
 Procedure ComputeReductionINER_LE(const FTSW,ThresINER,slopeINER,P,resp_INER : Double; var reductionINER : Double);
 begin
-	if FTSW < ThresINER then
+  if (FTSW < ThresINER) then
   begin
-		reductionINER := max(0.0001, ((1 - (ThresINER - FTSW) * SlopeINER) * (1 + (P * resp_INER))));
+    reductionINER := max(0.0001, ((1 / ThresINER) * FTSW) * (1 + (P * resp_INER)));
   end
 	else
   begin
@@ -627,6 +668,8 @@ begin
   SRwriteln('FTSW                  --> ' + floattostr(FTSW));
   SRwriteln('ThresINER             --> ' + floattostr(ThresINER));
   SRwriteln('SlopeINER             --> ' + floattostr(SlopeINER));
+  SRwriteln('P                     --> ' + FloatToStr(P));
+  SRwriteln('resp_INER             --> ' + FloatToStr(resp_INER));
   SRwriteln('reductionINER Calcule --> ' + floattostr(reductionINER));
 
 end;
@@ -662,7 +705,7 @@ end;
 Procedure ComputeLeafLER_LE(const predimOfCurrentLeaf,reductionLER,plasto,phenoStage,ligulo : Double; var LER : Double);
 begin
   SRwriteln('predimOfCurrentLeaf --> ' + FloatToStr(predimOfCurrentLeaf));
-  SRwriteln('rank                --> ' + FloatToStr(phenoStage));
+  SRwriteln('phenoStage          --> ' + FloatToStr(phenoStage));
   SRwriteln('plasto              --> ' + FloatToStr(plasto));
   SRwriteln('ligulo              --> ' + FloatToStr(ligulo));
   SRwriteln('reductionLER        --> ' + FloatToStr(reductionLER));
@@ -695,7 +738,7 @@ begin
   SRwriteln('predimOfCurrentInternode  --> ' + floattostr(predimOfCurrentInternode));
   SRwriteln('reductionINER             --> ' + floattostr(reductionINER));
   SRwriteln('plasto                    --> ' + floattostr(plasto));
-  SRwriteln('rank                      --> ' + floattostr(phenoStage));
+  SRwriteln('phenoStage                --> ' + floattostr(phenoStage));
   SRwriteln('ligulo                    --> ' + floattostr(ligulo));
   INER := predimOfCurrentInternode * reductionINER / (plasto + phenoStage * (ligulo - plasto));
   SRwriteln('ComputeINER_LE --> INER : ' + floattostr(INER));
@@ -870,7 +913,7 @@ begin
   // Cas : premiere feuille sur le brin maitre
   if ((isFirstLeaf = 1) and (isOnMainstem = 1)) then
   begin
-    exp_time := predim / LER;
+    exp_time := (predim - len) / LER;
   end
   else
   begin
@@ -973,11 +1016,9 @@ end;
 procedure ComputeInternodeBiomass_LE(const Volume, density : Double; var Biomass : Double);
 begin
   Biomass := Volume * density;
-
   SRwriteln('Volume  --> ' + FloatToStr(Volume));
   SRwriteln('density --> ' + FloatToStr(density));
   SRwriteln('Biomass --> ' + FloatToStr(Biomass));
-
 end;
 
 // ----------------------------------------------------------------------------
@@ -1057,7 +1098,7 @@ begin
   SRwriteln('biomass_IN                --> ' + floattostr(biomass_IN));
   SRwriteln('stock_IN                  --> ' + floattostr(stock_IN));
 
-  reservoirDispo_IN := max(0, maximumReserveInInternode*biomass_IN-stock_IN);
+  reservoirDispo_IN := max(0, maximumReserveInInternode * biomass_IN - stock_IN);
 
   SRwriteln('reservoirDispo_IN         --> ' + floattostr(reservoirDispo_IN));
 end;
@@ -1488,56 +1529,55 @@ end;
 @param dayDemand (In) demande journalière en biomasse
 @param stock (InOut) stock de biomasse
 *)
-procedure UpdateStock_LE(const dayDemand, reservoirDispo, supply, dailySenescedLeafBiomass: Double; var stock, deficit, seedres, surplus : Double);
+procedure UpdateStock_LE(const dayDemand, reservoirDispo, supply, dailyComputedReallocBiomass: Double; var stock, deficit, seedres, surplus : Double);
 var
   restDayDemand, tmp : Double;
 begin
 	SRwriteln('AVANT');
   SRwriteln('-----');
-  SRwriteln('stock                    --> ' + FloatToStr(stock));
-  SRwriteln('deficit                  --> ' + FloatToStr(deficit));
-  SRwriteln('seedres                  --> ' + FloatToStr(seedres));
-  SRwriteln('dayDemand                --> ' + FloatToStr(dayDemand));
-  SRwriteln('reservoirDispo           --> ' + FloatToStr(reservoirDispo));
-  SRwriteln('supply                   --> ' + FloatToStr(supply));
-  SRwriteln('surplus                  --> ' + FloatToStr(surplus));
-  SRwriteln('dailySenescedLeafBiomass --> ' + FloatToStr(dailySenescedLeafBiomass));
+  SRwriteln('stock                       --> ' + FloatToStr(stock));
+  SRwriteln('deficit                     --> ' + FloatToStr(deficit));
+  SRwriteln('seedres                     --> ' + FloatToStr(seedres));
+  SRwriteln('dayDemand                   --> ' + FloatToStr(dayDemand));
+  SRwriteln('reservoirDispo              --> ' + FloatToStr(reservoirDispo));
+  SRwriteln('supply                      --> ' + FloatToStr(supply));
+  SRwriteln('surplus                     --> ' + FloatToStr(surplus));
+  SRwriteln('dailyComputedReallocBiomass --> ' + FloatToStr(dailyComputedReallocBiomass));
 	if (seedres > 0) then
   begin
     if (seedres > dayDemand) then
     begin
+      SRwriteln('cas seedres > dayDemand');
       seedres := seedres  - dayDemand;
-      stock := stock + min(reservoirDispo, supply);
-      surplus := max(supply - reservoirDispo, 0);
+      stock := stock + min(reservoirDispo, supply + dailyComputedReallocBiomass);
+      surplus := max(supply + dailyComputedReallocBiomass - reservoirDispo, 0);
     end
     else
     begin
+      SRwriteln('cas seedres <= dayDemand');
       restDayDemand := dayDemand - seedres;
       seedres := 0;
-      stock := stock + min(reservoirDispo, supply - restDayDemand);
-      surplus := max(supply - restDayDemand - reservoirDispo, 0);
+      stock := stock + min(reservoirDispo, supply - restDayDemand + dailyComputedReallocBiomass);
+      surplus := max(supply + dailyComputedReallocBiomass - restDayDemand - reservoirDispo, 0);
     end;
   end
   else
   begin
+    SRwriteln('cas seedres = 0');
     seedres := 0;
-    stock := stock + min(reservoirDispo, supply - dayDemand);
-    surplus := max(supply - dayDemand - reservoirDispo, 0);
+    stock := stock + min(reservoirDispo, supply - dayDemand + dailyComputedReallocBiomass);
+    surplus := max(supply + dailyComputedReallocBiomass - dayDemand - reservoirDispo, 0);
   end;
-  tmp := deficit + stock + dailySenescedLeafBiomass;
+  tmp := deficit + stock;
   deficit := Min(0, tmp);
   stock := Max(0, tmp);
 
   SRwriteln('APRES');
   SRWRITELN('-----');
-  SRwriteln('stock                    --> ' + FloatToStr(stock));
-  SRwriteln('deficit                  --> ' + FloatToStr(deficit));
-  SRwriteln('seedres                  --> ' + FloatToStr(seedres));
-  SRwriteln('dayDemand                --> ' + FloatToStr(dayDemand));
-  SRwriteln('reservoirDispo           --> ' + FloatToStr(reservoirDispo));
-  SRwriteln('supply                   --> ' + FloatToStr(supply));
-  SRwriteln('surplus                  --> ' + FloatToStr(surplus));
-  SRwriteln('dailySenescedLeafBiomass --> ' + FloatToStr(dailySenescedLeafBiomass));
+  SRwriteln('stock                       --> ' + FloatToStr(stock));
+  SRwriteln('deficit                     --> ' + FloatToStr(deficit));
+  SRwriteln('seedres                     --> ' + FloatToStr(seedres));
+  SRwriteln('surplus                     --> ' + FloatToStr(surplus));
 end;
 
 
@@ -1566,7 +1606,6 @@ begin
   begin
     if (seedres > dayDemand) then
     begin
-
       surplus := max(supply - reservoirDispo, 0);
     end
     else
@@ -1643,28 +1682,28 @@ begin
 
   if (dayDemand <> 0) then
   begin
-    resDiv := (max(0,seedres) + supply)/dayDemand;
+    resDiv := (max(0, seedres) + supply) / dayDemand;
     total := total + resDiv;
     n := n + 1;
   end;
 
   if (dayDemand_previous1 <> 0) then
   begin
-    resDiv := (max(0,seedres_previous1) + supply_previous1)/dayDemand_previous1;
+    resDiv := (max(0, seedres_previous1) + supply_previous1) / dayDemand_previous1;
     total := total + resDiv;
     n := n + 1;
   end;
 
   if (dayDemand_previous2 <> 0) then
   begin
-    resDiv := (max(0,seedres_previous2) + supply_previous2)/dayDemand_previous2;
+    resDiv := (max(0, seedres_previous2) + supply_previous2) / dayDemand_previous2;
     total := total + resDiv;
     n := n + 1;
   end;
 
   if (dayDemand_previous3 <> 0) then
   begin
-    resDiv := (max(0,seedres_previous3) + supply_previous3)/dayDemand_previous3;
+    resDiv := (max(0, seedres_previous3) + supply_previous3) / dayDemand_previous3;
     total := total + resDiv;
     n := n + 1;
   end;
@@ -1678,7 +1717,7 @@ begin
     mean := Ic_previous1;
   end;
 
-  Ic := min(5,mean);
+  Ic := min(5, mean);
 
   if ((Ic = 0) and (seedres = 0) and (seedres_previous1 = 0) and (seedres_previous2 = 0)
      and (seedres_previous3 = 0)) then
@@ -1690,7 +1729,7 @@ begin
   end
   else
   begin
-    testIc := min(1 , sqrt(Ic) );
+    testIc := min(1 , sqrt(Ic));
   end;
 
   SRwriteln('total               --> ' + floattostr(total));
@@ -1794,7 +1833,10 @@ procedure ComputeInternodeVolume(const Length, Diameter : Double; var Volume : D
 begin
   Volume := Length * Power(0.5 * Diameter, 2) * PI;
 
-  SRwriteln('ComputeInternodeVolume --> Volume : ' + floattostr(Volume));
+  SRwriteln('Length   --> ' + FloatToStr(Length));
+  SRwriteln('Diameter --> ' + FloatToStr(Diameter));
+  SRwriteln('PI       --> ' + FloatToStr(PI));
+  SRwriteln('Volume   --> ' + floattostr(Volume));
 
 end;
 
@@ -1845,10 +1887,10 @@ end;
 @param inOnMainstem (In) est-ce que la feuille sur le brin maître ou non ?
 *)
 
-Procedure TransitionToLiguleState(var instance : TInstance; const len, predim, isOnMainstem : double);
+Procedure TransitionToLiguleState(var instance : TInstance; const len, predim, isOnMainstem : double; var demand, lastDemand : Double);
 var
   refInstance : TInstance;
-  lig, biomass : double;
+  lig : double;
   date : TDateTime;
 
   titi,toto : double;
@@ -1865,6 +1907,13 @@ begin
     // passage a l etat ligule
     (instance as TEntityInstance).SetCurrentState(20);
     SRWriteln('**** new ligulated leaf ****');
+
+    SRwriteln('on affecte demand a lastDemand et on met demand a 0');
+    lastDemand := demand;
+    demand := 0;
+
+    SRwriteln('lastDemand --> ' + FloatToStr(lastDemand));
+    SRwriteln('demand     --> ' + FloatToStr(demand));
 
     date := (instance as TEntityInstance).GetNextDate();
     SRwriteln('date  --> ' + datetostr(date));
@@ -2058,6 +2107,8 @@ begin
     (instance as TEntityInstance).GetTInstance('updateNbTillerCount_2').SetActiveState(2); // pour morphogenesis
     (instance as TEntityInstance).GetTInstance('countNbTiller_9').SetActiveState(9);
     (instance as TEntityInstance).GetTInstance('updateNbTillerCount_9').SetActiveState(9); // pour ELONG
+    (instance as TEntityInstance).GetTInstance('countNbTiller_4').SetActiveState(4);
+    (instance as TEntityInstance).GetTInstance('updateNbTillerCount_4').SetActiveState(4); // pour PI
   end;
 
   if (stadePheno = nbLeafEnablingTillering) then
@@ -2074,6 +2125,10 @@ begin
     (instance as TEntityInstance).GetTInstance('countNbTillerWith4Leaves_9').SetActiveState(9);
     (instance as TEntityInstance).GetTInstance('addOne_9').SetActiveState(9);
     (instance as TEntityInstance).GetTInstance('minTAEandnbTiller_9').SetActiveState(9);
+    (instance as TEntityInstance).GetTInstance('createTillers_4').SetActiveState(4); // pour PI
+    (instance as TEntityInstance).GetTInstance('countNbTillerWith4Leaves_4').SetActiveState(4);
+    (instance as TEntityInstance).GetTInstance('addOne_4').SetActiveState(4);
+    (instance as TEntityInstance).GetTInstance('minTAEandnbTiller_4').SetActiveState(4);
   end;
 end;
 
@@ -2227,7 +2282,7 @@ begin
 
 end;
 
-Procedure CreateTillersPhytomer_LE(var instance : TInstance; const boolCrossedPlasto,Ic,Ict,exeOrder,P,resp_Ict, thresINER, slopeINER, leafStockMax : double; var nbTiller : double);
+Procedure CreateTillersPhytomer_LE(var instance : TInstance; const boolCrossedPlasto,Ic,Ict,exeOrder,P,resp_Ict, thresINER, slopeINER, leafStockMax, phenoStageAtCreation : double; var nbTiller : double);
 var
   i, tillerExeOrder : integer;
   newTiller : TEntityInstance;
@@ -2245,7 +2300,8 @@ begin
         name := 'T_' + IntToStr(FindGreatestSuffixforASpecifiedCategory(instance as TEntityInstance,'Tiller')+1);
         SRwriteln('nbTiller : ' + FloatToStr(nbTiller));
         SRwriteln('Module Meristem ****  creation de la talle : ' + name + '  ****');
-        newTiller := ImportTillerPhytomer_LE(name, thresINER, slopeINER, leafStockMax);
+        SRwriteln('phenoStageAtCreation --> ' + FloatToStr(phenoStageAtCreation));
+        newTiller := ImportTillerPhytomer_LE(name, thresINER, slopeINER, leafStockMax, phenoStageAtCreation);
         // determination de l'ordre d'execution de newTiller :
         // -------------------------------------------------
         if (HasAnEntityWithASpecifiedCategory(instance as TEntityInstance,'Tiller')=False) then
@@ -2331,9 +2387,9 @@ end;
 *)
 Procedure ChangeOrganExeOrder_LE(var instance : TInstance);
 begin
-  (instance as TEntityInstance).GetTInstance('computeSumOfLeafDemand').SetExeOrder(1900);
+  //(instance as TEntityInstance).GetTInstance('computeSumOfLeafDemand').SetExeOrder(1900);
   //(instance as TEntityInstance).GetTInstance('Internode').SetExeOrder(1910);
-  (instance as TEntityInstance).GetTInstance('Root').SetExeOrder(1920);
+  //(instance as TEntityInstance).GetTInstance('Root').SetExeOrder(1920);
 
   (instance as TEntityInstance).GetTInstance('changeOrganExeOrder').SetActiveState(100);
 
@@ -2403,6 +2459,7 @@ var
    existLeafstate4_5 : Boolean;
    currentState : Integer;
    stateOldestLeaf : Integer;
+   localComputedReallocBiomass, dailySenescDw : Double;
 Begin
   // recherche de la plus vieille feuille
   // ------------------------------------
@@ -2479,23 +2536,31 @@ Begin
   // re alocation de la biomasse
   // ---------------------------
 
-  SRwriteln('-----------------------------');
-  SRwriteln('Ancienne valeur du stock    --> ' + FloatToStr(stock));
-  SRwriteln('Deficit                     --> ' + FloatToStr(deficit));
-  SRwriteln('Biomasse de la feuille tuee --> ' + FloatToStr(leafBiomass));
-  SRwriteln('On recupere                 --> ' + FloatToStr(realocationCoeff * leafBiomass));
+  SRwriteln('----------------------------------------------');
+  SRwriteln('Ancienne valeur du stock                  --> ' + FloatToStr(stock));
+  SRwriteln('Ancienne valeur de computedReallocBiomass --> ' + FloatToStr(computedReallocBiomass));
+  SRwriteln('Ancienne valeur de senesc_dw              --> ' + FloatToStr(senesc_dw));
+  SRwriteln('Deficit                                   --> ' + FloatToStr(deficit));
+  SRwriteln('Biomasse de la feuille tuee               --> ' + FloatToStr(leafBiomass));
+  SRwriteln('On recupere                               --> ' + FloatToStr(realocationCoeff * leafBiomass));
 
-  computedReallocBiomass := realocationCoeff * leafBiomass;
+  localComputedReallocBiomass := realocationCoeff * leafBiomass;
 
-  stock := max(0, computedReallocBiomass + deficit);
-  deficit := min(0, computedReallocBiomass + deficit);
-  senesc_dw := senesc_dw + leafBiomass - computedReallocBiomass;
+  computedReallocBiomass := computedReallocBiomass  + localComputedReallocBiomass;
+
+  stock := max(0, localComputedReallocBiomass + deficit);
+  deficit := min(0, localComputedReallocBiomass + deficit);
+  senesc_dw := senesc_dw + (leafBiomass - localComputedReallocBiomass);
+  dailySenescDw := leafBiomass - localComputedReallocBiomass;
   deadleafNb := deadleafNb + 1;
 
-  SRwriteln('-----------------------------');
-  SRwriteln('Nouvelle valeur du stock   --> ' + FloatToStr(stock));
-  SRwriteln('Nouvelle valeur du deficit --> ' + FloatToStr(deficit));
-  SRwriteln('computedReallocBiomass     --> ' + FloatToStr(computedReallocBiomass));
+  SRwriteln('----------------------------------------------');
+  SRwriteln('dailySenescDw                             --> ' + FloatToStr(dailySenescDw));
+  SRwriteln('Nouvelle valeur de computedReallocBiomass --> ' + FloatToStr(computedReallocBiomass));
+  SRwriteln('Nouvelle valeur de senesc_dw              --> ' + FloatToStr(senesc_dw));
+  SRwriteln('Nouvelle valeur du stock                  --> ' + FloatToStr(stock));
+  SRwriteln('Nouvelle valeur du deficit                --> ' + FloatToStr(deficit));
+  SRwriteln('computedReallocBiomass                    --> ' + FloatToStr(computedReallocBiomass));
 
   // cas particulier ou la plante est morte
   // (cad plus de feuille sur le brin maitre)
@@ -2630,7 +2695,7 @@ begin
 
   // recherche des entités 'Tiller' ayant l'attribut 'nbLeaf' >= 4
   le := (instance as TEntityInstance).LengthTInstanceList();
-  for i := 0 to le-1 do
+  for i := 0 to le - 1 do
   begin
     currentInstance := (instance as TEntityInstance).GetTInstance(i);
     if (currentInstance is TEntityInstance) then
@@ -2639,7 +2704,7 @@ begin
       if (category = 'Tiller') then
       begin
         leafNb := (currentInstance as TEntityInstance).GetTAttribute('leafNb').GetCurrentSample().value;
-        if(leafNb>=3) then
+        if(leafNb >= 3) then
         begin
           nbTillerWithMore4Leaves := nbTillerWithMore4Leaves + 1;
         end;
@@ -2689,13 +2754,13 @@ var
   category : String;
   currentState : Integer;
   currentInstance : TInstance;
-  entityInstance : TEntityInstance;
+//  entityInstance : TEntityInstance;
   phenoStageAtStateAttribute : TAttribute;
-  currentTT : TAttribute;
-  TTAtPI : TAttribute;
+//  currentTT : TAttribute;
+//  TTAtPI : TAttribute;
   sample : TSample;
-  ttSample : TSample;
-  ttAtPISample : TSample;
+//  ttSample : TSample;
+//  ttAtPISample : TSample;
   date : TDateTime;
   leafNb : Double;
 begin
@@ -2731,7 +2796,7 @@ begin
             sample.date := date;
             sample.value := n;
             phenoStageAtStateAttribute.SetSample(sample);
-            entityInstance := (instance as TEntityInstance);
+            //entityInstance := (instance as TEntityInstance);
             //currentTT := entityInstance.GetTAttribute('n');
             //ttSample := (currentTT as TAttributeTableOut).GetCurrentSample();
             //TTAtPI := (currentInstance as TEntityInstance).GetTAttribute('phenoStageAtPreFlo');
@@ -2823,13 +2888,10 @@ begin
       begin
         leafNb := (currentInstance as TEntityInstance).GetTAttribute('leafNb').GetCurrentSample().value;
         //showmessage('leafNb : ' + floattostr(leafNb));
-        if(leafNb>=3) then
+        if(leafNb >= 3) then
         begin
           nbTillerFertile := nbTillerFertile + 1;
           (currentInstance as TEntityInstance).SetCurrentState(3);
-
-          //SRwriteln('la talle ' + (currentInstance as TEntityInstance).GetName() + ' passe à 3');
-
         end;
       end;
     end;
@@ -2880,6 +2942,7 @@ begin
   // initialisation
   // ---------------
   nbLeaf := 0;
+  leafLength := 0;
   youngestCreationDate := MIN_DATE;
   youngestLigulatedLeaf := NIL;
   sumOfInternodeLength := 0;
@@ -2914,7 +2977,8 @@ begin
       begin
         if ((currentInstance as TEntityInstance).GetCurrentState() <> 2000) then
         begin
-          internodeLength := ((currentInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+          //internodeLength := ((currentInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+          internodeLength := (currentInstance as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
           sumOfInternodeLength := sumOfInternodeLength + internodeLength;
         end;
       end;
@@ -2936,7 +3000,7 @@ begin
     leafLength := (youngestLigulatedLeaf as TEntityInstance).GetTAttribute('len').GetSample(date).value;
     AreaLFEL := (youngestLigulatedLeaf as TEntityInstance).GetTAttribute('bladeArea').GetSample(date).value;
     DWLFEL := (youngestLigulatedLeaf as TEntityInstance).GetTAttribute('biomass').GetSample(date).value;
-    SLALFEL := AreaLFEL / DWLFEL * G_L * (1 + (stockPlant - stockInternodePlant) / structLeaf);
+    SLALFEL := AreaLFEL / (DWLFEL * G_L * (1 + (stockPlant - stockInternodePlant) / structLeaf));
     SRwriteln('youngestLigulatedLeaf name --> ' + youngestLigulatedLeaf.GetName());
     SRwriteln('G_L                        --> ' + FloatToStr(G_L));
     SRwriteln('LL_BL                      --> ' + FloatToStr(LL_BL));
@@ -2976,6 +3040,7 @@ begin
       begin
         SRwriteln('(1 - 1/LL_BL) * leafLength < peduncleLength');
         PHT := peduncleLength + sumOfInternodeLength;
+         //PHT := tmp + sumOfInternodeLength;
       end;
     end;
   end;
@@ -2999,7 +3064,11 @@ end;
 procedure compute_LAI_str(const PAI : double ; const density : double ; const fcstr : double ; var LAI : double);
 begin
 
-   LAI := PAI * density * (0.3+0.7*fcstr) / 10000;
+   LAI := PAI * density * (0.3 + 0.7 * fcstr) / 10000;
+   SRwriteln('PAI     --> ' + FloatToStr(PAI));
+   SRwriteln('density --> ' + FloatToStr(density));
+   SRwriteln('fcstr   --> ' + FloatToStr(fcstr));
+   SRwriteln('LAI     --> ' + FloatToStr(LAI));
 
 end;
 
@@ -3021,7 +3090,13 @@ end;
 *)
 procedure computeAssimpot_str(const radiationinterception : double ; const epsib : double ; const radiation : double ; const fcstr : double ;const Kpar : double ; var potentialAssimilation : double);
 begin
-  potentialAssimilation := radiationInterception*Epsib*Ln(1.4292 + 1.3692 * fcstr)*radiation*Kpar;
+  SRwriteln('radiationInterception --> ' + FloatToStr(radiationinterception));
+  SRwriteln('epsib                 --> ' + FloatToStr(epsib));
+  SRwriteln('fcstr                 --> ' + FloatToStr(fcstr));
+  SRwriteln('radiation             --> ' + FloatToStr(radiation));
+  SRwriteln('Kpar                  --> ' + FloatToStr(Kpar));
+  potentialAssimilation := radiationInterception * Epsib *Ln(1.4292 + 1.3692 * fcstr) * radiation * Kpar;
+  SRwriteln('potentialAssimilation --> ' + FloatToStr(potentialAssimilation));
 end;
 
 //
@@ -3249,7 +3324,8 @@ begin
     sample.value := total;
     ((instance as TEntityInstance).GetTAttribute('surplus') as TAttributeTableOut).SetSample(sample);
     SRwriteln('Surplus Plant --> ' + FloatToStr(total));
-  end;end;
+  end;
+end;
 
 // -----------------------------------------------------------------------------
 // Procedure ComputeDeficitPlant_LE
@@ -3437,6 +3513,7 @@ var
   sample : TSample;
   currentInstance : TInstance;
   stockCulm, maxReservoirOnCulm, sumDemandINCulm, sumDemandNonINCulm, sumOfLastDemandCulm, surplusCulm, supplyCulm : Double;
+  sumOfDailyComputedReallocBiomassCulm : Double;
   date : TDateTime;
 begin
   stateMeristem := (instance as TEntityInstance).GetCurrentState();
@@ -3447,16 +3524,18 @@ begin
     maxReservoirOnCulm := (instance as TEntityInstance).GetTAttribute('max_reservoir_mainstem').GetCurrentSample().value;
     sumDemandINCulm := (instance as TEntityInstance).GetTAttribute('sumOfMainstemInternodeDemand').GetCurrentSample().value;
     sumDemandNonINCulm := (instance as TEntityInstance).GetTAttribute('sumOfMainstemNonInternodeDemand').GetCurrentSample().value;
+    sumOfDailyComputedReallocBiomassCulm := (instance as TEntityInstance).GetTAttribute('sumOfDailyComputedReallocBiomassMainstem').GetCurrentSample().value;
     sumOfLastDemandCulm := (instance as TEntityInstance).GetTAttribute('lastDemandMainstem').GetCurrentSample().value;
     supplyCulm := (instance as TEntityInstance).GetTAttribute('supply_mainstem').GetCurrentSample().value;
-    SRwriteln('stockMainstem                   --> ' + FloatToStr(stockCulm));
-    SRwriteln('maxReservoirDispoOnMainstem     --> ' + FloatToStr(maxReservoirOnCulm));
-    SRwriteln('sumOfMainstemInternodeDemand    --> ' + FloatToStr(sumDemandINCulm));
-    SRwriteln('sumOfMainstemNonInternodeDemand --> ' + FloatToStr(sumDemandNonINCulm));
-    SRwriteln('sumOfLastDemandMainstem         --> ' + FloatToStr(sumOfLastDemandCulm));
-    SRwriteln('supplyMainstem                  --> ' + FloatToStr(supplyCulm));
-    surplusCulm := Max(0, stockCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + supplyCulm - maxReservoirOnCulm);
-    SRwriteln('surplusCulm                     --> ' + FloatToStr(surplusCulm));
+    SRwriteln('stockMainstem                            --> ' + FloatToStr(stockCulm));
+    SRwriteln('maxReservoirDispoOnMainstem              --> ' + FloatToStr(maxReservoirOnCulm));
+    SRwriteln('sumOfMainstemInternodeDemand             --> ' + FloatToStr(sumDemandINCulm));
+    SRwriteln('sumOfMainstemNonInternodeDemand          --> ' + FloatToStr(sumDemandNonINCulm));
+    SRwriteln('sumOfLastDemandMainstem                  --> ' + FloatToStr(sumOfLastDemandCulm));
+    SRwriteln('sumOfDailyComputedReallocBiomassMainstem --> ' + FloatToStr(sumOfDailyComputedReallocBiomassCulm));
+    SRwriteln('supplyMainstem                           --> ' + FloatToStr(supplyCulm));
+    surplusCulm := Max(0, stockCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + supplyCulm - maxReservoirOnCulm + sumOfDailyComputedReallocBiomassCulm);
+    SRwriteln('surplusCulm                              --> ' + FloatToStr(surplusCulm));
     date := (instance as TEntityInstance).GetNextDate();
     sample := (instance as TEntityInstance).GetTAttribute('surplus_mainstem').GetSample(date);
     sample.date := date;
@@ -3481,15 +3560,17 @@ begin
               sumDemandINCulm := (currentInstance as TEntityInstance).GetTAttribute('sumOfTillerInternodeDemand').GetCurrentSample().value;
               sumDemandNonINCulm := (currentInstance as TEntityInstance).GetTAttribute('demandOfNonINTiller').GetCurrentSample().value;
               sumOfLastDemandCulm := (currentInstance as TEntityInstance).GetTAttribute('last_demand_tiller').GetCurrentSample().value;
+              sumOfDailyComputedReallocBiomassCulm := (currentInstance as TEntityInstance).GetTAttribute('sumOfDailyComputedReallocBiomassTiller').GetCurrentSample().value;
               supplyCulm := (currentInstance as TEntityInstance).GetTAttribute('supply_tiller').GetCurrentSample().value;
-              SRwriteln('stockTiller                   --> ' + FloatToStr(stockCulm));
-              SRwriteln('maxReservoirDispoOnTiller     --> ' + FloatToStr(maxReservoirOnCulm));
-              SRwriteln('sumOfTillerInternodeDemand    --> ' + FloatToStr(sumDemandINCulm));
-              SRwriteln('sumOfTillerNonInternodeDemand --> ' + FloatToStr(sumDemandNonINCulm));
-              SRwriteln('sumOfLastDemandTiller         --> ' + FloatToStr(sumOfLastDemandCulm));
-              SRwriteln('supplyTiller                  --> ' + FloatToStr(supplyCulm));
-              surplusCulm := Max(0, stockCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + supplyCulm - maxReservoirOnCulm);
-              SRwriteln('surplusCulm                   --> ' + FloatToStr(surplusCulm));
+              SRwriteln('stockTiller                            --> ' + FloatToStr(stockCulm));
+              SRwriteln('maxReservoirDispoOnTiller              --> ' + FloatToStr(maxReservoirOnCulm));
+              SRwriteln('sumOfTillerInternodeDemand             --> ' + FloatToStr(sumDemandINCulm));
+              SRwriteln('sumOfTillerNonInternodeDemand          --> ' + FloatToStr(sumDemandNonINCulm));
+              SRwriteln('sumOfLastDemandTiller                  --> ' + FloatToStr(sumOfLastDemandCulm));
+              SRwriteln('sumOfDailyComputedReallocBiomassTiller --> ' + FloatToStr(sumOfDailyComputedReallocBiomassCulm));
+              SRwriteln('supplyTiller                           --> ' + FloatToStr(supplyCulm));
+              surplusCulm := Max(0, stockCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + supplyCulm - maxReservoirOnCulm + sumOfDailyComputedReallocBiomassCulm);
+              SRwriteln('surplusCulm                            --> ' + FloatToStr(surplusCulm));
               date := (currentInstance as TEntityInstance).GetNextDate();
               sample := (currentInstance as TEntityInstance).GetTAttribute('surplus_tiller').GetSample(date);
               sample.date := date;
@@ -3663,7 +3744,7 @@ end;
 
 function ComputeBiomassCulm(var instance : TInstance) : Double;
 var
-  i, le : Integer;
+  i, le, stateLeaf : Integer;
   currentInstance : TInstance;
   total : Double;
 begin
@@ -3676,7 +3757,15 @@ begin
     begin
       if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
       begin
-        total := total + (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+        stateLeaf := (currentInstance as TEntityInstance).GetCurrentState();
+        if ((stateLeaf = 4) or (stateLeaf = 5)) then
+        begin
+          total := total + (currentInstance as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
+        end
+        else
+        begin
+          total := total + (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;        
+        end;
       end
       else if ((currentInstance as TEntityInstance).GetCategory() = 'Internode') then
       begin
@@ -3717,62 +3806,46 @@ var
   stateMeristem, stateTiller, le, i : Integer;
   currentInstance : TInstance;
   stockCulm, deficitCulm, sumDemandINCulm, sumDemandNonINCulm, sumOfLastDemandCulm, supplyCulm, tmpCulm : Double;
-  sumOfBiomassOnCulm, sumOfBiomassOnPlant, sumOfDailySenescedLeafBiomassCulm : Double;
-  stockPlant, deficitPlant, computedReallocBiomass, reallocCulm : Double;
+  sumOfBiomassOnCulm, sumOfBiomassOnPlant : Double;
+  stockPlant, deficitPlant, sumOfDailyComputedReallocBiomassCulm : Double;
   sample : TSample;
   date : TDateTime;
 begin
   stateMeristem := (instance as TEntityInstance).GetCurrentState();
   if (stateMeristem >= 4) then
   begin
+    date := (instance as TEntityInstance).GetNextDate();
     SRwriteln('stateMeristem : ' + IntToStr(stateMeristem));
     deficitPlant := ((instance as TEntityInstance).GetTAttribute('deficit') as TAttributeTableOut).GetCurrentSample().value;
     stockPlant :=  ((instance as TEntityInstance).GetTAttribute('stock') as TAttributeTableOut).GetCurrentSample().value;
-    computedReallocBiomass := ((instance as TEntityInstance).GetTAttribute('computedReallocBiomass') as TAttributeTableOut).GetCurrentSample().value;
-    stockCulm := ((instance as TEntityInstance).GetTAttribute('stock_mainstem') as TAttributeTableOut).GetCurrentSample().value;
-    deficitCulm := (instance as TEntityInstance).GetTAttribute('deficit_mainstem').GetCurrentSample().value;
     sumDemandINCulm := (instance as TEntityInstance).GetTAttribute('sumOfMainstemInternodeDemand').GetCurrentSample().value;
     sumDemandNonINCulm := (instance as TEntityInstance).GetTAttribute('sumOfMainstemNonInternodeDemand').GetCurrentSample().value;
     sumOfLastDemandCulm := (instance as TEntityInstance).GetTAttribute('lastDemandMainstem').GetCurrentSample().value;
     supplyCulm := (instance as TEntityInstance).GetTAttribute('supply_mainstem').GetCurrentSample().value;
-    sumOfDailySenescedLeafBiomassCulm := (instance as TEntityInstance).GetTAttribute('sumOfDailySenescedLeafBiomassMainstem').GetCurrentSample().value;
-
-    date := (instance as TEntityInstance).GetNextDate();
-
-    SRwriteln('stockMainstem                         --> ' + FloatToStr(stockCulm));
-    SRwriteln('deficitMainstem                       --> ' + FloatToStr(deficitCulm));
-    SRwriteln('deficitPlant                          --> ' + FloatToStr(deficitPlant));
-    SRwriteln('sumOfMainstemInternodeDemand          --> ' + FloatToStr(sumDemandINCulm));
-    SRwriteln('sumOfMainstemNonInternodeDemand       --> ' + FloatToStr(sumDemandNonINCulm));
-    SRwriteln('lastDemandMainstem                    --> ' + FloatToStr(sumOfLastDemandCulm));
-    SRwriteln('supplyMainstem                        --> ' + FloatToStr(supplyCulm));
-    SRwriteln('computedReallocBiomass                --> ' + FloatToStr(computedReallocBiomass));
-    SRwriteln('sumOfDailySenescedLeafBiomassMainstem --> ' + FloatToStr(sumOfDailySenescedLeafBiomassCulm));
-
-    if (deficitPlant < 0) then
-    begin
-      sumOfBiomassOnCulm := ComputeBiomassCulm(instance);
-      sumOfBiomassOnPlant := ComputeAllBiomass(instance);
-      stockCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * stockPlant;
-      deficitCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * deficitPlant;
-      sample.date := date;
-      sample.value :=  stockCulm;
-      (instance as TEntityInstance).GetTAttribute('stock_mainstem').SetSample(sample);
-      sample.value := deficitCulm;
-      (instance as TEntityInstance).GetTAttribute('deficit_mainstem').SetSample(sample);
-      SRwriteln('Nouveau stock, nouveau deficit');
-      SRwriteln('------------------------------');
-      SRwriteln('sumOfBiomassOnCulm  --> ' + FloatToStr(sumOfBiomassOnCulm));
-      SRwriteln('sumOfBiomassOnPlant --> ' + FloatToStr(sumOfBiomassOnPlant));
-      SRwriteln('stockPlant          --> ' + FloatToStr(stockPlant));
-      SRwriteln('deficitPlant        --> ' + FloatToStr(deficitPlant));
-      SRwriteln('stockCulm           --> ' + FloatToStr(stockCulm));
-      SRwriteln('deficitCulm         --> ' + FloatToStr(deficitCulm));
-      SRwriteln('------------------------------');
-    end;
-    tmpCulm := stockCulm + deficitCulm + supplyCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + sumOfDailySenescedLeafBiomassCulm;
-    SRwriteln('tmpMainstem                     --> ' + FloatToStr(tmpCulm));
-    SRwriteln('-------------------------------------------------');
+    sumOfDailyComputedReallocBiomassCulm := (instance as TEntityInstance).GetTAttribute('sumOfDailyComputedReallocBiomassMainstem').GetCurrentSample().value;
+    sumOfBiomassOnCulm := ComputeBiomassCulm(instance);
+    sumOfBiomassOnPlant := ComputeAllBiomass(instance);
+    stockCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * stockPlant;
+    deficitCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * deficitPlant;
+    sample.date := date;
+    sample.value :=  stockCulm;
+    (instance as TEntityInstance).GetTAttribute('stock_mainstem').SetSample(sample);
+    sample.value := deficitCulm;
+    (instance as TEntityInstance).GetTAttribute('deficit_mainstem').SetSample(sample);
+    SRwriteln('sumOfBiomassOnMainstem                    --> ' + FloatToStr(sumOfBiomassOnCulm));
+    SRwriteln('sumOfBiomassOnPlant                       --> ' + FloatToStr(sumOfBiomassOnPlant));
+    SRwriteln('sumOfMainstemInternodeDemand              --> ' + FloatToStr(sumDemandINCulm));
+    SRwriteln('sumOfMainstemNonInternodeDemand           --> ' + FloatToStr(sumDemandNonINCulm));
+    SRwriteln('sumOfDailyComputedReallocBiomassMainstem  --> ' + FloatToStr(sumOfDailyComputedReallocBiomassCulm));
+    SRwriteln('lastDemandMainstem                        --> ' + FloatToStr(sumOfLastDemandCulm));
+    SRwriteln('supplyMainstem                            --> ' + FloatToStr(supplyCulm));
+    SRwriteln('stockPlant                                --> ' + FloatToStr(stockPlant));
+    SRwriteln('deficitPlant                              --> ' + FloatToStr(deficitPlant));
+    SRwriteln('stockMainstem                             --> ' + FloatToStr(stockCulm));
+    SRwriteln('deficitMainstem                           --> ' + FloatToStr(deficitCulm));
+    tmpCulm := stockCulm + deficitCulm + supplyCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + sumOfDailyComputedReallocBiomassCulm;
+    SRwriteln('tmpMainstem                               --> ' + FloatToStr(tmpCulm));
+    SRwriteln('-------------------------------------------------------');
     sample := (instance as TEntityInstance).GetTAttribute('tmp_mainstem').GetSample(date);
     sample.date := date;
     sample.value := tmpCulm;
@@ -3788,46 +3861,35 @@ begin
           stateTiller := (currentInstance as TEntityInstance).GetCurrentState();
           if (stateTiller >= 4) then
           begin
-            SRwriteln('Tiller                        --> ' + currentInstance.GetName());
-            SRwriteln('state Tiller                  --> ' + IntToStr(stateTiller));
-            stockCulm := (currentInstance as TEntityInstance).GetTAttribute('stock_tiller').GetCurrentSample().value;
-            deficitCulm := (currentInstance as TEntityInstance).GetTAttribute('deficit_tiller').GetCurrentSample().value;
+            SRwriteln('Tiller                                 --> ' + currentInstance.GetName());
+            SRwriteln('state Tiller                           --> ' + IntToStr(stateTiller));
             sumDemandINCulm := (currentInstance as TEntityInstance).GetTAttribute('sumOfTillerInternodeDemand').GetCurrentSample().value;
             sumDemandNonINCulm := (currentInstance as TEntityInstance).GetTAttribute('demandOfNonINTiller').GetCurrentSample().value;
             sumOfLastDemandCulm := (currentInstance as TEntityInstance).GetTAttribute('last_demand_tiller').GetCurrentSample().value;
             supplyCulm := (currentInstance as TEntityInstance).GetTAttribute('supply_tiller').GetCurrentSample().value;
-            sumOfDailySenescedLeafBiomassCulm := (currentInstance as TEntityInstance).GetTAttribute('sumOfDailySenescedLeafBiomassTiller').GetCurrentSample().value;
-            SRwriteln('stockTiller                         --> ' + FloatToStr(stockCulm));
-            SRwriteln('deficitTiller                       --> ' + FloatToStr(deficitCulm));
-            SRwriteln('deficitPlant                        --> ' + FloatToStr(deficitPlant));
-            SRwriteln('sumOfTillerInternodeDemand          --> ' + FloatToStr(sumDemandINCulm));
-            SRwriteln('sumOfTillerNonInternodeDemand       --> ' + FloatToStr(sumDemandNonINCulm));
-            SRwriteln('lastDemandTiller                    --> ' + FloatToStr(sumOfLastDemandCulm));
-            SRwriteln('supplyTiller                        --> ' + FloatToStr(supplyCulm));
-            SRwriteln('sumOfDailySenescedLeafBiomassTiller --> ' + FloatToStr(sumOfDailySenescedLeafBiomassCulm));
-            if (deficitPlant < 0) then
-            begin
-              sumOfBiomassOnCulm := ComputeBiomassCulm(currentInstance);
-              sumOfBiomassOnPlant := ComputeAllBiomass(instance);
-              stockCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * stockPlant;
-              deficitCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * deficitPlant;
-              sample.date := date;
-              sample.value :=  stockCulm;
-              (currentInstance as TEntityInstance).GetTAttribute('stock_tiller').SetSample(sample);
-              sample.value := deficitCulm;
-              (currentInstance as TEntityInstance).GetTAttribute('deficit_tiller').SetSample(sample);
-              SRwriteln('Nouveau stock, nouveau deficit');
-              SRwriteln('------------------------------');
-              SRwriteln('sumOfBiomassOnCulm  --> ' + FloatToStr(sumOfBiomassOnCulm));
-              SRwriteln('sumOfBiomassOnPlant --> ' + FloatToStr(sumOfBiomassOnPlant));
-              SRwriteln('stockPlant          --> ' + FloatToStr(stockPlant));
-              SRwriteln('deficitPlant        --> ' + FloatToStr(deficitPlant));
-              SRwriteln('stockCulm           --> ' + FloatToStr(stockCulm));
-              SRwriteln('deficitCulm         --> ' + FloatToStr(deficitCulm));
-              SRwriteln('------------------------------');              
-            end;
-            tmpCulm := stockCulm + deficitCulm + supplyCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + sumOfDailySenescedLeafBiomassCulm;
-            SRwriteln('tmpTiller                     --> ' + FloatToStr(tmpCulm));
+            sumOfDailyComputedReallocBiomassCulm := (currentInstance as TEntityInstance).GetTAttribute('sumOfDailyComputedReallocBiomassTiller').GetCurrentSample().value;
+            sumOfBiomassOnCulm := ComputeBiomassCulm(currentInstance);
+            sumOfBiomassOnPlant := ComputeAllBiomass(instance);
+            stockCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * stockPlant;
+            deficitCulm := (sumOfBiomassOnCulm / sumOfBiomassOnPlant) * deficitPlant;
+            sample.date := date;
+            sample.value :=  stockCulm;
+            (currentInstance as TEntityInstance).GetTAttribute('stock_tiller').SetSample(sample);
+            sample.value := deficitCulm;
+            (currentInstance as TEntityInstance).GetTAttribute('deficit_tiller').SetSample(sample);
+            SRwriteln('sumOfBiomassOnCulm                     --> ' + FloatToStr(sumOfBiomassOnCulm));
+            SRwriteln('sumOfBiomassOnPlant                    --> ' + FloatToStr(sumOfBiomassOnPlant));
+            SRwriteln('sumOfTillerInternodeDemand             --> ' + FloatToStr(sumDemandINCulm));
+            SRwriteln('sumOfTillerNonInternodeDemand          --> ' + FloatToStr(sumDemandNonINCulm));
+            SRwriteln('sumOfDailyComputedReallocBiomassTiller --> ' + FloatToStr(sumOfDailyComputedReallocBiomassCulm));
+            SRwriteln('lastDemandTiller                       --> ' + FloatToStr(sumOfLastDemandCulm));
+            SRwriteln('supplyTiller                           --> ' + FloatToStr(supplyCulm));
+            SRwriteln('stockPlant                             --> ' + FloatToStr(stockPlant));
+            SRwriteln('deficitPlant                           --> ' + FloatToStr(deficitPlant));
+            SRwriteln('stockCulm                              --> ' + FloatToStr(stockCulm));
+            SRwriteln('deficitCulm                            --> ' + FloatToStr(deficitCulm));
+            tmpCulm := stockCulm + deficitCulm + supplyCulm - sumDemandINCulm - sumDemandNonINCulm - sumOfLastDemandCulm + sumOfDailyComputedReallocBiomassCulm;
+            SRwriteln('tmpTiller                              --> ' + FloatToStr(tmpCulm));
             SRwriteln('-------------------------------------------------');
             date := (currentInstance as TEntityInstance).GetNextDate();
             sample := (currentInstance as TEntityInstance).GetTAttribute('tmp_tiller').GetSample(date);
@@ -3920,20 +3982,24 @@ var
   stateMeristem, stateTiller, i, le : Integer;
   currentInstance : TInstance;
   currentEntityInstance : TEntityInstance;
-  assimPlant, sumOfBladeAreaPlant, sumOfBladeAreaMainstem, sumOfBladeAreaOnCulm, assim_tiller, assim_mainstem : Double;
+  assimPlant, assim_tiller, assim_mainstem : Double;
   sample : TSample;
   assimTillerAttribute, supplyTillerAttribute : TAttribute;
   date : TDateTime;
+
+  sumOfPlantLeafBiomass, sumOfMainstemLeafBiomass, sumOfTillerLeafBiomass : Double;
+
+
 begin
   stateMeristem := (instance as TEntityInstance).GetCurrentState();
   case stateMeristem of
-    4, 5, 6, 8, 9, 10, 11 :
+    4, 5, 6, 7, 8, 9, 10, 11 :
     begin
       SRwriteln('state meristem : ' + IntToStr(stateMeristem));
       assimPlant := ((instance as TEntityInstance).GetTAttribute('assim') as TAttributeTableOut).GetCurrentSample().value;
-      sumOfBladeAreaPlant := (instance as TEntityInstance).GetTAttribute('PAI').GetCurrentSample().value;
-      sumOfBladeAreaMainstem := (instance as TEntityInstance).GetTAttribute('sumOfBladeAreaOnMainstem').GetCurrentSample().value;
-      assim_mainstem := assimPlant * (sumOfBladeAreaMainstem / sumOfBladeAreaPlant);
+      sumOfPlantLeafBiomass := (instance as TEntityInstance).GetTAttribute('biomLeafStruct').GetCurrentSample().value;
+      sumOfMainstemLeafBiomass := (instance as TEntityInstance).GetTAttribute('sumOfMainstemLeafBiomass').GetCurrentSample().value;
+      assim_mainstem := assimPlant * (sumOfMainstemLeafBiomass / sumOfPlantLeafBiomass);
       date := (instance as TEntityInstance).GetNextDate();
       sample := ((instance as TEntityInstance).GetTAttribute('assim_mainstem') as TAttributeTableOut).GetSample(date);
       sample.date := date;
@@ -3943,11 +4009,11 @@ begin
       sample.date := date;
       sample.value := assim_mainstem;
       (instance as TEntityInstance).GetTAttribute('supply_mainstem').SetSample(sample);
-      SRwriteln('assimPlant             --> ' + FloatToStr(assimPlant));
-      SRwriteln('sumOfBladeAreaMainstem --> ' + FloatToStr(sumOfBladeAreaMainstem));
-      SRwriteln('sumOfBladeAreaPlant    --> ' + FloatToStr(sumOfBladeAreaPlant));
-      SRwriteln('assimMainstem          --> ' + FloatToStr(assim_mainstem));
-      SRwriteln('supplyMainstem         --> ' + FloatToStr(assim_mainstem));
+      SRwriteln('assimPlant               --> ' + FloatToStr(assimPlant));
+      SRwriteln('sumOfMainstemLeafBiomass --> ' + FloatToStr(sumOfMainstemLeafBiomass));
+      SRwriteln('sumOfPlantLeafBiomass    --> ' + FloatToStr(sumOfPlantLeafBiomass));
+      SRwriteln('assimMainstem            --> ' + FloatToStr(assim_mainstem));
+      SRwriteln('supplyMainstem           --> ' + FloatToStr(assim_mainstem));
       le := (instance as TEntityInstance).LengthTInstanceList();
       for i := 0 to le - 1 do
       begin
@@ -3963,11 +4029,11 @@ begin
               begin
                 SRwriteln('Tiller                 --> ' + currentEntityInstance.GetName());
                 SRwriteln('state tiller           --> ' + IntToStr(stateTiller));
-                sumOfBladeAreaOnCulm := currentEntityInstance.GetTAttribute('sumOfBladeAreaOnTillerInLeaf').GetCurrentSample().value;
+                sumOfTillerLeafBiomass := currentEntityInstance.GetTAttribute('sumOfTillerLeafBiomass').GetCurrentSample().value;
                 SRwriteln('assimPlant             --> ' + FloatToStr(assimPlant));
-                SRwriteln('sumOfBladeAreaOnTiller --> ' + FloatToStr(sumOfBladeAreaOnCulm));
-                SRwriteln('sumOfBladeAreaPlant    --> ' + FloatToStr(sumOfBladeAreaPlant));
-                assim_tiller := assimPlant * (sumOfBladeAreaOnCulm / sumOfBladeAreaPlant);
+                SRwriteln('sumOfTillerLeafBiomass --> ' + FloatToStr(sumOfTillerLeafBiomass));
+                SRwriteln('sumOfPlantLeafBiomass  --> ' + FloatToStr(sumOfPlantLeafBiomass));
+                assim_tiller := assimPlant * (sumOfTillerLeafBiomass / sumOfPlantLeafBiomass);
                 assimTillerAttribute := currentEntityInstance.GetTAttribute('assim_tiller');
                 sample := assimTillerAttribute.GetCurrentSample();
                 sample.value := assim_tiller;
@@ -4405,15 +4471,15 @@ end;
 //
 // ----------------------------------------------------------------------------
 
-procedure ComputePanicleDayDemandFlo_LE(const fillingRate, Tair, Tb, fcstr, testIc : Double; var panicleDayDemand : Double);
+procedure ComputePanicleDayDemandFlo_LE(const grainFillingRate, Tair, Tb, fcstr, testIc, reservoirDispo : Double; var panicleDayDemand : Double);
 begin
-  SRwriteln('Debut ComputePanicleDayDemandFlo_LE');
-  panicleDayDemand := fillingRate * (Tair - Tb) * fcstr * testIc;
-  SRwriteln('fillingRate      --> ' + FloatToStr(fillingRate));
+  panicleDayDemand := Min(grainFillingRate * (Tair - Tb) * fcstr * testIc, reservoirDispo);
+  SRwriteln('grainfillingRate --> ' + FloatToStr(grainFillingRate));
   SRwriteln('Tair             --> ' + FloatToStr(Tair));
   SRwriteln('Tb               --> ' + FloatToStr(Tb));
   SRwriteln('fcstr            --> ' + FloatToStr(fcstr));
   SRwriteln('testIc           --> ' + FloatToStr(testIc));
+  SRwriteln('reservoirDispo   --> ' + FloatToStr(reservoirDispo));
   SRwriteln('panicleDayDemand --> ' + FloatToStr(panicleDayDemand));
 end;
 
@@ -4423,34 +4489,15 @@ end;
 //
 // Calcule le weight de la panicle lorsqu'elle est passé à FLORAISON
 //
-// Equation : panicleWeight = gdwEmpty * grainNb + panicleDayDemand
+// Equation : panicleWeight = panicleWeight + panicleDayDemand
 //
 // ----------------------------------------------------------------------------
 
-procedure ComputePanicleWeightFlo_LE(const gdwEmpty, grainNb, panicleDayDemand : Double; var firstDayOfFLO, panicleWeight : Double);
+procedure ComputePanicleWeightFlo_LE(const panicleDayDemand : Double; var panicleWeight : Double);
 begin
-  if (firstDayOfFLO = 1) then
-  begin
-    panicleWeight := gdwEmpty * grainNb + panicleDayDemand;
-    firstDayOfFLO := 0;
-    SRwriteln('gdwEmpty         --> ' + FloatToStr(gdwEmpty));
-    SRwriteln('grainNb          --> ' + FloatToStr(grainNb));
-    SRwriteln('panicleDayDemand --> ' + FloatToStr(panicleDayDemand));
-    SRwriteln('panicleWeight    --> ' + FloatToStr(panicleWeight));
-  end
-  else
-  begin
-    SRwriteln('AVANT');
-    SRwriteln('-----');
-    SRwriteln('panicleWeight    --> ' + FloatToStr(panicleWeight));
-    panicleWeight := panicleWeight + panicleDayDemand;
-    SRwriteln('APRES');
-    SRwriteln('-----');
-    SRwriteln('panicleDayDemand --> ' + FloatToStr(panicleDayDemand));
-    SRwriteln('panicleWeight    --> ' + FloatToStr(panicleWeight));
-
-  end;
-
+  panicleWeight := panicleWeight + panicleDayDemand;
+  SRwriteln('panicleDayDemand --> ' + FloatToStr(panicleDayDemand));
+  SRwriteln('panicleWeight    --> ' + FloatToStr(panicleWeight));
 end;
 
 // ----------------------------------------------------------------------------
@@ -4485,7 +4532,6 @@ end;
 
 procedure ComputeStockLeafCulm_LE(const leafStockMax, sumOfBiomassInLeafCulm, stockCulm, sumOfCulmDemandIN, sumOfCulmStockIN : Double; var stockLeafCulm : Double);
 begin
-  //stockLeafCulm := min(leafStockMax * sumOfBiomassInLeafCulm, stockCulm - sumOfCulmDemandIN - sumOfCulmStockIN);
   stockLeafCulm := min(leafStockMax * sumOfBiomassInLeafCulm, stockCulm - sumOfCulmStockIN);
   SRwriteln('leafStockMax           --> ' + FloatToStr(leafStockMax));
   SRwriteln('sumOfBiomassInLeafCulm --> ' + FloatToStr(sumOfBiomassInLeafCulm));
@@ -4765,7 +4811,7 @@ begin
         culmName := currentTEntityInstance1.GetName();
         Delete(culmName, 1, 2);
         culmPos := StrToInt(culmName);
-        value := (currentTEntityInstance1.GetTAttribute('stock_tiller') as TAttributeTableOut).GetCurrentSample().value;
+        value := currentTEntityInstance1.GetTAttribute('stock_tiller').GetCurrentSample().value;
         PutValueInGrid(grid, culmPos, nbRow, nbLine, '', 'stock', value);
         le2 := currentTEntityInstance1.LengthTInstanceList();
         for i2 := 0 to (le2 - 1) do
@@ -4888,162 +4934,398 @@ end;
 
 procedure SaveTableData_LE(var instance : TInstance);
 const
+  leafAttributes : array[1..4] of string = ('width', 'bladeArea', 'biomass', 'length');
+  internodeAttributes : array[1..3] of string = ('biomass', 'length', 'diameter');
+  panicleAttributes : array[1..6] of string = ('grainNb', 'fertileGrainNumber', 'filledGrainNumber', 'height', 'weight', 'length');
+  peduncleAttributes : array[1..3] of string = ('biomass', 'length', 'diameter');
+  prefixHeader : array[1..4] of string = ('Name', 'Category', 'Attribute', 'Mainstem');
+  tillerBaseName = 'T_';
+  leafBaseName = 'L';
+  internodeBaseName = 'IN';
+  panicleBaseName = 'Pan';
+  peduncleBaseName = 'Ped';
+  tab = #09;
   fileName = 'aggregatedData_out';
   extension = 'txt';
   dot = '.';
   separator = '\';
-  nbAttributeForLeaf = 4;
-  nbAttributeForInternode = 3;
-  nbAttributeForPanicle = 6;
-  nbAttributeForPeduncle = 3;
-  baseNameTiller = 'T';
-  baseNameLeaf = 'L';
-  baseNameInternode = 'IN';
-  baseNamePanicle = 'Pan';
-  baseNamePeduncle = 'Ped';
 var
-  father : TInstance;
-  endingDate : TDateTime;
-  currentDate : TDateTime;
-  path, line : String;
+  refFather, currentInstance, currentInstance1, currentInstance2 : TInstance;
+  i, i1, i2, le, le1, le2, index, j : Integer;
+  indexBeginLeaf, indexBeginInternode, indexBeginPanicle, indexBeginPeduncle : Integer;
+  lastLeafName, lastInternodeName, category : string;
+  endingDate, currentDate : TDateTime;
+  pos : Integer;
+  nbLeafMax, nbInternodeMax, nbTillerMax : Integer;
+  numberOfLeafAttributes, numberOfInternodeAttributes : Integer;
+  numberOfPanicleAttributes, numberOfPeduncleAttributes : Integer;
+  hasPeduncle, hasPanicle, hasInternode : Boolean;
+  numberOfLine, numberOfRow, decay : Integer;
+  header, line : string;
+  path, fullFileName : string;
   pFile : TextFile;
-  minInternodeName, maxInternodeName : Integer;
-  nbLeafMax, nbTiller, nbInternode, nbPanicle, nbPeduncle : Integer;
-  nbLine, nbRow, state : Integer;
   grid : TArrayOfArrayOfString;
-  i, j, base : Integer;
+  tillerRank, leafRank, internodeRank, panicleRank, peduncleRank, state : Integer;
+  tillerName, leafName, internodeName, panicleName, peduncleName : string;
+  width, bladeArea, biomass, len, diameter, grainNb, fertileGrainNumber, filledGrainNumber, height, weight: Double;
 begin
-{  father := instance.GetFather();
-  endingDate := father.GetEndDate();
+  refFather := instance.GetFather();
+  endingDate := refFather.GetEndDate();
   currentDate := instance.GetNextDate();
-  state := Trunc((instance as TEntityInstance).GetCurrentState());
-  path := GetCurrentDir();
-
-  if ((endingDate = currentDate) and (state >= 4)) or (state = 1000) then
+  if (currentDate = endingDate) then
   begin
-    ComputeMaxNumberOfLeaf(instance, nbLeafMax);
-    nbTiller := Trunc((instance as TEntityInstance).GetTAttribute('nbExistingTiller').GetCurrentSample().value);
-    ComputeMinMaxNumberOfInternode(instance, minInternodeName, maxInternodeName);
-    nbInternode := (maxInternodeName - minInternodeName) + 1;
-    ComputeNbPanicle(instance, nbPanicle);
-    ComputeNbPeduncle(instance, nbPeduncle);
-    nbLine := (nbAttributeForLeaf * nbLeafMax) +
-              (nbInternode * nbAttributeForInternode) +
-              (nbAttributeForPanicle * nbPanicle) +
-              (nbAttributeForPeduncle * nbPeduncle) + 2;
-    nbRow := nbTiller + 4;
-    setLength(grid, nbLine, nbRow);
-    for i := 0 to nbLine - 1 do
+    nbTillerMax := 0;
+    indexBeginLeaf := -1;
+    indexBeginInternode := -1;
+    indexBeginPanicle := -1;
+    indexBeginPeduncle := -1;
+    path := GetCurrentDir();
+    fullFileName := path + separator + fileName + dot + extension;
+    AssignFile(pFile, fullFileName);
+    ReWrite(pFile);
+    hasPeduncle := False;
+    hasPanicle := False;
+    hasInternode := False;
+    numberOfLeafAttributes := High(leafAttributes);
+    numberOfInternodeAttributes := High(internodeAttributes);
+    numberOfPanicleAttributes := High(panicleAttributes);
+    numberOfPeduncleAttributes := High(peduncleAttributes);
+    le1 := (instance as TEntityInstance).LengthTInstanceList();
+    for i1 := 0 to le1 - 1 do
     begin
-      for j := 0 to nbRow - 1 do
+      currentInstance := (instance as TEntityInstance).GetTInstance(i1);
+      if (currentInstance is TEntityInstance) then
+      begin
+        if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+        begin
+          if ((currentInstance as TEntityInstance).GetCurrentState() <> 2000) then
+          begin
+            lastLeafName := currentInstance.GetName();
+          end;
+        end else if ((currentInstance as TEntityInstance).GetCategory() = 'Internode') then
+        begin
+          if ((currentInstance as TEntityInstance).GetCurrentState() <> 2000) then
+          begin
+            lastInternodeName := currentInstance.GetName();
+            hasInternode := True;
+          end;
+        end else if ((currentInstance as TEntityInstance).GetCategory() = 'Tiller') then
+        begin
+          nbTillerMax := nbTillerMax + 1;
+        end else if ((currentInstance as TEntityInstance).GetCategory() = 'Peduncle') then
+        begin
+          if ((currentInstance as TEntityInstance).GetCurrentState() <> 2000) then
+          begin
+            hasPeduncle := True;
+          end;
+        end else if ((currentInstance as TEntityInstance).GetCategory() = 'Panicle') then
+        begin
+          if ((currentInstance as TEntityInstance).GetCurrentState() <> 2000) then
+          begin
+            hasPanicle := True;
+          end;
+        end;
+      end;
+    end;
+    pos := AnsiPos(lastLeafName, 'L');
+    Delete(lastLeafName, 1, pos + 1);
+    nbLeafMax := StrToInt(lastLeafName);
+    if (hasInternode) then
+    begin
+      pos := AnsiPos(lastInternodeName, 'N');
+      Delete(lastInternodeName, 1, pos + 2);
+      nbInternodeMax := StrToInt(lastInternodeName);
+    end
+    else
+    begin
+      nbInternodeMax := 0;
+    end;
+    header := '';
+    numberOfRow := High(prefixHeader) + nbTillerMax;
+    numberOfLine := (nbLeafMax * numberOfLeafAttributes) + (nbInternodeMax * numberOfInternodeAttributes);
+    if (hasPeduncle) then
+    begin
+      numberOfLine := numberOfLine + ((nbTillerMax + 1) * numberOfPeduncleAttributes);
+    end;
+    if (hasPanicle) then
+    begin
+      numberOfLine := numberOfLine + ((nbTillerMax + 1) * numberOfPanicleAttributes);
+    end;
+    numberOfLine := numberOfLine + 1; // on rajoute la ligne du header
+    setLength(grid, numberOfLine, numberOfRow);
+    for i := 0 to numberOfLine - 1 do
+    begin
+      for j := 0 to numberOfRow - 1 do
       begin
         grid[i, j] := 'NA';
       end;
     end;
-    grid[0, 0] := 'attribute name';
-    grid[0, 1] := 'organ type';
-    grid[0, 2] := 'organ number';
-    grid[0, 3] := 'Mainstem';
-    for i := 0 to nbTiller - 1 do
+    // on ecrit le header dans la grille
+    index := 0;
+    for i := 1 to High(prefixHeader) do
     begin
-      grid[0, i + 3] := 'T_' + IntToStr(i + 1);
+      grid[0, index] := prefixHeader[i];
+      index := index + 1;
     end;
-    grid[1, 0] := 'stock';
-    grid[1, 1] := '';
-    grid[1, 2] := '';
-    i := 0;
-    j := 0;
-    while i < ((nbLeafMax) * nbAttributeForLeaf) do
+    for i := 0 to nbTillerMax - 1 do
     begin
-      grid[i + 0 + 2, 0] := 'width';
-      grid[i + 0 + 2, 1] := baseNameLeaf;
-      grid[i + 0 + 2, 2] := IntToStr(j + 1);
-      grid[i + 1 + 2, 0] := 'bladeArea';
-      grid[i + 1 + 2, 1] := baseNameLeaf;
-      grid[i + 1 + 2, 2] := IntToStr(j + 1);
-      grid[i + 2 + 2, 0] := 'biomass';
-      grid[i + 2 + 2, 1] := baseNameLeaf;
-      grid[i + 2 + 2, 2] := IntToStr(j + 1);
-      grid[i + 3 + 2, 0] := 'length';
-      grid[i + 3 + 2, 1] := baseNameLeaf;
-      grid[i + 3 + 2, 2] := IntToStr(j + 1);
-      i := i + 4;
-      j := j + 1;
+      grid[0, index] := tillerBaseName + IntToStr(i + 1);
+      index := index + 1;
     end;
-    base := ((nbLeafMax) * nbAttributeForLeaf) + 2;
-    i := base;
-    j := minInternodeName;
-    while (i < (base + (nbInternode * nbAttributeForInternode))) do
+    // on ecrit les entete de ligne
+    index := 1;
+    indexBeginLeaf := index;
+    for i := 0 to nbLeafMax - 1 do
     begin
-      grid[i + 0, 0] := 'biomass';
-      grid[i + 0, 1] := baseNameInternode;
-      grid[i + 0, 2] := IntToStr(j);
-      grid[i + 1, 0] := 'length';
-      grid[i + 1, 1] := baseNameInternode;
-      grid[i + 1, 2] := IntToStr(j);
-      grid[i + 2, 0] := 'diameter';
-      grid[i + 2, 1] := baseNameInternode;
-      grid[i + 2, 2] := IntToStr(j);
-      i := i + 3;
-      j := j + 1;
+      for j := 1 to High(leafAttributes) do
+      begin
+        grid[index, 0] := leafBaseName + IntToStr(i + 1);
+        grid[index, 1] := 'Leaf';
+        grid[index, 2] := leafAttributes[j];
+        index := index + 1;
+      end;
     end;
-    base := base + (nbInternode * nbAttributeForInternode);
-    i := base;
-    j := 0;
-    while (i < (base + (nbPanicle * nbAttributeForPanicle))) do
+    indexBeginInternode := index;
+    for i := 0 to nbInternodeMax - 1 do
     begin
-      grid[i + 0, 0] := 'grainNb';
-      grid[i + 0, 1] := baseNamePanicle;
-      grid[i + 0, 2] := IntToStr(j);
-      grid[i + 1, 0] := 'fertileGrainNb';
-      grid[i + 1, 1] := baseNamePanicle;
-      grid[i + 1, 2] := IntToStr(j);
-      grid[i + 2, 0] := 'filledGrainNb';
-      grid[i + 2, 1] := baseNamePanicle;
-      grid[i + 2, 2] := IntToStr(j);
-      grid[i + 3, 0] := 'height';
-      grid[i + 3, 1] := baseNamePanicle;
-      grid[i + 3, 2] := IntToStr(j);
-      grid[i + 4, 0] := 'weight';
-      grid[i + 4, 1] := baseNamePanicle;
-      grid[i + 4, 2] := IntToStr(j);
-      grid[i + 5, 0] := 'length';
-      grid[i + 5, 1] := baseNamePanicle;
-      grid[i + 5, 2] := IntToStr(j);
-      i := i + 6;
-      j := j + 1;
+      for j := 1 to High(internodeAttributes) do
+      begin
+        grid[index, 0] := internodeBaseName + IntToStr(i + 1);
+        grid[index, 1] := 'Internode';
+        grid[index, 2] := internodeAttributes[j];
+        index := index + 1;
+      end;
     end;
-    base := i + (nbPeduncle * nbAttributeForPeduncle);
-    j := 0;
-    while (i < (base - 1)) do
+    if (hasPeduncle) then
     begin
-      grid[i + 0, 0] := 'biomass';
-      grid[i + 0, 1] := baseNamePeduncle;
-      grid[i + 0, 2] := IntToStr(j);
-      grid[i + 1, 0] := 'length';
-      grid[i + 1, 1] := baseNamePeduncle;
-      grid[i + 1, 2] := IntToStr(j);
-      grid[i + 2, 0] := 'diameter';
-      grid[i + 2, 1] := baseNamePeduncle;
-      grid[i + 2, 2] := IntToStr(j);
-      i := i + 3;
-      j := j + 1;
+      indexBeginPeduncle := index;
+      for i := 0 to nbTillerMax do
+      begin
+        for j := 1 to High(peduncleAttributes) do
+        begin
+          grid[index, 0] := peduncleBaseName + IntToStr(i);
+          grid[index, 1] := 'Peduncle';
+          grid[index, 2] := peduncleAttributes[j];
+          index := index + 1;
+        end;
+      end;
     end;
-    FillGrid(instance, grid, nbRow, nbLine);
-    AssignFile(pFile, path + separator + fileName + dot + extension);
-    ReWrite(pFile);
-    for i := 0 to nbLine - 1 do
+    if (hasPanicle) then
+    begin
+      indexBeginPanicle := index;
+      for i := 0 to nbTillerMax do
+      begin
+        for j := 1 to High(panicleAttributes) do
+        begin
+          grid[index, 0] := panicleBaseName + IntToStr(i);
+          grid[index, 1] := 'Panicle';
+          grid[index, 2] := panicleAttributes[j];
+          index := index + 1;
+        end;
+      end;
+    end;
+    // on remplit la grille avec les bonne valeurs
+    le1 := (instance as TEntityInstance).LengthTInstanceList();
+    for i1 := 0 to le1 - 1 do
+    begin
+      currentInstance1 := (instance as TEntityInstance).GetTInstance(i1);
+      if (currentInstance1 is TEntityInstance) then
+      begin
+        category := (currentInstance1 as TEntityInstance).GetCategory();
+        state := (currentInstance1 as TEntityInstance).GetCurrentState();
+        if ((category = 'Leaf') and (state <> 2000)) then
+        begin
+          leafName := currentInstance1.GetName();
+          pos := AnsiPos(leafName, 'L');
+          Delete(leafName, 1, pos + 1);
+          leafRank := StrToInt(leafName);
+          decay := (leafRank - 1) * numberOfLeafAttributes;
+          i := decay + indexBeginLeaf;
+          width := (currentInstance1 as TEntityInstance).GetTAttribute('width').GetCurrentSample().value;
+          if (state >= 4) then
+          begin
+            bladeArea := (currentInstance1 as TEntityInstance).GetTAttribute('correctedBladeArea').GetCurrentSample().value;
+            biomass := (currentInstance1 as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
+          end
+          else
+          begin
+            bladeArea := (currentInstance1 as TEntityInstance).GetTAttribute('bladeArea').GetCurrentSample().value;
+            biomass := (currentInstance1 as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+          end;
+          len := (currentInstance1 as TEntityInstance).GetTAttribute('len').GetCurrentSample().value;
+          grid[i, 3] := FloatToStr(width);
+          grid[i + 1, 3] := FloatToStr(bladeArea);
+          grid[i + 2, 3] := FloatToStr(biomass);
+          grid[i + 3, 3] := FloatToStr(len);
+        end
+        else if ((category = 'Internode') and (state <> 2000)) then
+        begin
+          internodeName := currentInstance1.GetName();
+          pos := AnsiPos(internodeName, 'N');
+          Delete(internodeName, 1, pos + 2);
+          internodeRank := StrToInt(internodeName);
+          decay := (internodeRank - 1) * numberOfInternodeAttributes;
+          i := decay + indexBeginInternode;
+          biomass := (currentInstance1 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+          len := (currentInstance1 as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
+          diameter := (currentInstance1 as TEntityInstance).GetTAttribute('DIN').GetCurrentSample().value;
+          grid[i, 3] := FloatToStr(biomass);
+          grid[i + 1, 3] := FloatToStr(len);
+          grid[i + 2, 3] := FloatToStr(diameter);
+        end
+        else if ((category = 'Panicle') and (state <> 2000)) then
+        begin
+          panicleName := currentInstance1.GetName();
+          pos :=  AnsiPos(panicleName, 'n');
+          Delete(panicleName, 1, pos + 3);
+          panicleRank := StrToInt(panicleName);
+          decay := panicleRank * numberOfPanicleAttributes;
+          i := decay + indexBeginPanicle;
+          grainNb := (currentInstance1 as TEntityInstance).GetTAttribute('grain_nb').GetCurrentSample().value;
+          fertileGrainNumber := (currentInstance1 as TEntityInstance).GetTAttribute('fertile_grain_number').GetCurrentSample().value;
+          filledGrainNumber := (currentInstance1 as TEntityInstance).GetTAttribute('filled_grain_nb').GetCurrentSample().value;
+          height := (currentInstance1 as TEntityInstance).GetTAttribute('height_panicle').GetCurrentSample().value;
+          weight := (currentInstance1 as TEntityInstance).GetTAttribute('weight_panicle').GetCurrentSample().value;
+          len := (currentInstance1 as TEntityInstance).GetTAttribute('length_panicle').GetCurrentSample().value;
+          grid[i, 3] := FloatToStr(grainNb);
+          grid[i + 1, 3] := FloatToStr(fertileGrainNumber);
+          grid[i + 2, 3] := FloatToStr(filledGrainNumber);
+          grid[i + 3, 3] := FloatToStr(height);
+          grid[i + 4, 3] := FloatToStr(weight);
+          grid[i + 5, 3] := FloatToStr(len);
+        end
+        else if ((category = 'Peduncle') and (state <> 2000)) then
+        begin
+          peduncleName := currentInstance1.GetName();
+          pos :=  AnsiPos(peduncleName, 'n');
+          Delete(peduncleName, 1, pos + 3);
+          peduncleRank := StrToInt(peduncleName);
+          decay := peduncleRank * numberOfPeduncleAttributes;
+          i := decay + indexBeginPeduncle;
+          biomass := (currentInstance1 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+          len := (currentInstance1 as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
+          diameter := (currentInstance1 as TEntityInstance).GetTAttribute('DIN').GetCurrentSample().value;
+          grid[i, 3] := FloatToStr(biomass);
+          grid[i + 1, 3] := FloatToStr(len);
+          grid[i + 2, 3] := FloatToStr(diameter);
+        end
+        else if (category = 'Tiller') then
+        begin
+          le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+          for i2 := 0 to le2 - 1 do
+          begin
+            currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+            if (currentInstance2 is TEntityInstance) then
+            begin
+              category := (currentInstance2 as TEntityInstance).GetCategory();
+              state := (currentInstance2 as TEntityInstance).GetCurrentState();
+              tillerName := currentInstance1.GetName();
+              pos :=  AnsiPos(tillerName, 'T');
+              Delete(tillerName, 1, pos + 2);
+              tillerRank := StrToInt(tillerName);
+              j := tillerRank + 3;
+              if ((category = 'Leaf') and (state <> 2000)) then
+              begin
+                leafName := currentInstance2.GetName();
+                pos := AnsiPos(leafName, 'L');
+                Delete(leafName, 1, pos + 1);
+                pos := LastDelimiter('T', leafName);
+                Delete(leafName, pos - 1, length(leafName) - (pos - 2));
+                leafRank := StrToInt(leafName);
+                decay := (leafRank - 1) * numberOfLeafAttributes;
+                i := decay + indexBeginLeaf;
+                width := (currentInstance2 as TEntityInstance).GetTAttribute('width').GetCurrentSample().value;
+                if (state >= 4) then
+                begin
+                  bladeArea := (currentInstance2 as TEntityInstance).GetTAttribute('correctedBladeArea').GetCurrentSample().value;
+                  biomass := (currentInstance2 as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
+                end
+                else
+                begin
+                  bladeArea := (currentInstance2 as TEntityInstance).GetTAttribute('bladeArea').GetCurrentSample().value;
+                  biomass := (currentInstance2 as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+                end;
+                len := (currentInstance2 as TEntityInstance).GetTAttribute('len').GetCurrentSample().value;
+                grid[i, j] := FloatToStr(width);
+                grid[i + 1, j] := FloatToStr(bladeArea);
+                grid[i + 2, j] := FloatToStr(biomass);
+                grid[i + 3, j] := FloatToStr(len);
+              end
+              else if ((category = 'Internode') and (state <> 2000)) then
+              begin
+                internodeName := currentInstance2.GetName();
+                pos := AnsiPos(internodeName, 'N');
+                Delete(internodeName, 1, pos + 2);
+                pos := LastDelimiter('T', internodeName);
+                Delete(internodeName, pos - 1, length(internodeName) - (pos - 2));
+                internodeRank := StrToInt(internodeName);
+                decay := (internodeRank - 1) * numberOfInternodeAttributes;
+                i := decay + indexBeginInternode;
+                biomass := (currentInstance2 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+                len := (currentInstance2 as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
+                diameter := (currentInstance2 as TEntityInstance).GetTAttribute('DIN').GetCurrentSample().value;
+                grid[i, j] := FloatToStr(biomass);
+                grid[i + 1, j] := FloatToStr(len);
+                grid[i + 2, j] := FloatToStr(diameter);
+              end
+              else if ((category = 'Panicle') and (state <> 2000)) then
+              begin
+                panicleName := currentInstance2.GetName();
+                pos :=  AnsiPos(panicleName, 'n');
+                Delete(panicleName, 1, pos + 3);
+                pos := LastDelimiter('T', panicleName);
+                Delete(panicleName, pos - 1, length(panicleName) - (pos - 2));
+                panicleRank := StrToInt(panicleName);
+                decay := panicleRank * numberOfPanicleAttributes;
+                i := decay + indexBeginPanicle;
+                grainNb := (currentInstance2 as TEntityInstance).GetTAttribute('grain_nb').GetCurrentSample().value;
+                fertileGrainNumber := (currentInstance2 as TEntityInstance).GetTAttribute('fertile_grain_number').GetCurrentSample().value;
+                filledGrainNumber := (currentInstance2 as TEntityInstance).GetTAttribute('filled_grain_nb').GetCurrentSample().value;
+                height := (currentInstance2 as TEntityInstance).GetTAttribute('height_panicle').GetCurrentSample().value;
+                weight := (currentInstance2 as TEntityInstance).GetTAttribute('weight_panicle').GetCurrentSample().value;
+                len := (currentInstance2 as TEntityInstance).GetTAttribute('length_panicle').GetCurrentSample().value;
+                grid[i, j] := FloatToStr(grainNb);
+                grid[i + 1, j] := FloatToStr(fertileGrainNumber);
+                grid[i + 2, j] := FloatToStr(filledGrainNumber);
+                grid[i + 3, j] := FloatToStr(height);
+                grid[i + 4, j] := FloatToStr(weight);
+                grid[i + 5, j] := FloatToStr(len);
+              end
+              else if ((category = 'Peduncle') and (state <> 2000)) then
+              begin
+                peduncleName := currentInstance2.GetName();
+                pos :=  AnsiPos(peduncleName, 'n');
+                Delete(peduncleName, 1, pos + 3);
+                pos := LastDelimiter('T', peduncleName);
+                Delete(peduncleName, pos - 1, length(peduncleName) - (pos - 2));
+                peduncleRank := StrToInt(peduncleName);
+                decay := peduncleRank * numberOfPeduncleAttributes;
+                i := decay + indexBeginPeduncle;
+                biomass := (currentInstance2 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+                len := (currentInstance2 as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
+                diameter := (currentInstance2 as TEntityInstance).GetTAttribute('DIN').GetCurrentSample().value;
+                grid[i, j] := FloatToStr(biomass);
+                grid[i + 1, j] := FloatToStr(len);
+                grid[i + 2, j] := FloatToStr(diameter);
+              end;
+            end;
+          end;
+        end;
+      end;
+    end;
+    for i := 0 to numberOfLine - 1 do
     begin
       line := '';
-      for j := 0 to nbRow - 1 do
+      for j := 0 to numberOfRow - 1 do
       begin
-        line := line + grid[i, j] + #9;
+        line := line + grid[i, j] + tab;
       end;
       Writeln(pFile, line);
     end;
     CloseFile(pFile);
-  end;  }
+  end;
 end;
+
 
 procedure SaveTableData_LE2(var instance : TInstance);
 const
@@ -5247,38 +5529,38 @@ begin
   begin
     plasto := plasto * coeffPlastoPI;
     ligulo := ligulo * coeffLiguloPI;
-    LL_BL := LL_BL_init + slopeLL_BL * (n - nbLeafParam2);
+    LL_BL := LL_BL_init + slopeLL_BL * Max(0, ((n + 1) - nbLeafParam2));
     MGR := MGR * coeffMGRPI;
     SRwriteln('Nouvelles valeurs');
-    SRwriteln('plasto      --> ' + FloatToStr(plasto));
-    SRwriteln('ligulo      --> ' + FloatToStr(ligulo));
-    SRwriteln('LL_BL_init  --> ' + FloatToStr(LL_BL_init));
-    SRwriteln('LL_BL       --> ' + FloatToStr(LL_BL));
-    SRwriteln('MGR         --> ' + FloatToStr(MGR));
+    SRwriteln('plasto            --> ' + FloatToStr(plasto));
+    SRwriteln('ligulo            --> ' + FloatToStr(ligulo));
+    SRwriteln('LL_BL_init        --> ' + FloatToStr(LL_BL_init));
+    SRwriteln('LL_BL             --> ' + FloatToStr(LL_BL));
+    SRwriteln('MGR               --> ' + FloatToStr(MGR));
   end
   else if ((n >= nbLeafParam2) and (boolCrossedPlasto > 0) and (n < nbLeafPI + nbLeafMaxAfterPI + 1)) then
   begin
-    LL_BL := LL_BL_init + slopeLL_BL * (n - nbLeafParam2);
     plasto := plasto;
     ligulo := ligulo;
+    LL_BL := LL_BL_init + slopeLL_BL * Max(0, ((n + 1) - nbLeafParam2));
     LL_BL := LL_BL;
     MGR := MGR;
     SRwriteln('(n >= nbLeafParam2) and (boolCrossedPlasto > 0) and (n < nbLeafPI + nbLeafMaxAfterPI + 1)');
-    SRwriteln('LL_BL_init  --> ' + FloatToStr(LL_BL_init));
+    SRwriteln('LL_BL_init        --> ' + FloatToStr(LL_BL_init));
     SRwriteln('LL_BL modifie');
-    SRwriteln('LL_BL       --> ' + FloatToStr(LL_BL));
+    SRwriteln('LL_BL             --> ' + FloatToStr(LL_BL));
     SRwriteln('Valeurs inchangees');
-    SRwriteln('plasto      --> ' + FloatToStr(plasto));
-    SRwriteln('ligulo      --> ' + FloatToStr(ligulo));
-    SRwriteln('MGR         --> ' + FloatToStr(MGR));
+    SRwriteln('plasto            --> ' + FloatToStr(plasto));
+    SRwriteln('ligulo            --> ' + FloatToStr(ligulo));
+    SRwriteln('MGR               --> ' + FloatToStr(MGR));
   end
   else
   begin
     SRwriteln('Valeurs inchangees');
-    SRwriteln('plasto      --> ' + FloatToStr(plasto));
-    SRwriteln('ligulo      --> ' + FloatToStr(ligulo));
-    SRwriteln('LL_BL       --> ' + FloatToStr(LL_BL));
-    SRwriteln('MGR         --> ' + FloatToStr(MGR));
+    SRwriteln('plasto            --> ' + FloatToStr(plasto));
+    SRwriteln('ligulo            --> ' + FloatToStr(ligulo));
+    SRwriteln('LL_BL             --> ' + FloatToStr(LL_BL));
+    SRwriteln('MGR               --> ' + FloatToStr(MGR));
   end;
 end;
 
@@ -5607,8 +5889,7 @@ var
   oldDeficit, deficitTiller, tmp, previousDeficit : Double;
   sample : TSample;
 begin
-  computedReallocBiomass := 0;
-  activeLeavesNb := 0;
+//  activeLeavesNb := 0;
   state := (instance as TEntityInstance).GetCurrentState();
   SRwriteln('state   --> ' + IntToStr(state));
   SRwriteln('stock   --> ' + FloatToStr(stock));
@@ -5732,11 +6013,12 @@ begin
           SRwriteln('senesc_dw                  --> ' + FloatToStr(senesc_dw));
 
           
-          computedReallocBiomass := reallocationCoeff * leafBiomass;
+          computedReallocBiomass := computedReallocBiomass + (reallocationCoeff * leafBiomass);
 
           stock := max(0, stock + computedReallocBiomass + deficit);
+          deficit := Min(0, stock + computedReallocBiomass + deficit);
           deadleafNb := deadleafNb + 1;
-          senesc_dw := senesc_dw + leafBiomass - computedReallocBiomass;
+          senesc_dw := senesc_dw + leafBiomass - (reallocationCoeff * leafBiomass);
 
           SRwriteln('-----------------------------');
           SRwriteln('Nouvelle valeur du stock   --> ' + FloatToStr(stock));
@@ -5911,9 +6193,10 @@ begin
           SRwriteln('Internode state        --> ' + IntToStr(internodeState));
           if ((internodeState <> 2000) and (internodeState <> 1000) and (internodeState <> -1)) then
           begin
-          if ((currentInstance as TEntityInstance).GetTAttribute('LIN') <> Nil) then
+            if ((currentInstance as TEntityInstance).GetTAttribute('LIN') <> Nil) then
             begin
-              internodeLength := ((currentInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+              //internodeLength := ((currentInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+              internodeLength := (currentInstance as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
               SRwriteln('Internode contribution --> ' + FloatToStr(internodeLength));
               internodeLengthOnMainstem := internodeLengthOnMainstem + internodeLength
             end;
@@ -5950,7 +6233,8 @@ begin
         if ((currentInstance as TEntityInstance).GetCategory() = 'Internode') then
         begin
           internodeState := (currentInstance as TEntityInstance).GetCurrentState();
-          if (internodeState = 4) then
+          SRwriteln('internode state --> ' + FloatToStr(internodeState));
+          if ((internodeState = 4) or (internodeState = 5)) then
           begin
             currentDate := (currentInstance as TEntityInstance).GetCreationDate();
             if (currentDate < minCreationDate) then
@@ -5970,12 +6254,15 @@ begin
     if ((refMinInstance <> nil) and (refMaxInstance <> nil)) then
     begin
       SRwriteln('first expanded internode          --> ' + refMinInstance.GetName());
-      firstDiameter := ((refMinInstance as TEntityInstance).GetTAttribute('DIN') as TAttributeTableOut).GetCurrentSample().value;
+      //firstDiameter := ((refMinInstance as TEntityInstance).GetTAttribute('DIN') as TAttributeTableOut).GetCurrentSample().value;
+      firstDiameter := (refMinInstance as TEntityInstance).GetTAttribute('DIN').GetCurrentSample().value;
       SRwriteln('first expanded internode diameter --> ' + FloatToStr(firstDiameter));
       SRwriteln('last expanded internode           -->  ' + refMaxInstance.GetName());
-      lastDiameter := ((refMaxInstance as TEntityInstance).GetTAttribute('DIN') as TAttributeTableOut).GetCurrentSample().value;
+      //lastDiameter := ((refMaxInstance as TEntityInstance).GetTAttribute('DIN') as TAttributeTableOut).GetCurrentSample().value;
+      lastDiameter := (refMaxInstance as TEntityInstance).GetTAttribute('DIN').GetCurrentSample().value;
       lastRank := (refMaxInstance as TEntityInstance).GetTAttribute('rank').GetCurrentSample().value;
-      lastLength := ((refMaxInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+      //lastLength := ((refMaxInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+      lastLength := (refMaxInstance as TEntityInstance).GetTAttribute('LIN').GetCurrentSample().value;
       SRwriteln('last expanded internode diameter  --> ' + FloatToStr(lastDiameter));
     end;
   end;
@@ -6098,6 +6385,9 @@ var
   sample : TSample;
   refPanicle : TEntityInstance;
 begin
+  refPanicle := nil;
+  lengthPeduncleMainstem := 0;
+  lengthPeduncleTiller := 0;
   state := (instance as TEntityInstance).GetCurrentState();
   SRwriteln('state --> ' + IntToStr(state));
   case state of
@@ -6127,7 +6417,8 @@ begin
           begin
             if ((currentInstance1 as TEntityInstance).GetTAttribute('LIN') <> Nil) then
             begin
-              sample := ((currentInstance1 as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample();
+              //sample := ((currentInstance1 as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample();
+              sample := (currentInstance1 as TEntityInstance).GetTAttribute('LIN').GetCurrentSample();
               SRwriteln('Internode : ' + currentInstance1.GetName() + ' length --> ' + FloatToStr(sample.value));
               sumOfInternodeLengthMainstem := sumOfInternodeLengthMainstem + sample.value;
             end;
@@ -6166,7 +6457,8 @@ begin
                     begin
                       if ((currentInstance2 as TEntityInstance).GetTAttribute('LIN') <> Nil) then
                       begin
-                        sample := ((currentInstance2 as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample();
+                        //sample := ((currentInstance2 as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample();
+                        sample := (currentInstance2 as TEntityInstance).GetTAttribute('LIN').GetCurrentSample();
                         SRwriteln('Internode : ' + currentInstance2.GetName() + ' length --> ' + FloatToStr(sample.value));
                         sumOfInternodeLengthTiller := sumOfInternodeLengthTiller + sample.value;
                       end;
@@ -6257,14 +6549,14 @@ var
   state : Integer;
   biomass, bladeArea, thermalTimeSinceLigulation, lifespan, SLA : Double;
   oldCorrectedBiomass, delta, reallocationCoeff : Double;
-  computedReallocBiomass, computedSenesc_dw, stock, senesc_dw, G_L : Double;
+  computedReallocBiomass, computedSenesc_dw, senesc_dw, G_L : Double;
   refInstance : TInstance;
   refTAttribute : TAttributeTableOut;
   refTa : TAttribute;
   sample : TSample;
 begin
   state := (instance as TEntityInstance).GetCurrentState();
-  refInstance := nil;
+//  refInstance := nil;
   if (state <> 2000) then
   begin
     if ((state = 4) or (state = 5)) then
@@ -6276,7 +6568,7 @@ begin
       lifespan := (instance as TEntityInstance).GetTAttribute('lifespan').GetCurrentSample().value;
       SLA := (instance as TEntityInstance).GetTAttribute('leafBiomassStructAtInitiation').GetCurrentSample().value;
       G_L := (instance as TEntityInstance).GetTAttribute('G_L').GetCurrentSample().value;
-      correctedLeafBiomass :=  (biomass - bladeArea * (1 + G_L) * (thermalTimeSinceLigulation / lifespan) / SLA);
+      correctedLeafBiomass := biomass * (1 - thermalTimeSinceLigulation / lifespan);
       SRwriteln('biomass                    --> ' + FloatToStr(biomass));
       SRwriteln('bladeArea                  --> ' + FloatToStr(bladeArea));
       SRwriteln('thermalTimeSinceLigulation --> ' + FloatToStr(thermalTimeSinceLigulation));
@@ -6292,7 +6584,7 @@ begin
       sample.value := correctedLeafBiomass;
       refTA.SetSample(sample);
       refInstance := instance.GetFather();
-      while refInstance.GetName() <> 'EntityMeristem' do
+      while (refInstance.GetName() <> 'EntityMeristem') do
       begin
         refInstance := refInstance.GetFather();
       end;
@@ -6301,17 +6593,60 @@ begin
       computedReallocBiomass := reallocationCoeff * delta;
       computedSenesc_dw := delta - computedReallocBiomass;
       SRwriteln('computedReallocBiomass     --> ' + FloatToStr(computedReallocBiomass));
-      SRwriteln('dailySenescedLeafBiomass   --> ' + FloatToStr(computedReallocBiomass));
+      SRwriteln('dailySenescedLeafBiomass   --> ' + FloatToStr(computedSenesc_dw));
       SRwriteln('computedSenesc_dw          --> ' + FloatToStr(computedSenesc_dw));
-      refTa := (instance as TEntityInstance).GetTAttribute('dailySenescedLeafBiomass');
+      refTa := (instance as TEntityInstance).GetTAttribute('dailyComputedReallocBiomass');
       sample := refTa.GetCurrentSample();
       sample.value := computedReallocBiomass;
       refTa.SetSample(sample);
-      //refTAttribute := ((refInstance as TEntityInstance).GetTAttribute('stock') as TAttributeTableOut);
-      //sample := refTAttribute.GetCurrentSample();
-      //stock := sample.value + computedReallocBiomass;
-      //sample.value := stock;
-      //refTAttribute.SetSample(sample);
+      refTa := (instance as TEntityInstance).GetTAttribute('dailySenescedLeafBiomass');
+      sample := refTa.GetCurrentSample();
+      sample.value := computedSenesc_dw;
+      refTa.SetSample(sample);
+      refTa := (instance as TEntityInstance).GetTAttribute('dailySenescedDwLeafBiomass');
+      sample := refTa.GetCurrentSample();
+      sample.value := computedSenesc_dw;
+      refTa.SetSample(sample);
+      refTAttribute := ((refInstance as TEntityInstance).GetTAttribute('senesc_dw') as TAttributeTableOut);
+      sample := refTAttribute.GetCurrentSample();
+      senesc_dw := sample.value + computedSenesc_dw;
+      sample.value := senesc_dw;
+      refTAttribute.SetSample(sample);
+      SRwriteln('senesc_dw                  --> ' + FloatToStr(senesc_dw));
+      refTAttribute := ((refInstance as TEntityInstance).GetTAttribute('computedReallocBiomass') as TAttributeTableOut);
+      sample := refTAttribute.GetCurrentSample();
+      sample.value := sample.value + computedReallocBiomass;
+      refTAttribute.SetSample(sample);
+    end
+    else if (state = 500) then
+    begin
+      SRwriteln('On est a l''etat DEAD_BY_SENESCENCE');
+      oldCorrectedBiomass := (instance as TEntityInstance).GetTAttribute('oldCorrectedBiomass').GetCurrentSample().value;
+      SRwriteln('oldCorrectedBiomass --> ' + FloatToStr(oldCorrectedBiomass));
+      refInstance := instance.GetFather();
+      while (refInstance.GetName() <> 'EntityMeristem') do
+      begin
+        refInstance := refInstance.GetFather();
+      end;
+      reallocationCoeff := (refInstance as TEntityInstance).GetTAttribute('realocationCoeff').GetCurrentSample().value;
+      SRwriteln('reallocationCoeff          --> ' + FloatToStr(reallocationCoeff));
+      computedReallocBiomass := reallocationCoeff * oldCorrectedBiomass;
+      computedSenesc_dw := oldCorrectedBiomass - computedReallocBiomass;
+      SRwriteln('computedReallocBiomass     --> ' + FloatToStr(computedReallocBiomass));
+      SRwriteln('dailySenescedLeafBiomass   --> ' + FloatToStr(computedSenesc_dw));
+      SRwriteln('computedSenesc_dw          --> ' + FloatToStr(computedSenesc_dw));
+      refTa := (instance as TEntityInstance).GetTAttribute('dailyComputedReallocBiomass');
+      sample := refTa.GetCurrentSample();
+      sample.value := computedReallocBiomass;
+      refTa.SetSample(sample);
+      refTa := (instance as TEntityInstance).GetTAttribute('dailySenescedLeafBiomass');
+      sample := refTa.GetCurrentSample();
+      sample.value := computedSenesc_dw;
+      refTa.SetSample(sample);
+      refTa := (instance as TEntityInstance).GetTAttribute('dailySenescedDwLeafBiomass');
+      sample := refTa.GetCurrentSample();
+      sample.value := computedSenesc_dw;
+      refTa.SetSample(sample);
       refTAttribute := ((refInstance as TEntityInstance).GetTAttribute('senesc_dw') as TAttributeTableOut);
       sample := refTAttribute.GetCurrentSample();
       senesc_dw := sample.value + computedSenesc_dw;
@@ -6321,6 +6656,7 @@ begin
       sample := refTAttribute.GetCurrentSample();
       sample.value := sample.value + computedReallocBiomass;
       refTAttribute.SetSample(sample);
+      correctedLeafBiomass := 0;
     end
     else
     begin
@@ -6364,52 +6700,6 @@ begin
     else
     begin
       deadLeafBiomass := 0;
-    end;
-  end;
-end;
-
-procedure ComputeLeavesSenescenceStock(var instance : TInstance; const reallocCoef : Double; var senesc_dw, stock : Double);
-var
-  i, le, leafState : Integer;
-  currentInstance : TInstance;
-  deadLeafBiomass : Double;
-begin
-  le := (instance as TEntityInstance).LengthTInstanceList();
-  for i := 0 to le - 1 do
-  begin
-    currentInstance := (instance as TEntityInstance).GetTInstance(i);
-    if (currentInstance is TEntityInstance) then
-    begin
-      if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
-      begin
-        leafState := (currentInstance as TEntityInstance).GetCurrentState();
-        if (leafState <> 2000) then
-        begin
-          if ((leafState = 4) or (leafState = 5)) then
-          begin
-            SRwriteln(currentInstance.GetName() + ' --> ligulee');
-            deadLeafBiomass := (currentInstance as TEntityInstance).GetTAttribute('deadLeafBiomass').GetCurrentSample().value;
-            SRwriteln('reallocCoef     --> ' + FloatToStr(reallocCoef));
-            SRwriteln('deadLeafBiomass --> ' + FloatToStr(deadLeafBiomass));
-            SRwriteln('delta stock     --> ' + FloatToStr(deadLeafBiomass * reallocCoef));
-            SRwriteln('delta senesc_dw --> ' + FloatToStr(deadLeafBiomass * (1 - reallocCoef)));
-            SRwriteln('AVANT');
-            SRwriteln('-----');
-            SRwriteln('stock           --> ' + FloatToStr(stock));
-            SRwriteln('senesc_dw       --> ' + FloatToStr(senesc_dw));
-            stock := stock + (deadLeafBiomass * reallocCoef);
-            senesc_dw := senesc_dw + (deadLeafBiomass * (1 - reallocCoef));
-            SRwriteln('APRES');
-            SRwriteln('-----');
-            SRwriteln('stock           --> ' + FloatToStr(stock));
-            SRwriteln('senesc_dw       --> ' + FloatToStr(senesc_dw));
-          end
-          else
-          begin
-            SRwriteln(currentInstance.GetName() + ' --> pas ligulee');
-          end;
-        end;
-      end;
     end;
   end;
 end;
@@ -6462,14 +6752,14 @@ begin
                 stateLeaf := (currentInstance2 as TEntityInstance).GetCurrentState();
                 if (stateLeaf <> 2000) then
                 begin
-                  if (((stateLeaf = 4) or (stateLeaf = 5)) and (stateLeaf <> 2000)) then
+                  if ((stateLeaf = 4) or (stateLeaf = 5)) then
                   begin
                     SRwriteln('Feuille : ' + currentInstance2.GetName() + ' ligulee');
                     biomLeaf := (currentInstance2 as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
                   end
                   else
                   begin
-                    SRwriteln('Feuille : ' + currentInstance2.GetName() + ' ligulee');
+                    SRwriteln('Feuille : ' + currentInstance2.GetName() + ' pas ligulee');
                     biomLeaf := (currentInstance2 as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
                   end;
                   SRwriteln('biomLeaf       --> ' + FloatToStr(biomLeaf));
@@ -6630,12 +6920,87 @@ begin
   end;
 end;
 
+procedure ComputeBladeAreaLeavesTiller(var instance : TInstance; var sumOfBladeAreaOnTiller : Double);
+var
+  i, le, state : Integer;
+  currentInstance : TInstance;
+  bladeAreaLeaf : Double;
+begin
+  sumOfBladeAreaOnTiller := 0;
+  le := (instance as TEntityInstance).LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+      begin
+        state := (currentInstance as TEntityInstance).GetCurrentState();
+        if ((state <> 2000) and (state <> 500)) then
+        begin
+          if ((state = 4) or (state = 5)) then
+          begin
+            SRwriteln('Feuille : ' + currentInstance.GetName() + ' ligulee');
+            bladeAreaLeaf := (currentInstance as TEntityInstance).GetTAttribute('correctedBladeArea').GetCurrentSample().value;
+          end
+          else
+          begin
+            SRwriteln('Feuille : ' + currentInstance.GetName() + ' pas ligulee');
+            bladeAreaLeaf := (currentInstance as TEntityInstance).GetTAttribute('bladeArea').GetCurrentSample().value;
+          end;
+          SRwriteln('bladeAreaLeaf            --> ' + FloatToStr(bladeAreaLeaf));
+          sumOfBladeAreaOnTiller := sumOfBladeAreaOnTiller + bladeAreaLeaf;
+          SRwriteln('sumOfBladeAreaOnTiller --> ' + FloatToStr(sumOfBladeAreaOnTiller));
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure ComputeBiomassLeavesTiller(var instance : TInstance; var sumOfTillerLeafBiomass : Double);
+var
+  i, le, state : Integer;
+  currentInstance : TInstance;
+  biomassLeaf : Double;
+begin
+  sumOfTillerLeafBiomass := 0;
+  le := (instance as TEntityInstance).LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+      begin
+        state := (currentInstance as TEntityInstance).GetCurrentState();
+        if ((state <> 2000) and (state <> 500)) then
+        begin
+          if ((state = 4) or (state = 5)) then
+          begin
+            SRwriteln('Feuille : ' + currentInstance.GetName() + ' ligulee');
+            biomassLeaf := (currentInstance as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
+          end
+          else
+          begin
+            SRwriteln('Feuille : ' + currentInstance.GetName() + ' pas ligulee');
+            biomassLeaf := (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+          end;
+          SRwriteln('biomassLeaf              --> ' + FloatToStr(biomassLeaf));
+          sumOfTillerLeafBiomass := sumOfTillerLeafBiomass + biomassLeaf;
+          SRwriteln('sumOfTillerLeafBiomass   --> ' + FloatToStr(sumOfTillerLeafBiomass));
+        end;
+      end;
+    end;
+  end;
+end;
+
 procedure KillSenescLeaves(var instance : TInstance; var deadLeafNb : Double);
 var
-  i1, i2, le1, le2, state1, state2 : Integer;
+  i1, i2, le1, le2, state1, state2, counter : Integer;
   currentInstance1, currentInstance2 : TInstance;
   category1, category2 : String;
 begin
+  counter := 0;
   le1 := (instance as TEntityInstance).LengthTInstanceList();
   for i1 := 0 to le1 - 1 do
   begin
@@ -6646,7 +7011,11 @@ begin
       if (category1 = 'Leaf') then
       begin
         state1 := (currentInstance1 as TEntityInstance).GetCurrentState();
-        if (state1 = 500) then
+        if ((state1 <> 500) and (state1 <> 2000)) then
+        begin
+          counter := counter + 1;
+        end
+        else if (state1 = 500) then
         begin
           deadLeafNb := deadLeafNb + 1;
           SRwriteln('La feuille : ' + currentInstance1.GetName() + ' detruite par senescence');
@@ -6678,6 +7047,11 @@ begin
         end;
       end;
     end;
+  end;
+  if (counter = 0) then
+  begin
+    (instance as TEntityInstance).SetCurrentState(1000);
+    SRwriteln('Plante morte - Plus de feuille sur le brin maitre - KillSenescLeaves');
   end;
 end;
 
@@ -6714,6 +7088,7 @@ var
   predim : Double;
   find : boolean;
 begin
+  currentInstance := nil;
   predim := -1;
   refFather := instance.GetFather();
   le := (refFather as TEntityInstance).LengthTInstanceList();
@@ -6757,7 +7132,7 @@ end;
 
 procedure ComputeInternodeLengthPredim(var instance : TInstance; const slopeLengthIN, leafLengthToINLength : Double; var internodeLengthPredim : Double);
 var
-  leafPredim, LL_BL, LL_BL_init, slope_LL_BL_at_PI, nbLeafParam2 : Double;
+  leafPredim, LL_BL_init, slope_LL_BL_at_PI, nbLeafParam2,LL_BL, coeffSpecies : Double;
   internodeName, leafRankName : string;
   rank : Integer;
   refFather : TInstance;
@@ -6771,28 +7146,30 @@ begin
   refFather := instance.GetFather();
   if ((refFather as TEntityInstance).GetCategory() = 'Tiller') then
   begin
-    leafRankName := 'L' + IntToStr(rank - 1) + '_'+ (refFather as TEntityInstance).GetName();
+    leafRankName := 'L' + IntToStr(rank) + '_'+ (refFather as TEntityInstance).GetName();
   end
   else
   begin
-    leafRankName := 'L' + IntToStr(rank - 1);
+    leafRankName := 'L' + IntToStr(rank);
   end;
   refFather := instance.GetFather();
-  while refFather.GetName() <> 'EntityMeristem' do
+  while (refFather.GetName() <> 'EntityMeristem') do
   begin
     refFather := refFather.GetFather();
   end;
   LL_BL_init := (refFather as TEntityInstance).GetTAttribute('LL_BL_init').GetCurrentSample().value;
   slope_LL_BL_at_PI := (refFather as TEntityInstance).GetTAttribute('slope_LL_BL_at_PI').GetCurrentSample().value;
   nbLeafParam2 := (refFather as TEntityInstance).GetTAttribute('nb_leaf_param2').GetCurrentSample().value;
-  if (((rank - 1) - nbLeafParam2) < 0) then
+  coeffSpecies := (refFather as TEntityInstance).GetTAttribute('coeff_species').GetCurrentSample().value;
+  if (((rank) - nbLeafParam2) < 0) then
   begin
     LL_BL := LL_BL_init;
   end
   else
   begin
-    LL_BL := LL_BL_init + slope_LL_BL_at_PI * ((rank - 1) - nbLeafParam2);
+    LL_BL := LL_BL_init + slope_LL_BL_at_PI * ((rank + 1) - nbLeafParam2);
   end;
+  SRwriteln('coeffSpecies            --> ' + FloatToStr(coeffSpecies));
   SRwriteln('LeafName                --> ' + leafRankName);
   SRwriteln('LL_BL_init              --> ' + FloatToStr(LL_BL_init));
   SRwriteln('slope_LL_BL_at_PI       --> ' + FloatToStr(slope_LL_BL_at_PI));
@@ -6800,7 +7177,8 @@ begin
   SRwriteln('LL_BL                   --> ' + FloatToStr(LL_BL));
   leafPredim := FindPredimOrganLength(instance, leafRankName, 'Leaf');
   SRwriteln('Leaf predim             --> ' + FloatToStr(leafPredim));
-  internodeLengthPredim := Max(0.0001, slopeLengthIN * (1 - (1 / LL_BL)) * leafPredim - leafLengthToINLength);
+  internodeLengthPredim := Max(0.0001, slopeLengthIN * (1 - (coeffSpecies *(1/LL_BL))) * leafPredim - leafLengthToINLength);
+  //internodeLengthPredim := Max(0.0001, slopeLengthIN * leafPredim - leafLengthToINLength);
   SRwriteln('Internode length predim --> ' + FloatToStr(internodeLengthPredim));
 end;
 
@@ -7054,12 +7432,41 @@ begin
       if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
       begin
         leafState := (currentInstance as TEntityInstance).GetCurrentState();
-        if ((leafState = 4) or (leafState = 5)) then
+        if ((leafState = 4) or (leafState = 5) or (leafState = 500)) then
         begin
           dailySenescedLeafBiomass := (currentInstance as TEntityInstance).GetTAttribute('dailySenescedLeafBiomass').GetCurrentSample().value;
           SRwriteln((currentInstance as TEntityInstance).GetName() + ' dailySenescedLeafBiomass --> ' + FloatToStr(dailySenescedLeafBiomass));
           sumOfDailySenescedLeafBiomass := sumOfDailySenescedLeafBiomass + dailySenescedLeafBiomass;
           SRwriteln('sumOfDailySenescedLeafBiomass --> ' + FloatToStr(sumOfDailySenescedLeafBiomass));
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure SumOfDailyComputedReallocBiomassOnCulm(var instance : TInstance; var sumOfDailyComputedReallocBiomass : Double);
+var
+  i, le, leafState : Integer;
+  currentInstance : TInstance;
+  dailyComputedReallocBiomass : Double;
+begin
+//  dailyComputedReallocBiomass := 0;
+  sumOfDailyComputedReallocBiomass := 0;
+  le := (instance as TEntityInstance).LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+      begin
+        leafState := (currentInstance as TEntityInstance).GetCurrentState();
+        if ((leafState = 4) or (leafState = 5) or (leafState = 500)) then
+        begin
+          dailyComputedReallocBiomass := (currentInstance as TEntityInstance).GetTAttribute('dailyComputedReallocBiomass').GetCurrentSample().value;
+          SRwriteln((currentInstance as TEntityInstance).GetName() + ' dailyComputedReallocBiomass --> ' + FloatToStr(dailyComputedReallocBiomass));
+          sumOfDailyComputedReallocBiomass := sumOfDailyComputedReallocBiomass + dailyComputedReallocBiomass;
+          SRwriteln('sumOfDailyComputedReallocBiomass --> ' + FloatToStr(sumOfDailyComputedReallocBiomass));
         end;
       end;
     end;
@@ -7091,6 +7498,810 @@ begin
     end;
   end;
   SRwriteln('total --> ' + FloatToStr(total));
+end;
+
+procedure SumOfDailyComputedReallocBiomass(var instance : TInstance; var total : Double);
+var
+  i, le : Integer;
+  currentInstance : TInstance;
+  sumOfComputedReallocBiomass : Double;
+begin
+  total := 0;
+  sumOfComputedReallocBiomass := (instance as TEntityInstance).GetTAttribute('sumOfDailyComputedReallocBiomassMainstem').GetCurrentSample().value;
+  SRwriteln('sumOfDailyComputedReallocBiomassMainstem --> ' + FloatToStr(sumOfComputedReallocBiomass));
+  total := total + sumOfComputedReallocBiomass;
+  le := (instance as TEntityInstance).LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        sumOfComputedReallocBiomass := (currentInstance as TEntityInstance).GetTAttribute('sumOfDailyComputedReallocBiomassTiller').GetCurrentSample().value;
+        SRwriteln(currentInstance.GetName() + ' : sumOfDailyComputedReallocBiomassTiller --> ' + FloatToStr(sumOfComputedReallocBiomass));
+        total := total + sumOfComputedReallocBiomass;
+      end;
+    end;
+  end;
+  SRwriteln('total --> ' + FloatToStr(total));
+end;
+
+procedure ComputeBiomassInternodeStruct(var instance : TInstance; var biomInternodeStruct : Double; var biomInternodeStructMainstem : Double; var biomInternodeStructTiller : Double);
+var
+  i1, i2, le1, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
+  contribution : Double;
+  category1, category2 : string;
+  name : string;
+begin
+  biomInternodeStruct := 0;
+  biomInternodeStructMainstem := 0;
+  biomInternodeStructTiller := 0;
+  le1 := (instance as TEntityInstance).LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
+  begin
+    currentInstance1 := (instance as TEntityInstance).GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      category1 := (currentInstance1 as TEntityInstance).GetCategory();
+      if (category1 = 'Internode') then
+      begin
+        name := currentInstance1.GetName();
+        contribution := (currentInstance1 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+        biomInternodeStructMainstem := biomInternodeStructMainstem + contribution;
+        SRwriteln(name + ' : biomassIN --> ' + FloatToStr(contribution));
+        SRwriteln('biomInternodeStructMainstem --> ' + FloatToStr(biomInternodeStructMainstem));
+      end
+      else if (category1 = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            category2 := (currentInstance2 as TEntityInstance).GetCategory();
+            if (category2 = 'Internode') then
+            begin
+              name := currentInstance2.GetName();
+              contribution := (currentInstance2 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+              biomInternodeStructTiller := biomInternodeStructTiller + contribution;
+              SRwriteln(name + ' : biomassIN --> ' + FloatToStr(contribution));
+              SRwriteln('biomInternodeStructTiller --> ' + FloatToStr(biomInternodeStructTiller));
+            end;
+          end;
+        end;  
+      end;
+    end;
+  end;
+  biomInternodeStruct := biomInternodeStructMainstem + biomInternodeStructTiller;
+  SRwriteln('biomInternodeStruct --> ' + FloatToStr(biomInternodeStruct));
+end;
+
+procedure ComputeBiomBlade(const sumOfLeafBiomass : Double ; const G_L : Double; var biomBlade : Double);
+begin
+  SRwriteln('sumOfLeafBiomass --> ' + FloatToStr(sumOfLeafBiomass));
+  SRwriteln('G_L              --> ' + FloatToStr(G_L));
+  biomBlade := sumOfLeafBiomass / (1 + G_L);
+  SRwriteln('biomBlade        --> ' + FloatToStr(biomBlade));
+
+end;
+
+procedure ComputeBiomLeafMainstem(var instance : TInstance; var biomLeafMainstem : Double);
+var
+  i, le, statePlant, stateLeaf : Integer;
+  currentInstance : TInstance;
+  biomLeaf, biomSenesc : Double;
+  contribution1, contribution2, reallocationCoeff : Double;
+  stockLeaf, sumOfLeafBiomass : Double;
+  biomass, stockMainstem, stockInternodeMainstem : Double;
+  senesc_dw : Double;
+begin
+  biomLeaf := 0;
+  biomSenesc := 0;
+  statePlant := (instance as TEntityInstance).GetCurrentState();
+  if ((statePlant = 1) or (statePlant = 2) or (statePlant = 3)) then
+  begin
+    SRwriteln('statePlant = leaf morphogenesis');
+    le := (instance as TEntityInstance).LengthTInstanceList();
+    for i := 0 to le - 1 do
+    begin
+      currentInstance := (instance as TEntityInstance).GetTInstance(i);
+      if (currentInstance is TEntityInstance) then
+      begin
+        if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+        begin
+          SRwriteln('Leaf name --> ' + currentInstance.GetName());
+          stateLeaf := (currentInstance as TEntityInstance).GetCurrentState();
+          SRwriteln('stateLeaf --> ' +  FloatToStr(stateLeaf));
+          if ((stateLeaf = 2) or (stateLeaf = 3) or (stateLeaf = 10) or (stateLeaf = 20)) then
+          begin
+            SRwriteln('stateLeaf = realization');
+            contribution1 := (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+            SRwriteln('biomass  --> ' + FloatToStr(contribution1));
+            biomLeaf := biomLeaf  + contribution1;
+            SRwriteln('biomLeaf --> ' + FloatToStr(biomLeaf));
+          end
+          else if ((stateLeaf = 4) or (stateLeaf = 5)) then
+          begin
+            SRwriteln('stateLeaf = ligule');
+            reallocationCoeff := (instance as TEntityInstance).GetTAttribute('realocationCoeff').GetCurrentSample().value;
+            SRwriteln('reallocationCoeff   --> ' + FloatToStr(reallocationCoeff));
+            biomass := (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+            SRwriteln('biomass             --> ' + FloatToStr(biomass));
+            contribution1 := (currentInstance as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
+            SRwriteln('biomass (corrected) --> ' + FloatToStr(contribution1));
+            contribution2 := (biomass - contribution1) * (1 - reallocationCoeff);
+            SRwriteln('senescDw            --> ' + FloatToStr(contribution2));
+            biomLeaf := biomLeaf + contribution1;
+            biomSenesc := biomSenesc + contribution2;
+            SRwriteln('biomLeaf            --> ' + FloatToStr(biomLeaf));
+            SRwriteln('biomSenesc          --> ' + FloatToStr(biomSenesc));
+          end;
+        end;
+      end;
+    end;
+    stockLeaf := ((instance as TEntityInstance).GetTAttribute('stockLeaf') as TAttributeTableOut).GetCurrentSample().value;
+    sumOfLeafBiomass := (instance as TEntityInstance).GetTAttribute('sumOfLeafBiomass').GetCurrentSample().value;
+    senesc_dw := ((instance as TEntityInstance).GetTAttribute('senesc_dw') as TAttributeTableOut).GetCurrentSample().value;
+    biomLeafMainstem := (biomLeaf + senesc_dw) + stockLeaf * (biomLeaf / sumOfLeafBiomass);
+    SRwriteln('biomLeaf               --> ' + FloatToStr(biomLeaf));
+    SRwriteln('senesc_dw              --> ' + FloatToStr(senesc_dw));
+    SRwriteln('stockLeaf              --> ' + FloatToStr(stockLeaf));
+    SRwriteln('sumOfLeafBiomass       --> ' + FloatToStr(sumOfLeafBiomass));
+    SRwriteln('biomLeafMainstem       --> ' + FloatToStr(biomLeafMainstem));
+  end
+  else
+  begin
+    SRwriteln('statePlant = elong, pi ou plus');
+    le := (instance as TEntityInstance).LengthTInstanceList();
+    for i := 0 to le - 1 do
+    begin
+      currentInstance := (instance as TEntityInstance).GetTInstance(i);
+      if (currentInstance is TEntityInstance) then
+      begin
+        if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+        begin
+          SRwriteln('Leaf name --> ' + currentInstance.GetName());
+          stateLeaf := (currentInstance as TEntityInstance).GetCurrentState();
+          SRwriteln('stateLeaf --> ' +  FloatToStr(stateLeaf));          
+          if ((stateLeaf = 2) or (stateLeaf = 3) or (stateLeaf = 10) or (stateLeaf = 20)) then
+          begin
+            SRwriteln('stateLeaf = realization');
+            contribution1 := (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+            SRwriteln('biomass  --> ' + FloatToStr(contribution1));
+            biomLeaf := biomLeaf  + contribution1;
+            SRwriteln('biomLeaf --> ' + FloatToStr(biomLeaf));
+          end
+          else if ((stateLeaf = 4) or (stateLeaf = 5)) then
+          begin
+            SRwriteln('stateLeaf = ligule');
+            reallocationCoeff := (instance as TEntityInstance).GetTAttribute('realocationCoeff').GetCurrentSample().value;
+            SRwriteln('reallocationCoeff   --> ' + FloatToStr(reallocationCoeff));
+            biomass := (currentInstance as TEntityInstance).GetTAttribute('biomass').GetCurrentSample().value;
+            SRwriteln('biomass             --> ' + FloatToStr(biomass));
+            contribution1 := (currentInstance as TEntityInstance).GetTAttribute('correctedLeafBiomass').GetCurrentSample().value;
+            SRwriteln('biomass (corrected) --> ' + FloatToStr(contribution1));
+            contribution2 := (biomass - contribution1) * (1 - reallocationCoeff);
+            SRwriteln('senescDw            --> ' + FloatToStr(contribution2));
+            biomLeaf := biomLeaf + contribution1;
+            biomSenesc := biomSenesc + contribution2;
+            SRwriteln('biomLeaf            --> ' + FloatToStr(biomLeaf));
+            SRwriteln('biomSenesc          --> ' + FloatToStr(biomSenesc));
+          end;
+        end;
+      end;
+    end;
+    stockMainstem := ((instance as TEntityInstance).GetTAttribute('stock_mainstem') as TAttributeTableOut).GetCurrentSample().value;
+    stockInternodeMainstem := ((instance as TEntityInstance).GetTAttribute('stock_internode_mainstem') as TAttributeTableOut).GetCurrentSample().value;
+    senesc_dw := ((instance as TEntityInstance).GetTAttribute('senesc_dw') as TAttributeTableOut).GetCurrentSample().value;
+    biomLeafMainstem := biomLeaf + senesc_dw + (stockMainstem - stockInternodeMainstem);
+    SRwriteln('biomLeaf               --> ' + FloatToStr(biomLeaf));
+    SRwriteln('senesc_dw              --> ' + FloatToStr(senesc_dw));
+    SRwriteln('stockMainstem          --> ' + FloatToStr(stockMainstem));
+    SRwriteln('stockInternodeMainstem --> ' + FloatToStr(stockInternodeMainstem));
+    SRwriteln('biomLeafMainstem       --> ' + FloatToStr(biomLeafMainstem));
+  end; 
+end;
+
+procedure ComputeNbLeafMainstem(var instance : TInstance; var NbLeafMainstem : Double);
+var
+  i, le : Integer;
+  leafState : Integer;
+  currentInstance : TInstance;
+begin
+  NbLeafMainstem := 0;
+  le := (instance as TEntityInstance).LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Leaf') then
+      begin
+        leafState := (currentInstance as TEntityInstance).GetCurrentState();
+        SRwriteln('Leaf : ' + currentInstance.GetName() + ' state --> ' + IntToStr(leafState));
+        if ((leafState = 2) or (leafState = 3) or (leafState = 4) or (leafState = 5) or (leafState = 10) or (leafState = 20)) then
+        begin
+          NbLeafMainstem := NbLeafMainstem + 1;
+          SRwriteln('NbLeafMainstem --> ' + FloatToStr(NbLeafMainstem));
+        end;
+      end;
+    end;
+  end;
+end;
+
+procedure ComputePanicleReservoirDispo(const fertileGrainNumber : Double; const gdw : Double; const weight : Double; var reservoirDispo : Double);
+begin
+  SRwriteln('fertileGrainNumber --> ' + FloatToStr(fertileGrainNumber));
+  SRwriteln('gdw                --> ' + FloatToStr(gdw));
+  SRwriteln('weight             --> ' + FloatToStr(weight));
+  reservoirDispo := Max(0, fertileGrainNumber * gdw - weight);
+  SRwriteln('reservoirDispo     --> ' + FloatToStr(reservoirDispo));
+end;
+
+procedure SetUpTillerStockPre_Elong(var instance : TInstance);
+var
+  sumOfBiomass, sumOfTillerLeafBiomass, stockPlant, stockTiller, stockMainstem : Double;
+  ifFirstDayOfPre_Elong : Double;
+  tillerState : Integer;
+  sample : TSample;
+  attributeFirstDay, attributeStockTiller : TAttribute;
+  attributeStockPlant, attributeStockMainstem : TAttributeTableOut;
+  refFather : TInstance;
+
+begin
+  tillerState := (instance as TEntityInstance).GetCurrentState();
+  if (tillerState = 10) then
+  begin
+    SRwriteln('Tiller a PRE_ELONG');
+    attributeFirstDay := (instance as TEntityInstance).GetTAttribute('ifFirstDayOfPre_Elong');
+    sample := attributeFirstDay.GetCurrentSample();
+    ifFirstDayOfPre_Elong := sample.value;
+    if (ifFirstDayOfPre_Elong = 1) then
+    begin
+      SRwriteln('Premier jour de PRE_ELONG, on initialise le stock de la talle');
+      sample.value := 0;
+      attributeFirstDay.SetSample(sample);
+      refFather := instance.GetFather();
+      while (refFather.GetName() <> 'EntityMeristem') do
+      begin
+        refFather := refFather.GetFather();
+      end;
+      attributeStockPlant := ((refFather as TEntityInstance).GetTAttribute('stock') as TAttributeTableOut);
+      stockPlant := attributeStockPlant.GetCurrentSample().value;
+      SRwriteln('stockPlant             --> ' + FloatToStr(stockPlant));
+      attributeStockMainstem := ((refFather as TEntityInstance).GetTAttribute('stock_mainstem') as TAttributeTableOut);
+      stockMainstem := attributeStockMainstem.GetCurrentSample().value;
+      SRwriteln('stockMainstem          --> ' + FloatToStr(stockMainstem));
+      sumOfBiomass := (refFather as TEntityInstance).GetTAttribute('sumOfBiomass').GetCurrentSample().value;
+      SRwriteln('sumOfBiomass           --> ' + FloatToStr(sumOfBiomass));
+      sumOfTillerLeafBiomass := (instance as TEntityInstance).GetTAttribute('sumOfTillerLeafBiomass').GetCurrentSample().value;
+      SRwriteln('sumOfTillerLeafBiomass --> ' + FloatToStr(sumOfTillerLeafBiomass));
+      attributeStockTiller := (instance as TEntityInstance).GetTAttribute('stock_tiller');
+      stockTiller := (sumOfTillerLeafBiomass / sumOfBiomass) * stockPlant;
+      SRwriteln('stockTiller            --> ' + FloatToStr(stockTiller));
+      stockMainstem := stockPlant - stockTiller;
+      SRwriteln('Nouveau stockMainstem  --> ' + FloatToStr(stockMainstem));
+      sample := attributeStockMainstem.GetCurrentSample();
+      sample.value := stockMainstem;
+      attributeStockMainstem.SetSample(sample);
+      sample := attributeStockTiller.GetCurrentSample();
+      sample.value := stockTiller;
+      attributeStockTiller.SetSample(sample);
+    end
+    else
+    begin
+      SRwriteln('Pas premier jour de PRE_ELONG');
+    end;
+  end
+  else
+  begin
+    SRwriteln('Tiller pas a PRE_ELONG');
+  end;
+end;
+
+procedure DeficitSurplusCorrection(var instance : TInstance);
+var
+  attributeDeficit, attributeSurplus : TAttributeTableOut;
+  deficit, surplus : Double;
+  newDeficit, newSurplus : Double;
+  sample : TSample;
+  date : TDateTime;
+begin
+  attributeDeficit := ((instance as TEntityInstance).GetTAttribute('deficit') as TAttributeTableOut);
+  attributeSurplus := ((instance as TEntityInstance).GetTAttribute('surplus') as TAttributeTableOut);
+  sample := attributeDeficit.GetCurrentSample();
+  date := sample.date;
+  deficit := sample.value;
+  SRwriteln('deficit    --> ' + FloatToStr(deficit));
+  sample := attributeSurplus.GetCurrentSample();
+  surplus := sample.value;
+  SRwriteln('surplus --> ' + FloatToStr(surplus));
+  newDeficit := Min(0, deficit + surplus);
+  newSurplus := Max(0, deficit + surplus);
+  SRwriteln('newDeficit --> ' + FloatToStr(newDeficit));
+  SRwriteln('newSurplus --> ' + FloatToStr(newSurplus));
+  sample.date := date;
+  sample.value := newDeficit;
+  attributeDeficit.SetSample(sample);
+  sample.value := newSurplus;
+  attributeSurplus.SetSample(sample);
+end;
+
+procedure ComputeBiomLeafTot(const biomLeaf : double; const senescDw : double; var biomLeafTot : Double);
+begin
+  biomLeafTot := biomLeaf + senescDw;
+  SRwriteln('biomLeaf    --> ' + FloatToStr(biomLeaf));
+  SRwriteln('senescDw    --> ' + FloatToStr(senescDw));;
+  SRwriteln('biomLeafTot --> ' + FloatToStr(biomLeafTot));
+end;
+
+procedure ComputeStockLeaf(const stock : Double; const stockInternode : Double; var stockLeaf : Double);
+begin
+  stockLeaf := stock - stockInternode;
+  SRwriteln('stock          --> ' + FloatToStr(stock));
+  SRwriteln('stockInternode --> ' + FloatToStr(stockInternode));
+  SRwriteln('stockLeaf      --> ' + FloatToStr(stockLeaf));
+end;
+
+procedure ComputeSLAStruct(var instance : TInstance; const PLA : Double; tmp : Double; var SLAStruct : Double);
+var
+  state : Integer;
+begin
+  state := (instance as TEntityInstance).GetCurrentState();
+  SRwriteln('state     --> ' + IntToStr(state));
+  if (state = 1000) then
+  begin
+    SLAStruct := 0;
+    SRwriteln('SLAStruct --> ' + FloatToStr(SLAStruct));
+  end
+  else
+  begin
+    SLAStruct := PLA / tmp;
+    SRwriteln('SLAStruct --> ' + FloatToStr(SLAStruct));
+  end;
+end;
+
+function InternodesHeight(var instance : TInstance; const rank : Double) : Double;
+var
+  i, le, state : Integer;
+  internodeRank, internodeLength : Double;
+  currentInstance : TInstance;
+  returnValue : Double;
+begin
+  returnValue := 0;
+  le := (instance as TEntityInstance).LengthTAttributeList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Internode') then
+      begin
+        state := (currentInstance as TEntityInstance).GetCurrentState();
+        if ((state <> 1000) and (state <> 2000) and (state <> -1)) then
+        begin
+          internodeRank := (currentInstance as TEntityInstance).GetTAttribute('rank').GetCurrentSample().value;
+          if (internodeRank <= rank) then
+          begin
+            internodeLength := ((currentInstance as TEntityInstance).GetTAttribute('LIN') as TAttributeTableOut).GetCurrentSample().value;
+            returnValue := returnValue + internodeLength;
+          end;
+        end;
+      end;
+    end;
+  end;
+  Result := returnValue;
+end;
+
+procedure DataForR(var instance : TInstance);
+const
+  N = 16;
+type
+  TLine = array[0..N - 1] of string;
+var
+  i, j, i1, len1, i2, len2 : Integer;
+  tabLen : Integer;
+  tab : array of TLine;
+  header, line : TLine;
+  entityInstance1, entityInstance2 : TEntityInstance;
+  currentInstance1, currentInstance2 : TInstance;
+  id, axis, rank, state, ttBegin, age, len, width, bladeArea, bladeAreaCorr : string;
+  biomass, biomassCorr, ll_bl, bladeLength, sheathLength, bladeHeight : string;
+  lengthDoubleValue, ll_blDoubleValue, bladeLengthDoubleValue, sheathLengthDoubleValue : Double;
+  bladeHeightDoubleValue, rankDoubleValue : Double;
+  PAI, density, fcstr, rolling_a, rolling_b, lai, nbDayOfSimulation, radiation, TT : Double;
+  stateIntegerValue : Integer;
+  myFile : TextFile;
+begin
+  header[0] := 'id';
+  header[1] := 'axis';
+  header[2] := 'rank';
+  header[3] := 'state';
+  header[4] := 'ttBegin';
+  header[5] := 'age';
+  header[6] := 'length';
+  header[7] := 'width';
+  header[8] := 'bladeArea';
+  header[9] := 'bladeAreaCorr';
+  header[10] := 'biomass';
+  header[11] := 'biomassCorr';
+  header[12] := 'll_bl';
+  header[13] := 'bladeLength';
+  header[14] := 'sheathLength';
+  header[15] := 'bladeHeight';
+  tabLen := 1;
+  SetLength(tab, tabLen);
+  tab[tabLen - 1] := header;
+  tabLen := tabLen + 1;
+  SetLength(tab, tabLen);
+  len1 := (instance as TEntityInstance).LengthTInstanceList();
+  for i1 := 0 to (len1 - 1) do
+  begin
+    currentInstance1 := (instance as TEntityInstance).GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      entityInstance1 := currentInstance1 as TEntityInstance;
+      if (entityInstance1.GetCategory() = 'Leaf') then
+      begin
+        stateIntegerValue := entityInstance1.GetCurrentState();
+        if ((stateIntegerValue <> 500) and (stateIntegerValue <> 1000) and (stateIntegerValue <> 2000) and (stateIntegerValue <> -1)) then
+        begin
+          SetLength(tab, tabLen);
+          id := entityInstance1.GetName();
+          SRwriteln('id            --> ' + id);
+          axis := 'Mainstem';
+          SRwriteln('axis          --> ' + axis);
+          rankDoubleValue := entityInstance1.GetTAttribute('rank').GetCurrentSample().value;
+          rank := FloatToStr(rankDoubleValue);
+          SRwriteln('rank          --> ' + rank);
+          state := IntToStr(entityInstance1.GetCurrentState());
+          SRwriteln('state         --> ' + state);
+          ttBegin := FloatToStr(entityInstance1.GetTAttribute('thermalTimeAtInitiation').GetCurrentSample().value);
+          SRwriteln('ttBegin       --> ' + ttBegin);
+          age := FloatToStr(entityInstance1.GetTAttribute('time_from_app').GetCurrentSample().value);
+          SRwriteln('age           --> ' + age);
+          lengthDoubleValue := entityInstance1.GetTAttribute('len').GetCurrentSample().value;
+          len := FloatToStr(lengthDoubleValue);
+          SRwriteln('len           --> ' + len);
+          width := FloatToStr(entityInstance1.GetTAttribute('width').GetCurrentSample().value);
+          SRwriteln('width         --> ' + width);
+          bladeArea := FloatToStr(entityInstance1.GetTAttribute('bladeArea').GetCurrentSample().value);
+          SRwriteln('bladeArea     --> ' + bladeArea);
+          bladeAreaCorr := FloatToStr(entityInstance1.GetTAttribute('correctedBladeArea').GetCurrentSample().value);
+          SRwriteln('bladeAreaCorr --> ' + id);
+          biomass := FloatToStr(entityInstance1.GetTAttribute('biomass').GetCurrentSample().value);
+          SRwriteln('biomass       --> ' + biomass);
+          biomassCorr := FloatToStr(entityInstance1.GetTAttribute('correctedLeafBiomass').GetCurrentSample().value);
+          SRwriteln('biomassCorr   --> ' + biomassCorr);
+          ll_blDoubleValue := entityInstance1.GetTAttribute('LL_BL').GetCurrentSample().value ;
+          ll_bl := FloatToStr(ll_blDoubleValue);
+          SRwriteln('ll_bl         --> ' + id);
+          bladeLengthDoubleValue := lengthDoubleValue / ll_blDoubleValue;
+          bladeLength := FloatToStr(bladeLengthDoubleValue);
+          SRwriteln('bladeLength   --> ' + bladeLength);
+          sheathLengthDoubleValue := lengthDoubleValue - bladeLengthDoubleValue;
+          sheathLength := FloatToStr(sheathLengthDoubleValue);
+          SRwriteln('sheathLength  --> ' + sheathLength);
+          bladeHeightDoubleValue := InternodesHeight(instance, rankDoubleValue) + sheathLengthDoubleValue;
+          bladeHeight := FloatToStr(bladeHeightDoubleValue);
+          SRwriteln('bladeHeight   --> ' + bladeHeight);
+          line[0] := id;
+          line[1] := axis;
+          line[2] := rank;
+          line[3] := state;
+          line[4] := ttBegin;
+          line[5] := age;
+          line[6] := len;
+          line[7] := width;
+          line[8] := bladeArea;
+          line[9] := bladeAreaCorr;
+          line[10] := biomass;
+          line[11] := biomassCorr;
+          line[12] := ll_bl;
+          line[13] := bladeLength;
+          line[14] := sheathLength;
+          line[15] := bladeHeight;
+          tab[tabLen - 1] := line;
+          tabLen := tabLen + 1;
+          SetLength(tab, tabLen);
+        end;
+      end
+      else if (entityInstance1.GetCategory() = 'Tiller') then
+      begin
+        len2 := entityInstance1.LengthTInstanceList();
+        for i2 := 0 to (len2 - 1) do
+        begin
+          currentInstance2 := entityInstance1.GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            entityInstance2 := currentInstance2 as TEntityInstance;
+            if (entityInstance2.GetCategory() = 'Leaf') then
+            begin
+              stateIntegerValue := entityInstance2.GetCurrentState();
+              if ((stateIntegerValue <> 500) and (stateIntegerValue <> 1000) and (stateIntegerValue <> 2000) and (stateIntegerValue <> -1)) then
+              begin
+                id := entityInstance2.GetName();
+                SRwriteln('id            --> ' + id);
+                axis := 'Tiller';
+                SRwriteln('axis          --> ' + axis);
+                rankDoubleValue := entityInstance2.GetTAttribute('rank').GetCurrentSample().value;
+                rank := FloatToStr(rankDoubleValue);
+                SRwriteln('rank          --> ' + rank);
+                state := IntToStr(entityInstance2.GetCurrentState());
+                SRwriteln('state         --> ' + state);
+                ttBegin := FloatToStr(entityInstance2.GetTAttribute('thermalTimeAtInitiation').GetCurrentSample().value);
+                SRwriteln('ttBegin       --> ' + ttBegin);
+                age := FloatToStr(entityInstance2.GetTAttribute('time_from_app').GetCurrentSample().value);
+                SRwriteln('age           --> ' + age);
+                lengthDoubleValue := entityInstance2.GetTAttribute('len').GetCurrentSample().value;
+                len := FloatToStr(lengthDoubleValue);
+                SRwriteln('len           --> ' + len);
+                width := FloatToStr(entityInstance2.GetTAttribute('width').GetCurrentSample().value);
+                SRwriteln('width         --> ' + width);
+                bladeArea := FloatToStr(entityInstance2.GetTAttribute('bladeArea').GetCurrentSample().value);
+                SRwriteln('bladeArea     --> ' + bladeArea);
+                bladeAreaCorr := FloatToStr(entityInstance2.GetTAttribute('correctedBladeArea').GetCurrentSample().value);
+                SRwriteln('bladeAreaCorr --> ' + bladeAreaCorr);
+                biomass := FloatToStr(entityInstance2.GetTAttribute('biomass').GetCurrentSample().value);
+                SRwriteln('biomass       --> ' + biomass);
+                biomassCorr := FloatToStr(entityInstance2.GetTAttribute('correctedLeafBiomass').GetCurrentSample().value);
+                SRwriteln('biomassCorr   --> ' + biomassCorr);
+                ll_blDoubleValue := entityInstance2.GetTAttribute('LL_BL').GetCurrentSample().value;
+                ll_bl := FloatToStr(ll_blDoubleValue);
+                SRwriteln('ll_bl         --> ' + ll_bl);
+                bladeLengthDoubleValue := lengthDoubleValue / ll_blDoubleValue;
+                bladeLength := FloatToStr(bladeLengthDoubleValue);
+                SRwriteln('bladeLength   --> ' + bladeLength);
+                sheathLengthDoubleValue := lengthDoubleValue - bladeLengthDoubleValue;
+                sheathLength := FloatToStr(sheathLengthDoubleValue);
+                SRwriteln('sheathLength  --> ' + sheathLength);
+                bladeHeightDoubleValue := InternodesHeight(currentInstance1, rankDoubleValue) + sheathLengthDoubleValue;
+                bladeHeight := FloatToStr(bladeHeightDoubleValue);
+                SRwriteln('bladeHeight   --> ' + bladeHeight);
+                line[0] := id;
+                line[1] := axis;
+                line[2] := rank;
+                line[3] := state;
+                line[4] := ttBegin;
+                line[5] := age;
+                line[6] := len;
+                line[7] := width;
+                line[8] := bladeArea;
+                line[9] := bladeAreaCorr;
+                line[10] := biomass;
+                line[11] := biomassCorr;
+                line[12] := ll_bl;
+                line[13] := bladeLength;
+                line[14] := sheathLength;
+                line[15] := bladeHeight;
+                tab[tabLen - 1] := line;
+                tabLen := tabLen + 1;
+                SetLength(tab, tabLen);
+              end;
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+  AssignFile(myFile, 'G:\Mes donnees\[DEV]\Ecomeristem\trunk\temporaryFiles\param_feuilles.txt');
+  Rewrite(myFile);
+  line := tab[0];
+  for i := 0 to High(line) do
+  begin
+    Write(myFile, line[i]);
+    Write(myfile, #9);
+  end;
+  Writeln(myFile, '');
+  for i := 1 to High(tab) - 1 do
+  begin
+    line := tab[i];
+    for j := 0 to High(line) do
+    begin
+      Write(myFile, line[j]);
+      Write(myfile, #9);
+    end;
+    Writeln(myFile, '');
+  end;
+  CloseFile(myFile);
+  AssignFile(myFile, 'G:\Mes donnees\[DEV]\Ecomeristem\trunk\temporaryFiles\param.txt');
+  Rewrite(myFile);
+  nbDayOfSimulation := (instance as TEntityInstance).GetTAttribute('nbDayOfSimulation').GetCurrentSample().value;
+  SRwriteln('nbDayOfSimulation --> ' + FloatToStr(nbDayOfSimulation));
+  PAI := (instance as TEntityInstance).GetTAttribute('PAI').GetCurrentSample().value;
+  SRwriteln('PAI               --> ' + FloatToStr(PAI));
+  density := (instance as TEntityInstance).GetTAttribute('density').GetCurrentSample().value;
+  SRwriteln('density           --> ' + FloatToStr(density));
+  fcstr := ((instance as TEntityInstance).GetTAttribute('fcstr') as TAttributeTableOut).GetCurrentSample().value;
+  SRwriteln('fcstr             --> ' + FloatToStr(fcstr));
+  rolling_a := (instance as TEntityInstance).GetTAttribute('Rolling_A').GetCurrentSample().value;
+  SRwriteln('rolling_a         --> ' + FloatToStr(rolling_a));
+  rolling_b := (instance as TEntityInstance).GetTAttribute('Rolling_B').GetCurrentSample().value;
+  SRwriteln('rolling_b         --> ' + FloatToStr(rolling_b));
+  lai := PAI * (rolling_b + (rolling_a * fcstr)) * density / 10000;
+  SRwriteln('lai               --> ' + FloatToStr(lai));
+  radiation := (instance as TEntityInstance).GetTAttribute('radiation').GetCurrentSample().value;
+  SRwriteln('par               --> ' + FloatToStr(radiation));
+  TT := ((instance as TEntityInstance).GetTAttribute('TT') as TAttributeTableOut).GetCurrentSample().value;
+  SRwriteln('TT               --> ' + FloatToStr(TT));
+  Writeln(myFile, 'date = ' + FloatToStr(nbDayOfSimulation));
+  Writeln(myFile, 'par = ' + FloatToStr(radiation));
+  Writeln(myFile, 'lai = ' + FloatToStr(lai));
+  Writeln(myFile, 'density = ' + FloatToStr(density));
+  Writeln(myFile, 'TT = ' + FloatToStr(TT));
+  CloseFile(myFile);
+end;
+
+procedure ComputeIntercFromR(var interc : Double);
+var
+  Si : STARTUPINFO;
+  Pi : PROCESS_INFORMATION;
+  strInterc : string;
+  myFile : TextFile;
+begin
+  ZeroMemory(@Si, SizeOf(STARTUPINFO));
+  Si.dwFlags := STARTF_USESHOWWINDOW;
+  Si.wShowWindow := SW_HIDE;
+  CreateProcess(nil, Pchar('G:\Mes donnees\[DEV]\Ecomeristem\trunk\temporaryFiles\couplage.bat'), nil, nil, True, 0, nil, nil, Si, Pi);
+  WaitForSingleObject(Pi.hProcess, INFINITE);
+
+  AssignFile(myFile, 'G:\Mes donnees\[DEV]\Ecomeristem\trunk\temporaryFiles\interc.txt');
+  Reset(myFile);
+  Readln(myFile, strInterc);
+  CloseFile(myFile);
+  interc := StrToFloat(strInterc);
+  SRwriteln('interc --> ' + FloatToStr(interc));
+end;
+
+procedure ComputeIntercAssimFromR(var interc, assim : Double);
+var
+  Si : STARTUPINFO;
+  Pi : PROCESS_INFORMATION;
+  strInterc, strAssim : string;
+  myFile : TextFile;
+begin
+  ZeroMemory(@Si, SizeOf(STARTUPINFO));
+  Si.dwFlags := STARTF_USESHOWWINDOW;
+  Si.wShowWindow := SW_HIDE;
+  CreateProcess(nil, Pchar('D:\Mes donnees\ecophen\trunk\temporaryFiles\couplage.bat'), nil, nil, True, 0, nil, nil, Si, Pi);
+  WaitForSingleObject(Pi.hProcess, INFINITE);
+
+  AssignFile(myFile, 'D:\Mes donnees\ecophen\trunk\temporaryFiles\interc.txt');
+  Reset(myFile);
+  Readln(myFile, strInterc);
+  CloseFile(myFile);
+  interc := StrToFloat(strInterc);
+
+  AssignFile(myFile, 'D:\Mes donnees\ecophen\trunk\temporaryFiles\assim.txt');
+  Reset(myFile);
+  Readln(myFile, strAssim);
+  CloseFile(myFile);
+  assim := StrToFloat(strAssim);
+
+  SRwriteln('interc --> ' + FloatToStr(interc));
+  SRwriteln('assim  --> ' + FloatToStr(assim));
+end;
+
+procedure ComputeBiomMainstem_LE(var instance : TInstance; var biomMainstem : Double);
+var
+  i, le  : Integer;
+  currentInstance : TInstance;
+  biomassIN, totalBiomIN, stockIN, totalStockIN : Double;
+begin
+  biomMainstem := 0;
+  totalBiomIN := 0;
+  totalStockIN := 0;
+  le := (instance as TEntityInstance).LengthTInstanceList();
+  for i := 0 to le - 1 do
+  begin
+    currentInstance := (instance as TEntityInstance).GetTInstance(i);
+    if (currentInstance is TEntityInstance) then
+    begin
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Internode') then
+      begin
+        biomassIN := (currentInstance as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+        totalBiomIN := totalBiomIN + biomassIN;
+        stockIN := (currentInstance as TEntityInstance).GetTAttribute('stockIN').GetCurrentSample().value;
+        totalStockIN := totalStockIN + stockIN;
+        SRwriteln(currentInstance.GetName() + ' : biomassIN --> ' + FloatToStr(biomassIN));
+        SRwriteln(currentInstance.GetName() + ' : stockIN   --> ' + FloatToStr(stockIN));
+        SRwriteln('totalBiomIN  --> ' + FloatToStr(totalBiomIN) );
+        SRwriteln('totalStockIN --> ' + FloatToStr(totalStockIN) );
+      end;
+      if ((currentInstance as TEntityInstance).GetCategory() = 'Peduncle') then
+      begin
+        biomassIN := (currentInstance as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+        totalBiomIN := totalBiomIN + biomassIN;
+        stockIN := (currentInstance as TEntityInstance).GetTAttribute('stockPeduncle').GetCurrentSample().value;
+        totalStockIN := totalStockIN + stockIN;
+        SRwriteln(currentInstance.GetName() + ' : biomassIN       --> ' + FloatToStr(biomassIN));
+        SRwriteln(currentInstance.GetName() + ' : stockPeduncle   --> ' + FloatToStr(stockIN));
+        SRwriteln('totalBiomIN  --> ' + FloatToStr(totalBiomIN) );
+        SRwriteln('totalStockIN --> ' + FloatToStr(totalStockIN) );
+      end;
+    end;
+  end;
+  biomMainstem := totalBiomIN + totalStockIN;
+  SRwriteln('biomMainstem --> ' + FloatToStr(biomMainstem));
+end;
+
+procedure ComputeBiomStem_LE(var instance : TInstance; var biomStem : Double);
+var
+  i1, le1, i2, le2 : Integer;
+  currentInstance1, currentInstance2 : TInstance;
+  biomassIN, totalBiomIN, stockIN, totalStockIN : Double;
+begin
+  biomStem := 0;
+  totalBiomIN := 0;
+  totalStockIN := 0;
+  le1 := (instance as TEntityInstance).LengthTInstanceList();
+  for i1 := 0 to le1 - 1 do
+  begin
+    currentInstance1 := (instance as TEntityInstance).GetTInstance(i1);
+    if (currentInstance1 is TEntityInstance) then
+    begin
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Internode') then
+      begin
+        biomassIN := (currentInstance1 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+        totalBiomIN := totalBiomIN + biomassIN;
+        stockIN := (currentInstance1 as TEntityInstance).GetTAttribute('stockIN').GetCurrentSample().value;
+        totalStockIN := totalStockIN + stockIN;
+        SRwriteln(currentInstance1.GetName() + ' : biomassIN --> ' + FloatToStr(biomassIN));
+        SRwriteln(currentInstance1.GetName() + ' : stockIN   --> ' + FloatToStr(stockIN));
+        SRwriteln('totalBiomIN  --> ' + FloatToStr(totalBiomIN) );
+        SRwriteln('totalStockIN --> ' + FloatToStr(totalStockIN) );
+      end;
+      if ((currentInstance1 as TEntityInstance).GetCategory() = 'Peduncle') then
+      begin
+        biomassIN := (currentInstance1 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+        totalBiomIN := totalBiomIN + biomassIN;
+        stockIN := (currentInstance1 as TEntityInstance).GetTAttribute('stockPeduncle').GetCurrentSample().value;
+        totalStockIN := totalStockIN + stockIN;
+        SRwriteln(currentInstance1.GetName() + ' : biomassIN       --> ' + FloatToStr(biomassIN));
+        SRwriteln(currentInstance1.GetName() + ' : stockPeduncle   --> ' + FloatToStr(stockIN));
+        SRwriteln('totalBiomIN  --> ' + FloatToStr(totalBiomIN) );
+        SRwriteln('totalStockIN --> ' + FloatToStr(totalStockIN) );
+      end
+      else if ((currentInstance1 as TEntityInstance).GetCategory() = 'Tiller') then
+      begin
+        le2 := (currentInstance1 as TEntityInstance).LengthTInstanceList();
+        for i2 := 0 to le2 - 1 do
+        begin
+          currentInstance2 := (currentInstance1 as TEntityInstance).GetTInstance(i2);
+          if (currentInstance2 is TEntityInstance) then
+          begin
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Internode') then
+            begin
+              biomassIN := (currentInstance2 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+              totalBiomIN := totalBiomIN + biomassIN;
+              stockIN := (currentInstance2 as TEntityInstance).GetTAttribute('stockIN').GetCurrentSample().value;
+              totalStockIN := totalStockIN + stockIN;
+              SRwriteln(currentInstance2.GetName() + ' : biomassIN --> ' + FloatToStr(biomassIN));
+              SRwriteln(currentInstance2.GetName() + ' : stockIN   --> ' + FloatToStr(stockIN));
+              SRwriteln('totalBiomIN  --> ' + FloatToStr(totalBiomIN) );
+              SRwriteln('totalStockIN --> ' + FloatToStr(totalStockIN) );
+            end;
+            if ((currentInstance2 as TEntityInstance).GetCategory() = 'Peduncle') then
+            begin
+              biomassIN := (currentInstance2 as TEntityInstance).GetTAttribute('biomassIN').GetCurrentSample().value;
+              totalBiomIN := totalBiomIN + biomassIN;
+              stockIN := (currentInstance2 as TEntityInstance).GetTAttribute('stockPeduncle').GetCurrentSample().value;
+              totalStockIN := totalStockIN + stockIN;
+              SRwriteln(currentInstance2.GetName() + ' : biomassIN       --> ' + FloatToStr(biomassIN));
+              SRwriteln(currentInstance2.GetName() + ' : stockPeduncle   --> ' + FloatToStr(stockIN));
+              SRwriteln('totalBiomIN  --> ' + FloatToStr(totalBiomIN) );
+              SRwriteln('totalStockIN --> ' + FloatToStr(totalStockIN) );
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+  biomStem := totalBiomIN + totalStockIN;
+  SRwriteln('biomStem --> ' + FloatToStr(biomStem));
 end;
 
 
@@ -7245,7 +8456,7 @@ end;
 
 Procedure TransitionToLiguleStateDyn(var instance : TInstance; Var T : TPointerProcParam);
 Begin
-  TransitionToLiguleState(instance,T[0],T[1],T[2]);
+  TransitionToLiguleState(instance,T[0],T[1],T[2],T[3],T[4]);
 end;
 
 Procedure TransitionToMatureStateDyn(var instance : TInstance; Var T : TPointerProcParam);
@@ -7275,7 +8486,7 @@ end;
 
 Procedure CreateTillersPhytomer_LEDyn(var instance : TInstance; Var T : TPointerProcParam);
 Begin
-  CreateTillersPhytomer_LE(instance,T[0],T[1],T[2],T[3],T[4],T[5],T[6],T[7],T[8],T[9]);
+  CreateTillersPhytomer_LE(instance,T[0],T[1],T[2],T[3],T[4],T[5],T[6],T[7],T[8],T[9],T[10]);
 end;
 
 procedure CountAndTagOfNbTillerWithMore4Leaves_LEDyn(var instance : TInstance; Var T : TPointerProcParam);
@@ -7455,12 +8666,12 @@ end;
 
 procedure ComputePanicleDayDemandFlo_LEDyn(var T : TPointerProcParam);
 begin
-  ComputePanicleDayDemandFlo_LE(T[0], T[1], T[2], T[3], T[4], T[5]);
+  ComputePanicleDayDemandFlo_LE(T[0], T[1], T[2], T[3], T[4], T[5], T[6]);
 end;
 
 procedure ComputePanicleWeightFlo_LEDyn(var T : TPointerProcParam);
 begin
-  ComputePanicleWeightFlo_LE(T[0], T[1], T[2], T[3], T[4]);
+  ComputePanicleWeightFlo_LE(T[0], T[1]);
 end;
 
 procedure ComputePanicleFilledGrainNbFlo_LEDyn(var T : TPointerProcParam);
@@ -7658,11 +8869,6 @@ begin
   ComputeDeadLeafBiomass(instance, T[0]);
 end;
 
-procedure ComputeLeavesSenescenceStockDyn(var instance : TInstance; var T : TPointerProcParam);
-begin
-  ComputeLeavesSenescenceStock(instance, T[0], T[1], T[2]);
-end;
-
 procedure ComputeBiomassInAllLeavesDyn(var instance : TInstance; var T : TPointerProcParam);
 begin
   ComputeBiomassInAllLeaves(instance, T[0]);
@@ -7673,6 +8879,11 @@ begin
   ComputeBiomassLeavesMainstem(instance, T[0]);
 end;
 
+procedure ComputeBiomassLeavesTillerDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeBiomassLeavesTiller(instance, T[0]);
+end;
+
 procedure ComputeBladeAreaInAllLeavesDyn(var instance : TInstance; var T : TPointerProcParam);
 begin
    ComputeBladeAreaInAllLeaves(instance, T[0]);
@@ -7681,6 +8892,11 @@ end;
 procedure ComputeBladeAreaLeavesMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
 begin
    ComputeBladeAreaLeavesMainstem(instance, T[0]);
+end;
+
+procedure ComputeBladeAreaLeavesTillerDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+   ComputeBladeAreaLeavesTiller(instance, T[0]);
 end;
 
 procedure KillSenescLeavesDyn(var instance : TInstance; var T : TPointerProcParam);
@@ -7738,8 +8954,90 @@ begin
   SumOfDailySenescedLeafBiomass(instance, T[0]);
 end;
 
+procedure ComputeBiomBladeDyn(var T : TPointerProcParam);
+begin
+  ComputeBiomBlade(T[0], T[1], T[2]);
+end;
 
+procedure ComputeBiomassInternodeStructDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeBiomassInternodeStruct(instance, T[0], T[1], T[2]);
+end;
 
+procedure ComputeBiomLeafMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeBiomLeafMainstem(instance, T[0]);
+end;
+
+procedure ComputeNbLeafMainstemDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeNbLeafMainstem(instance, T[0]);
+end;
+
+procedure SumOfDailyComputedReallocBiomassOnCulmDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  SumOfDailyComputedReallocBiomassOnCulm(instance, T[0]);
+end;
+
+procedure SumOfDailyComputedReallocBiomassDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  SumOfDailyComputedReallocBiomass(instance, T[0]);
+end;
+
+procedure ComputePanicleReservoirDispoDyn(var T : TPointerProcParam);
+begin
+  ComputePanicleReservoirDispo(T[0], T[1], T[2], T[3]);
+end;
+
+procedure SetUpTillerStockPre_ElongDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  SetUpTillerStockPre_Elong(instance);
+end;
+
+procedure DeficitSurplusCorrectionDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  DeficitSurplusCorrection(instance);
+end;
+
+procedure ComputeBiomLeafTotDyn(var T : TPointerProcParam);
+begin
+  ComputeBiomLeafTot(T[0], T[1], T[2]);
+end;
+
+procedure ComputeStockLeafDyn(var T : TPointerProcParam);
+begin
+  ComputeStockLeaf(T[0], T[1], T[2]);
+end;
+
+procedure ComputeSLAStructDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeSLAStruct(instance, T[0], T[1], T[2]);
+end;
+
+procedure DataForRDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  DataForR(instance);
+end;
+
+procedure ComputeIntercFromRDyn(var T : TPointerProcParam);
+begin
+  ComputeIntercFromR(T[0]);
+end;
+
+procedure ComputeIntercAssimFromRDyn(var T : TPointerProcParam);
+begin
+  ComputeIntercAssimFromR(T[0], T[1]);
+end;
+
+procedure ComputeBiomMainstem_LEDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeBiomMainstem_LE(instance, T[0]);
+end;
+
+procedure ComputeBiomStem_LEDyn(var instance : TInstance; var T : TPointerProcParam);
+begin
+  ComputeBiomStem_LE(instance, T[0]);
+end;
 
 
 // ****************************************************************************
@@ -7851,7 +9149,7 @@ PROC_DECLARATION := TProcInstanceInternal.Create('',UpdateSeedres2_LEDyn,['reser
 PROC_DECLARATION.SetProcName('UpdateSeedres2_LE');  
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
-PROC_DECLARATION := TProcInstanceInternal.Create('',UpdateStock_LEDyn,['dayDemand','kIn','reservoirDispo','kIn','supply','kIn','dailySenescedLeafBiomass','kIn','stock','kInOut','deficit','kInOut','seedres','kInOut','surplus','kOut']);
+PROC_DECLARATION := TProcInstanceInternal.Create('',UpdateStock_LEDyn,['dayDemand','kIn','reservoirDispo','kIn','supply','kIn','dailyComputedReallocBiomass','kIn','stock','kInOut','deficit','kInOut','seedres','kInOut','surplus','kOut']);
 PROC_DECLARATION.SetProcName('UpdateStock_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
@@ -7871,7 +9169,7 @@ PROC_DECLARATION := TProcInstanceInternal.Create('',ComputeBalance_LEDyn,['stock
 PROC_DECLARATION.SetProcName('ComputeBalance_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
-PROC_DECLARATION := TExtraProcInstanceInternal.Create('',TransitionToLiguleStateDyn,['len','kIn','predim','kIn','isOnMainstem','kIn']);
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',TransitionToLiguleStateDyn,['len','kIn','predim','kIn','isOnMainstem','kIn','demand','kInOut','lastDemand','kInOut']);
 PROC_DECLARATION.SetProcName('TransitionToLiguleState');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
@@ -7899,7 +9197,7 @@ PROC_DECLARATION := TExtraProcInstanceInternal.Create('',CreateTillers_LEDyn,['b
 PROC_DECLARATION.SetProcName('CreateTillers_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
-PROC_DECLARATION := TExtraProcInstanceInternal.Create('',CreateTillersPhytomer_LEDyn,['boolCrossedPlasto','kIn','Ic','kIn','Ict','kIn','exeOrder','kIn','P','kIn','resp_Ict','kIn','thresINER', 'kIn','slopeINER', 'kIn', 'leafStockMax', 'kIn', 'nbTiller','kInOut']);
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',CreateTillersPhytomer_LEDyn,['boolCrossedPlasto','kIn','Ic','kIn','Ict','kIn','exeOrder','kIn','P','kIn','resp_Ict','kIn','thresINER', 'kIn','slopeINER', 'kIn', 'leafStockMax', 'kIn', 'phenoStageAtCreation', 'kIn', 'nbTiller','kInOut']);
 PROC_DECLARATION.SetProcName('CreateTillersPhytomer_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
@@ -8039,11 +9337,11 @@ PROC_DECLARATION := TProcInstanceInternal.Create('',ComputePanicleFertileGrainNu
 PROC_DECLARATION.SetProcName('computePanicleFertileGrainNumber_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
-PROC_DECLARATION := TProcInstanceInternal.Create('',ComputePanicleDayDemandFlo_LEDyn,['fillingRate', 'kIn', 'Tair', 'kIn', 'Tb', 'kIn', 'fcstr', 'kIn', 'testIc', 'kIn', 'panicleDayDemand', 'kOut']);
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputePanicleDayDemandFlo_LEDyn,['grainFillingRate', 'kIn', 'Tair', 'kIn', 'Tb', 'kIn', 'fcstr', 'kIn', 'testIc', 'kIn', 'reservoirDispo', 'kIn', 'panicleDayDemand', 'kOut']);
 PROC_DECLARATION.SetProcName('computePanicleDayDemandFlo_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
-PROC_DECLARATION := TProcInstanceInternal.Create('',ComputePanicleWeightFlo_LEDyn,['gdwEmpty', 'kIn', 'grainNb', 'kIn', 'panicleDayDemand', 'kIn', 'firstDayOfFLO', 'kInOut', 'panicleWeight', 'kInOut']);
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputePanicleWeightFlo_LEDyn,['panicleDayDemand', 'kIn', 'panicleWeight', 'kInOut']);
 PROC_DECLARATION.SetProcName('computePanicleWeightFlo_LE');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
@@ -8203,10 +9501,6 @@ PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeDeadLeafBiomassD
 PROC_DECLARATION.SetProcName('ComputeDeadLeafBiomass');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
-PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeLeavesSenescenceStockDyn,['reallocCoef','kIn','senesc_dw','kInOut','stock','kInOut']);
-PROC_DECLARATION.SetProcName('ComputeLeavesSenescenceStock');
-PROC_LIBRARY.AddTProc(PROC_DECLARATION);
-
 PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomassInAllLeavesDyn,['biomLeafStruct', 'kOut']);
 PROC_DECLARATION.SetProcName('ComputeBiomassInAllLeaves');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
@@ -8215,12 +9509,20 @@ PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomassLeavesMai
 PROC_DECLARATION.SetProcName('ComputeBiomassLeavesMainstem');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomassLeavesTillerDyn,['sumOfTillerLeafBiomass', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomassLeavesTiller');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
 PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBladeAreaInAllLeavesDyn,['PAI', 'kOut']);
 PROC_DECLARATION.SetProcName('ComputeBladeAreaInAllLeaves');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
 PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBladeAreaLeavesMainstemDyn,['sumOfBladeAreaOnMainstem', 'kOut']);
 PROC_DECLARATION.SetProcName('ComputeBladeAreaLeavesMainstem');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBladeAreaLeavesTillerDyn,['sumOfBladeAreaOnTiller', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBladeAreaLeavesTiller');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
 PROC_DECLARATION := TExtraProcInstanceInternal.Create('',KillSenescLeavesDyn,['deadLeafNb', 'kInOut']);
@@ -8267,4 +9569,74 @@ PROC_DECLARATION := TExtraProcInstanceInternal.Create('',SumOfDailySenescedLeafB
 PROC_DECLARATION.SetProcName('SumOfDailySenescedLeafBiomass');
 PROC_LIBRARY.AddTProc(PROC_DECLARATION);
 
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputeBiomBladeDyn,['sumOfLeafBiomass', 'kIn', 'G_L', 'kIn', 'biomBlade', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomBlade');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomassInternodeStructDyn,['biomInternodeStruct', 'kOut', 'biomInternodeStructMainstem', 'kOut', 'biomInternodeStructTiller', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomassInternodeStruct');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomLeafMainstemDyn,['biomLeafMainstem', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomLeafMainstem');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeNbLeafMainstemDyn,['nbLeafMainstem', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeNbLeafMainstem');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',SumOfDailyComputedReallocBiomassOnCulmDyn,['sumOfDailyComputedReallocBiomass', 'kOut']);
+PROC_DECLARATION.SetProcName('SumOfDailyComputedReallocBiomassOnCulm');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',SumOfDailyComputedReallocBiomassDyn,['total', 'kOut']);
+PROC_DECLARATION.SetProcName('SumOfDailyComputedReallocBiomass');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputePanicleReservoirDispoDyn,['fertileGrainNumber', 'kIn', 'gdw', 'kIn', 'weight', 'kIn', 'reservoirDispo', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputePanicleReservoirDispo');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',SetUpTillerStockPre_ElongDyn,[]);
+PROC_DECLARATION.SetProcName('SetUpTillerStockPre_Elong');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',DeficitSurplusCorrectionDyn,[]);
+PROC_DECLARATION.SetProcName('DeficitSurplusCorrection');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputeBiomLeafTotDyn,['biomLeaf', 'kIn', 'senescDw', 'kIn', 'biomLeafTot', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomLeafTot');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputeStockLeafDyn,['stock', 'kIn', 'stockInternode', 'kIn', 'stockLeaf', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeStockLeaf');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeSLAStructDyn,['PLA', 'kIn', 'tmp', 'kIn', 'SLAStruct', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeSLAStruct');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',DataForRDyn,[]);
+PROC_DECLARATION.SetProcName('DataForR');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputeIntercFromRDyn,['interc', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeIntercFromR');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TProcInstanceInternal.Create('',ComputeIntercAssimFromRDyn,['interc', 'kOut', 'assim', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeIntercAssimFromR');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomMainstem_LEDyn,['biomMainstem', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomMainstem_LE');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
+PROC_DECLARATION := TExtraProcInstanceInternal.Create('',ComputeBiomStem_LEDyn,['biomStem', 'kOut']);
+PROC_DECLARATION.SetProcName('ComputeBiomStem_LE');
+PROC_LIBRARY.AddTProc(PROC_DECLARATION);
+
 end.
+
+

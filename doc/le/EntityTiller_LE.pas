@@ -393,7 +393,7 @@ begin
   // procedure a l etat 4, c est a dire PI //
   //---------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec4', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec4', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10015);
   XprocTmp.SetActiveState(4);
@@ -560,7 +560,7 @@ begin
   // procedure a l etat 5, c est a dire PRE_PI //
   //-------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec5', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec5', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10210);
   XprocTmp.SetActiveState(5);
@@ -726,7 +726,7 @@ begin
   // procedure a l etat 6, c est a dire PRE_FLO //
   //--------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec6', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec6', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10410);
   XprocTmp.SetActiveState(6);
@@ -892,7 +892,7 @@ begin
   // procedure a l etat 7, c est a dire FLO //
   //-------------------------------- -------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec7', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec7', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10610);
   XprocTmp.SetActiveState(7);
@@ -1058,7 +1058,7 @@ begin
   // procedure a l etat 9, c est a dire ELONG //
   //------------------------------------------//
 
-  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec9', SumOfBladeAreaOnTillerInLeafRecDyn,['total', 'kOut']);
+  XprocTmp := TExtraProcInstanceInternal.Create('sumOfBladeAreaOnTillerInLeafRec9', ComputeBladeAreaLeavesTillerDyn,['total', 'kOut']);
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(10810);
   XprocTmp.SetActiveState(9);

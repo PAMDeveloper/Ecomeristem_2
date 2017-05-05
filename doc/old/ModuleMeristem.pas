@@ -45,6 +45,9 @@ uses
   ClassTProcInstanceDLL,
   ClassTProcLibrary,
   ClassTExtraProcInstanceInternal,
+
+  Windows, ShellAPI,
+
   DefinitionConstant, Dialogs;
 
 // modules non visibles
@@ -258,6 +261,9 @@ end;
 Procedure Diff(const inValue1, inValue2 : double; var outValue: Double);
 begin
   outValue := inValue1 - inValue2;
+  SRwriteln('inValue1 --> ' + FloatToStr(inValue1));
+  SRwriteln('inValue2 --> ' + FloatToStr(inValue2));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 // ----------------------------------------------------------------------------
@@ -284,6 +290,9 @@ end;
 Procedure Divide(const inValue1, inValue2: double; var outValue : Double);
 begin
   outValue := inValue1 / inValue2;
+  SRwriteln('inValue1 --> ' + FloatToStr(inValue1));
+  SRwriteln('inValue2 --> ' + FloatToStr(inValue2));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 // ----------------------------------------------------------------------------
@@ -307,6 +316,9 @@ end;
 Procedure Add2Values(const inValue1, inValue2 : double; var outValue : Double);
 begin
   outValue := inValue1 + inValue2;
+  SRwriteln('inValue1 --> ' + FloatToStr(inValue1));
+  SRwriteln('inValue2 --> ' + FloatToStr(inValue2));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 // ----------------------------------------------------------------------------
@@ -330,6 +342,9 @@ end;
 Procedure Mult2Values(const inValue1, inValue2 : double; var outValue : Double);
 begin
   outValue := inValue1 * inValue2;
+  SRwriteln('inValue1 --> ' + FloatToStr(inValue1));
+  SRwriteln('inValue2 --> ' + FloatToStr(inValue2));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));  
 end;
 
 // ----------------------------------------------------------------------------
@@ -353,6 +368,9 @@ end;
 Procedure Min2Values(const inValue1, inValue2 : double; var outValue : Double);
 begin
   outValue := min(inValue1, inValue2);
+  SRwriteln('inValue1 --> ' + FloatToStr(inValue1));
+  SRwriteln('inValue2 --> ' + FloatToStr(inValue2));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 // ----------------------------------------------------------------------------
@@ -376,6 +394,9 @@ end;
 Procedure Max2Values(const inValue1, inValue2 : double; var outValue : Double);
 begin
   outValue := max(inValue1, inValue2);
+  SRwriteln('inValue1 --> ' + FloatToStr(inValue1));
+  SRwriteln('inValue2 --> ' + FloatToStr(inValue2));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 
@@ -403,6 +424,8 @@ end;
 Procedure SqrtReal(const inValue : double; var outValue : Double);
 begin
   outValue := sqrt(inValue);
+  SRwriteln('inValue  --> ' + FloatToStr(inValue));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 
@@ -428,6 +451,8 @@ end;
 Procedure Identity(const inValue : double; var outValue : Double);
 begin
   outValue := inValue;
+  SRwriteln('inValue  --> ' + FloatToStr(inValue));
+  SRwriteln('outValue --> ' + FloatToStr(outValue));
 end;
 
 // ----------------------------------------------------------------------------
@@ -767,7 +792,10 @@ end;
 
 Procedure UpdateAdd(const quantity : Double; var attributeValue : Double);
 begin
+  SRwriteln('oldValue --> ' + FloatToStr(attributeValue));
+  SRwriteln('quantity --> ' + FloatToStr(quantity));
   attributeValue := attributeValue + quantity;
+  SRwriteln('newValue --> ' + FloatToStr(attributeValue));
 end;
 
 
@@ -920,10 +948,50 @@ end;
 *)
 
 Procedure ComputeRadiationInterception(const Kdf, LAI : Double; var radiationInterception : Double);
+//var
+//  res : Integer;
+//  myFile : TextFile;
+//  str : string;
+
+//  Si : STARTUPINFO;
+//  Pi : PROCESS_INFORMATION;
+
+//  time1, time2 : Integer;
+
 begin
   SRwriteln('Kdf --> ' + floattostr(kdf));
 	SRwriteln('LAI --> ' + floattostr(LAI));
   radiationInterception := 1 - exp(-Kdf * LAI);
+
+  {time1 := GetTickCount();
+
+  AssignFile(myFile, 'D:\Mes donnees\ecophen\trunk\temporaryFiles\param.txt');
+  Rewrite(myFile);
+  Write(myFile, 'kdf');
+  Write(myfile, #9);
+  Writeln(myFile, 'lai');
+  Write(myFile, FloatToStr(Kdf));
+  Write(myFile, #9);
+  Writeln(myFile, FloatToStr(LAI));
+  CloseFile(myFile);
+
+  ZeroMemory(@Si, SizeOf(STARTUPINFO));
+  Si.dwFlags := STARTF_USESHOWWINDOW;
+  Si.wShowWindow := SW_SHOWNORMAL;
+  CreateProcess(nil, Pchar('D:\Mes donnees\ecophen\trunk\temporaryFiles\couplage.bat'), nil, nil, True, 0, nil, nil, Si, Pi);
+  WaitForSingleObject(Pi.hProcess, INFINITE);
+
+  AssignFile(myFile, 'D:\Mes donnees\ecophen\trunk\temporaryFiles\interc.txt');
+  Reset(myFile);
+  Readln(myFile, str);
+  CloseFile(myFile);
+
+  time2 := GetTickCount();
+
+  SRwriteln('Cout du couplage : ' + IntToStr(time2 - time1));
+
+  SRwriteln('radiation interception (depuis R) ' + str);}
+
   SRwriteln('radiation interception --> ' + floattostr(radiationInterception));
 end;
 
@@ -1196,7 +1264,6 @@ var
   i,le : Integer;
   entityContribution : Double;
   currentInstance : TInstance;
-  attributeRef : TAttribute;
 begin
   total := 0;
 
@@ -1222,6 +1289,7 @@ begin
       total := total + entityContribution;
     end;
   end;
+  SRwriteln('Total --> ' + FloatToStr(total));
 end;
 
 
@@ -1348,9 +1416,6 @@ var
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
   father : TInstance;
-
-  isOnMainstem : Double;
-
 begin
   total := 0;
 
@@ -1394,10 +1459,6 @@ var
   entityContribution : Double;
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
-  father : TInstance;
-
-  isOnMainstem : Double;
-
 begin
   total := 0;
   SRwriteln('instance name : ' + (instance as TEntityInstance).GetName());
@@ -1429,10 +1490,6 @@ var
   entityContribution : Double;
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
-  father : TInstance;
-
-  isOnMainstem : Double;
-
 begin
   total := 0;
 
@@ -1477,10 +1534,6 @@ var
   entityContribution : Double;
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
-  father : TInstance;
-
-  isOnMainstem : Double;
-
 begin
   total := 0;
 
@@ -1526,10 +1579,6 @@ var
   entityContribution : Double;
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
-  father : TInstance;
-
-  isOnMainstem : Double;
-
 begin
   total := 0;
 
@@ -1800,9 +1849,6 @@ var
   currentInstance : TInstance;
   currentTEntityInstance : TEntityInstance;
   father : TInstance;
-
-  isOnMainstem : Double;
-
 begin
   total := 0;
 
@@ -1860,7 +1906,6 @@ var
   i, le, stateMeristem : Integer;
   entityContribution : Double;
   currentInstance : TInstance;
-  father : TInstance;
 begin
   stateMeristem := (instance as TEntityInstance).GetCurrentState();
   case stateMeristem of
@@ -2195,7 +2240,6 @@ var
   entityContribution : Double;
   currentInstance : TInstance;
   currentEntity : TEntityInstance;
-  father : TInstance;
 begin
   total := 0;
   le := (instance as TEntityInstance).LengthTInstanceList();
@@ -2281,7 +2325,6 @@ var
   i,le : Integer;
   entityContribution : Double;
   currentInstance : TInstance;
-  father : TInstance;
   currentEntity : TEntityInstance;
 begin
   total := 0;
@@ -2486,7 +2529,6 @@ var
    currentInstance : TInstance;
    category : String;
    leafNb : Double;
-   entityTmp : TEntityInstance;
 begin
   // initialisation du nombre de talle ayant plus de 4 feuilles
   nbTillerWithMore4Leaves := 1;
@@ -2554,7 +2596,7 @@ Begin
         if((currentInstance as TEntityInstance).GetCategory()='Tiller') then
         begin
           le2 := (currentInstance as TEntityInstance).LengthTInstanceList();
-          for i2:=0 to le-1 do
+          for i2:=0 to le2 - 1 do
           begin
             currentInstanceOnTiller := (currentInstance as TEntityInstance).GetTInstance(i2);
             if (currentInstanceOnTiller is TEntityInstance) then
@@ -2603,7 +2645,7 @@ Begin
         if((currentInstance as TEntityInstance).GetCategory()='Tiller') then
         begin
           le2 := (currentInstance as TEntityInstance).LengthTInstanceList();
-          for i2:=0 to le-1 do
+          for i2:=0 to le2 - 1 do
           begin
             currentInstanceOnTiller := (currentInstance as TEntityInstance).GetTInstance(i2);
             if (currentInstanceOnTiller is TEntityInstance) then

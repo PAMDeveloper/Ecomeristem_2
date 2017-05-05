@@ -7,7 +7,7 @@
 // ----------------------------------------------------------------------------
 (** @Author JCS and DL *)
 
-unit EntityInternode_LE;
+unit EntityPeduncle_LE;
 
 // ****************************************************************************
 // ****************************************************************************
@@ -21,9 +21,9 @@ unit EntityInternode_LE;
 // ****************************************************************************
 // ****************************************************************************
 
-interface
+interface         
 
-uses
+uses                                   
   SysUtils,
   DateUtils,
   ClassTInstance,
@@ -51,13 +51,13 @@ uses
   ClassTExtraProcInstanceInternal,
   DefinitionConstant, Dialogs;
 
-function ImportInternode_LE(const name : string; const MGR, plasto, Tb, resp_INER, LIN1, IN_A, IN_B, density_In, leaf_width_to_IN_diameter, leaf_length_to_IN_length, leafLength, leafWidth, MaximumReserveInInternode : double ; const isFirstInterNode : Double = 0 ; const isOnMainstem : Double = 0) : TEntityInstance;
+function ImportPeduncle_LE(const name : string; const MGR, plasto, Tb, resp_INER, LIN1, IN_A, IN_B, density_In, stock_mainstem, leaf_width_to_IN_diameter, leaf_length_to_IN_length, leafLength, leafWidth, MaximumReserveInInternode, ratioINPed, peduncleDiam : double ; const isFirstInterNode : Double = 0 ; const isOnMainstem : Double = 0) : TEntityInstance;
 
 implementation
 
 // ----------------------------------------------------------------------------
-//  fonction ImportInternode_LE
-//  ---------------------------
+//  fonction ImportPeduncle_LE
+//  --------------------------
 //
 /// creation et importation d'une entité entrenoeud générique
 ///
@@ -69,18 +69,17 @@ implementation
 ///     cas, ce parametre vaut 1 sinon il vaut 0.
 
 
-function ImportInternode_LE(const name : string; const MGR, plasto, Tb, resp_INER, LIN1, IN_A, IN_B, density_In, leaf_width_to_IN_diameter, leaf_length_to_IN_length, leafLength, leafWidth, MaximumReserveInInternode : double ; const isFirstInterNode : Double = 0 ; const isOnMainstem : Double = 0) : TEntityInstance;
+function ImportPeduncle_LE(const name : string; const MGR, plasto, Tb, resp_INER, LIN1, IN_A, IN_B, density_In, stock_mainstem, leaf_width_to_IN_diameter, leaf_length_to_IN_length, leafLength, leafWidth, MaximumReserveInInternode, ratioINPed, peduncleDiam : double ; const isFirstInterNode : Double = 0 ; const isOnMainstem : Double = 0) : TEntityInstance;
 var
   parameterTmp : TParameter;
-  entityInternode : TEntityInstance;
+  entityPeduncle : TEntityInstance;
   attributeTmp : TAttributeTmp;
-  attributeOut : TAttributeTableOut;
   procTmp : TProcInstanceInternal;
   managerTmp : TManagerInternal;
   XprocTmp : TExtraProcInstanceInternal;
   initSample : TSample;
 begin
-  entityInternode := TEntityInstance.Create('',
+  entityPeduncle := TEntityInstance.Create('',
                         ['degreeDayForInitiation','kIn',
                         'degreeDayForRealization','kIn',
                         'testIc','kIn',
@@ -94,207 +93,184 @@ begin
                         'FTSW','kIn',
                         'P','kIn']);
 
-  entityInternode.SetName(name);
-  entityInternode.SetCategory('Internode');
+  entityPeduncle.SetName(name);
+  entityPeduncle.SetCategory('Peduncle');
 
   // ----------------------------------------------
   // creation des attributs dans 'EntityInternode'
   // ----------------------------------------------
 
   attributeTmp := TAttributeTmp.Create('time_from_app');
-  entityInternode .AddTAttribute(attributeTmp);
+  entityPeduncle .AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('INER');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('Volume');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('exp_time');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('predim');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('stock_culm');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('density_IN', density_IN);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('MaximumReserveInInternode', MaximumReserveInInternode);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('leaf_width_to_IN_diameter', leaf_width_to_IN_diameter);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
-//  parameterTmp := TParameter.Create('IN_diameter_to_length', IN_diameter_to_length);
-//  entityInternode.AddTAttribute(parameterTmp);
+  parameterTmp := TParameter.Create('leaf_length_to_IN_length', leaf_length_to_IN_length);
+  entityPeduncle.AddTAttribute(parameterTmp);
+
+  parameterTmp := TParameter.Create('leafLength', leafLength);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('leafWidth', leafWidth);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('DDInitiation');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('DDRealization');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('isFirstInternode', isFirstInterNode);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('isOnMainstem', isOnMainstem);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('MGR', MGR);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('testIc');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('fcstr');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('plasto', plasto);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('phenoStage');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('rank');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('ligulo', plasto);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('IN_A', IN_A);   // OK
-  entityInternode.AddTAttribute(parameterTmp);       // OK
+  entityPeduncle.AddTAttribute(parameterTmp);       // OK
 
   parameterTmp := TParameter.Create('IN_B',IN_B);    // OK
-  entityInternode.AddTAttribute(parameterTmp);       // OK
+  entityPeduncle.AddTAttribute(parameterTmp);       // OK
 
   parameterTmp := TParameter.Create('RER');
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('SSL');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
-  // attributeOut := TAttributeTableOut.Create('stockIN');
-  // attributeOut.SetFileNameOut(GetCurrentDir() + '\stock_IN_' + entityInternode.GetName() + '_out.txt', true);
-  // entityInternode.AddTAttribute(attributeOut);
-
-  attributeTmp := TAttributeTmp.Create('stockIN');
-  entityInternode.AddTAttribute(attributeTmp);
+  attributeTmp := TAttributeTmp.Create('stockPeduncle');
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('deficitIN');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
+
+  attributeTmp := TAttributeTmp.Create('stockPlant');
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('Tb',Tb);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('Tair');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('deltaT');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('one',1);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   parameterTmp := TParameter.Create('zero',0);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('biomassIN');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   initSample.date := 0; initSample.value := 0;
   attributeTmp := TAttributeTmp.Create('lastdemand',initSample);
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   initSample.date := 0; initSample.value := 0;
   attributeTmp := TAttributeTmp.Create('demandIN',initSample);
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('LIN1', LIN1);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
-  // attributeTmp := TAttributeTmp.Create('LIN');  // OK
-  // entityInternode.AddTAttribute(attributeTmp);  // OK
+  attributeTmp := TAttributeTmp.Create('LIN');  // OK
+  entityPeduncle.AddTAttribute(attributeTmp);  // OK
 
-  // attributeTmp := TAttributeTmp.Create('DIN');  // OK
-  // entityInternode.AddTAttribute(attributeTmp);  // OK
-
-  attributeOut := TAttributeTableOut.Create('DIN');
-  attributeOut.SetFileNameOut(GetCurrentDir() + '\diameter_' + entityInternode.GetName() + '_out.txt', True);
-  entityInternode.AddTAttribute(attributeOut);
-
-  attributeOut := TAttributeTableOut.Create('LIN');
-  attributeOut.SetFileNameOut(GetCurrentDir() + '\length_' + entityInternode.GetName() + '_out.txt', True);
-  entityInternode.AddTAttribute(attributeOut);
-
+  attributeTmp := TAttributeTmp.Create('DIN');  // OK
+  entityPeduncle.AddTAttribute(attributeTmp);  // OK
 
   attributeTmp := TAttributeTmp.Create('plasto_delay');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('thresINER');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('slopeINER');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('FTSW');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('lig');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('reductionINER');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   parameterTmp := TParameter.Create('resp_INER', resp_INER);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   attributeTmp := TAttributeTmp.Create('P');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('sumOfInternodeBiomassOnCulm');
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   attributeTmp := TAttributeTmp.Create('reservoirDispoIN');
-  entityInternode.AddTAttribute(attributeTmp);
-
-  attributeTmp := TAttributeTmp.Create('leafLength');
-  entityInternode.AddTAttribute(attributeTmp);
-
-  attributeTmp := TAttributeTmp.Create('leaf_length_to_IN_length');
-  entityInternode.AddTAttribute(attributeTmp);
-
-  attributeTmp := TAttributeTmp.Create('slope_length_IN');
-  entityInternode.AddTAttribute(attributeTmp);
-
-  parameterTmp := TParameter.Create('leafLength',leafLength);
-  entityInternode.AddTAttribute(parameterTmp);
-
-  parameterTmp := TParameter.Create('leaf_length_to_IN_length',leaf_length_to_IN_length);
-  entityInternode.AddTAttribute(parameterTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
   initSample.date := 0; initSample.value := 0;
   attributeTmp := TAttributeTmp.Create('lastdemand', initSample);
-  entityInternode.AddTAttribute(attributeTmp);
+  entityPeduncle.AddTAttribute(attributeTmp);
 
-  attributeTmp := TAttributeTmp.Create('IN_length_to_IN_diam');
-  entityInternode.AddTAttribute(attributeTmp);
+  parameterTmp := TParameter.Create('ratio_INPed', ratioINPed);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
-  attributeTmp := TAttributeTmp.Create('coef_lin_IN_diam');
-  entityInternode.AddTAttribute(attributeTmp);
-
+  parameterTmp := TParameter.Create('peduncle_diam', peduncleDiam);
+  entityPeduncle.AddTAttribute(parameterTmp);
 
   /////////////////////////////////////////////////////////////////////////////
   // Connections internes des ports
   /////////////////////////////////////////////////////////////////////////////
 
   // connection port <-> attribut pour 'EntityInternode'
-  entityInternode.InternalConnect(['DDInitiation',
+  entityPeduncle.InternalConnect(['DDInitiation',
                                    'DDRealization',
                                    'testIc',
                                    'fcstr',
@@ -308,85 +284,58 @@ begin
                                    'P']);
 
   /////////////////////////////////////////////////////////////////////////////
-  // Modules pour l'etat vegetatif
-  /////////////////////////////////////////////////////////////////////////////
-
-  // creation de 'lengthZero'
-
-  procTmp := TProcInstanceInternal.Create('lengthZero', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(2);
-  procTmp.SetActiveState(2000);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour lengthZero
-  procTmp.ExternalConnect(['zero', 'LIN']);
-
-  // creation de 'diameterZeo'
-
-  procTmp := TProcInstanceInternal.Create('diameterZero2000', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(4);
-  procTmp.SetActiveState(2000);
-  entityInternode.AddTInstance(procTmp);
-  // connection prot <-> attribut pour diameterZero
-  procTmp.ExternalConnect(['zero', 'DIN']);
-
-
-  /////////////////////////////////////////////////////////////////////////////
   // Modules pour l'état initiation
   /////////////////////////////////////////////////////////////////////////////
 
 
   // creation de 'initTimeFromApp'
-  procTmp := TProcInstanceInternal.Create('initTimeFromApp',IdentityDyn,['inValue','kIn','outValue','kOut']);
+  procTmp := TProcInstanceInternal.Create('initTimeFromApp', IdentityDyn,['inValue', 'kIn', 'outValue', 'kOut']);
   procTmp.SetProcName('Identity');
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(10);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour 'initTimeFromApp' de 'EntityInternode'
-  procTmp.ExternalConnect(['DDInitiation','time_from_app']);
+  entityPeduncle.AddTInstance(procTmp);
+  // connection port <-> attribut pour 'initTimeFromApp' de 'EntityPeduncle'
+  procTmp.ExternalConnect(['DDInitiation', 'time_from_app']);
 
-  // creation de 'initInternodeLengthPredim'
-  XprocTmp := TExtraProcInstanceInternal.Create('initInternodeLengthPredim',ComputeInternodeLengthPredimDyn,['slopeLengthIN', 'kIn', 'leafLengthToINLength', 'kIn', 'internodeLengthPredim', 'kOut']);
-  XprocTmp.SetProcName('ComputeInternodeLengthPredim');
+  // creation de 'initPeduncleLengthPredim'
+  XprocTmp := TExtraProcInstanceInternal.Create('initPeduncleLengthPredim',ComputePeduncleLengthPredimDyn,['ratioINPed', 'kIn', 'peduncleLengthPredim', 'kOut']);
+  XprocTmp.SetProcName('ComputePeduncleLengthPredim');
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(20);
   XprocTmp.SetActiveState(1);
-  entityInternode.AddTInstance(XprocTmp);
-  // connection port <-> attribut pour 'slope_length_IN', 'leaf_length_to_IN_length', 'predim' de 'EntityInternode'
-  XprocTmp.ExternalConnect(['slope_length_IN', 'leaf_length_to_IN_length', 'predim']);
+  entityPeduncle.AddTInstance(XprocTmp);
+  // connection port <-> attribut pour 'ratio_INPed', 'predim' de 'EntityInternode'
+  XprocTmp.ExternalConnect(['ratio_INPed', 'predim']);
 
-  // creation de 'initInternodeDiameterPredim'
-  procTmp := TProcInstanceInternal.Create('initInternodeDiameterPredim',ComputeInternodeDiameterPredim2Dyn,['INLengthToINDiam', 'kIn', 'coefLinINDIam', 'kIn', 'internodeLengthPredim', 'kIn', 'internodeDiameterPredim', 'kOut']);
-  procTmp.SetProcName('ComputeInternodeDiameterPredim2');
-  procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(30);
-  procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour 'IN_length_to_IN_diam', 'coef_lin_IN_diam', 'predim', 'DIN' de 'EntityInternode'
-  procTmp.ExternalConnect(['IN_length_to_IN_diam', 'coef_lin_IN_diam', 'predim', 'DIN']);
+  // creation de 'initPeduncleDiameterPredim'
+  XprocTmp := TExtraProcInstanceInternal.Create('initPeduncleDiameterPredim',ComputePeduncleDiameterPredimDyn,['peduncleDiam', 'kIn', 'peduncleDiameterPredim', 'kOut']);
+  XprocTmp.SetProcName('ComputePeduncleDiameterPredim');
+  XprocTmp.SetExeStep(1); // pas journalier
+  XprocTmp.SetExeOrder(30);
+  XprocTmp.SetActiveState(1);
+  entityPeduncle.AddTInstance(XprocTmp);
+  // connection port <-> attribut pour 'peduncle_diam', 'DIN' de 'EntityInternode'
+  XprocTmp.ExternalConnect(['peduncle_diam', 'DIN']);
 
   //creation de 'initReductionINER'
-  procTmp := TProcInstanceInternal.Create('initReductionINER',ComputeReductionINER_LEDyn,['FTSW','kIn','ThresINER','kIn','SlopeINER','kIn','P','kIn','resp_INER','kIn','reductionINER','kOut']);
+  procTmp := TProcInstanceInternal.Create('initReductionINER', ComputeReductionINER_LEDyn,['FTSW', 'kIn', 'ThresINER', 'kIn', 'SlopeINER', 'kIn', 'P', 'kIn', 'resp_INER', 'kIn', 'reductionINER', 'kOut']);
   procTmp.SetProcName('ComputeReductionINER_LE');
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(40);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour 'initReductionINER' de 'EntityInternode'
-  procTmp.ExternalConnect(['FTSW','thresINER','slopeINER','P','resp_INER','reductionINER']);
+  entityPeduncle.AddTInstance(procTmp);
+  // connection port <-> attribut
+  procTmp.ExternalConnect(['FTSW', 'thresINER', 'slopeINER', 'P', 'resp_INER', 'reductionINER']);
 
   // creation de 'initINER'
-  procTmp := TProcInstanceInternal.Create('initINER',ComputeINER_LEDyn,['predimOfCurrentInternode','kIn','reductionINER','kIn','plasto','kIn','phenoStage','kIn','ligulo','kIn','INER','kOut']);
+  procTmp := TProcInstanceInternal.Create('initINER', ComputeINER_LEDyn,['predimOfCurrentInternode', 'kIn', 'reductionINER', 'kIn', 'plasto','kIn','phenoStage','kIn','ligulo','kIn','INER','kOut']);
   procTmp.SetProcName('ComputeINER_LE');
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(50);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour 'initINER' de 'EntityInternode'
+  entityPeduncle.AddTInstance(procTmp);
+  // connection port <-> attribut
   procTmp.ExternalConnect(['predim','reductionINER','plasto','rank','ligulo','INER']);
 
   // creation de 'initLen'
@@ -395,9 +344,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(60);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initLen' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['INER','DDRealization','LIN']);
 
   {debut affichage des paramètres}
@@ -408,9 +357,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(70);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initLen' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['INER']);
 
 
@@ -420,9 +369,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(80);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initLen' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['DDRealization']);
 
 
@@ -432,9 +381,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(90);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initLen' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['LIN']);
 
 
@@ -447,9 +396,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(100);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initVolume' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['LIN','DIN','Volume']);
 
   // creation de 'initExp_Time'
@@ -458,9 +407,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(110);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initExp_Time' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['isFirstInternode','isOnMainstem','predim','LIN','INER','exp_time']);
 
   // creation de 'initBiomass'
@@ -469,9 +418,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(120);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initBiomass' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['Volume','density_IN','biomassIN']);
 
   // creation de 'initSumOfBiomass'
@@ -480,9 +429,9 @@ begin
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(130);
   XprocTmp.SetActiveState(1);
-  entityInternode.AddTInstance(XprocTmp);
+  entityPeduncle.AddTInstance(XprocTmp);
 
-  // connection port <-> attribut pour 'initSumOfBiomass'
+  // connection port <-> attribut
   XprocTmp.ExternalConnect(['sumOfInternodeBiomassOnCulm']);
 
   // creation de 'initDemand'
@@ -491,9 +440,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(140);
   procTmp.SetActiveState(1);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initDemand' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['biomassIN','demandIN']);
 
 
@@ -507,9 +456,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1000);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeDeltaT' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['Tair','Tb','deltaT']);
 
   // creation de 'computeDDF'
@@ -518,9 +467,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1010);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeDDF' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['deltaT','time_from_app']);
 
   //creation de 'computeReductionINER'
@@ -529,8 +478,8 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1020);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour 'initReductionINER' de 'EntityInternode'
+  entityPeduncle.AddTInstance(procTmp);
+  // connection port <-> attribut
   procTmp.ExternalConnect(['FTSW','thresINER','slopeINER','P','resp_INER','reductionINER']);
 
   // creation de 'computeLERRealization'
@@ -539,9 +488,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1030);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeINERRealization' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['predim','reductionINER','plasto','rank','ligulo','INER']);
 
   // creation de 'computeExpTimeRealization'
@@ -550,9 +499,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1040);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeExpTimeRealization' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['zero','isOnMainstem','predim','LIN','INER','exp_time']);
 
   // creation de 'updateLenRealization'
@@ -561,9 +510,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1050);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'updateLenRealization' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['INER','deltaT','exp_time','LIN']);
 
   // creation de 'initVolume'
@@ -572,9 +521,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1070);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'initVolume' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['LIN','DIN','Volume']);
 
   // creation de 'computeDemandRealization'
@@ -583,9 +532,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1080);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeDemandRealization' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['density_IN', 'Volume', 'biomassIN', 'demandIN']);
 
   // creation de 'computeBiomassRealization'
@@ -594,9 +543,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1090);
   procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeBiomass' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['Volume','density_IN','biomassIN']);
 
   // creation de 'computeSumOfBiomass'
@@ -605,9 +554,9 @@ begin
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(1100);
   XprocTmp.SetActiveState(2);
-  entityInternode.AddTInstance(XprocTmp);
+  entityPeduncle.AddTInstance(XprocTmp);
 
-  // connection port <-> attribut pour 'computeSumOfBiomass'
+  // connection port <-> attribut
   XprocTmp.ExternalConnect(['sumOfInternodeBiomassOnCulm']);
 
   // creation de 'transitionToMatureState'
@@ -616,51 +565,10 @@ begin
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(1130);
   XprocTmp.SetActiveState(2);
-  entityInternode.AddTInstance(XprocTmp);
+  entityPeduncle.AddTInstance(XprocTmp);
 
-  // connection port <-> attribut pour 'transitionToMatureState'
+  // connection port <-> attribut
   XprocTmp.ExternalConnect(['LIN','predim','isOnMainstem']);
-
-
-  // creation de 'keepDIN2'
-
-  procTmp := TProcInstanceInternal.Create('keepDIN2', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(1140);
-  procTmp.SetActiveState(2);
-  entityInternode.AddTInstance(procTmp);
-  // connection prot <-> attribut pour keepDIN2
-  procTmp.ExternalConnect(['DIN', 'DIN']);
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Modules pour l'etat realization_nostock
-  /////////////////////////////////////////////////////////////////////////////
-
-  // creation de 'keepLength3'
-
-  procTmp := TProcInstanceInternal.Create('keepLength3', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(1200);
-  procTmp.SetActiveState(3);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour keepLength3
-  procTmp.ExternalConnect(['LIN', 'LIN']);
-
-  // creation de 'keepDiameter3'
-
-  procTmp := TProcInstanceInternal.Create('keepDiameter3', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(1210);
-  procTmp.SetActiveState(3);
-  entityInternode.AddTInstance(procTmp);
-  // connection prot <-> attribut pour keepDiameter3
-  procTmp.ExternalConnect(['DIN', 'DIN']);
-
-
 
 
   /////////////////////////////////////////////////////////////////////////////
@@ -673,9 +581,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(1900);
   procTmp.SetActiveState(4);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeLastDemand' de 'EntityLeaf'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['demandIN','lastdemand']);
 
   // creation de 'computeExpTimeRealization'
@@ -684,9 +592,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(2000);
   procTmp.SetActiveState(4);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'computeExpTimeRealization' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['zero','isOnMainstem','predim','LIN','INER','exp_time']);
 
   // creation de 'computeSumOfBiomass'
@@ -695,44 +603,21 @@ begin
   XprocTmp.SetExeStep(1); // pas journalier
   XprocTmp.SetExeOrder(2100);
   XprocTmp.SetActiveState(4);
-  entityInternode.AddTInstance(XprocTmp);
+  entityPeduncle.AddTInstance(XprocTmp);
 
-  // connection port <-> attribut pour 'computeSumOfBiomass'
+  // connection port <-> attribut
   XprocTmp.ExternalConnect(['sumOfInternodeBiomassOnCulm']);
 
   // creation de 'finalizeDemand'
   procTmp := TProcInstanceInternal.Create('finalizeDemand',IdentityDyn,['inValue','kIn','outValue','kOut']);
   procTmp.SetProcName('Identity');
   procTmp.SetExeStep(1); // pas journalier
-  procTmp.SetExeOrder(2110);
-  procTmp.SetActiveState(4);
-  entityInternode.AddTInstance(procTmp);
-
-  // connection port <-> attribut pour 'finalizeDemand' de 'EntityLeaf'
-  procTmp.ExternalConnect(['zero','demandIN']);
-
-
-  // creation de 'keepLength4'
-
-  procTmp := TProcInstanceInternal.Create('keepLength4', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(2115);
-  procTmp.SetActiveState(4);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour keepLength3
-  procTmp.ExternalConnect(['LIN', 'LIN']);
-
-  // creation de 'keepDiameter4'
-
-  procTmp := TProcInstanceInternal.Create('keepDiameter4', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
   procTmp.SetExeOrder(2120);
   procTmp.SetActiveState(4);
-  entityInternode.AddTInstance(procTmp);
-  // connection prot <-> attribut pour keepDiameter3
-  procTmp.ExternalConnect(['DIN', 'DIN']);
+  entityPeduncle.AddTInstance(procTmp);
+
+  // connection port <-> attribut
+  procTmp.ExternalConnect(['zero','demandIN']);
 
 
   // creation de 'cancelDemand3'
@@ -741,9 +626,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(2130);
   procTmp.SetActiveState(3);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'demandIN' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['zero','demandIN']);
 
 
@@ -753,9 +638,9 @@ begin
   procTmp.SetExeStep(1); // pas journalier
   procTmp.SetExeOrder(2140);
   procTmp.SetActiveState(5);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'demandIN' de 'EntityInternode'
+  // connection port <-> attribut
   procTmp.ExternalConnect(['zero','demandIN']);
 
 
@@ -765,49 +650,23 @@ begin
   procTmp.SetExeStep(1);
   procTmp.SetExeOrder(2150);
   procTmp.SetActiveState(5);
-  entityInternode.AddTInstance(procTmp);
+  entityPeduncle.AddTInstance(procTmp);
 
-  // connection port <-> attribut pour 'demandIN' de 'EntityInternode'
-  procTmp.ExternalConnect(['zero','stockIN']);
-
-  // creation de 'keepLength5'
-
-  procTmp := TProcInstanceInternal.Create('keepLength5', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(2160);
-  procTmp.SetActiveState(5);
-  entityInternode.AddTInstance(procTmp);
-  // connection port <-> attribut pour keepLength3
-  procTmp.ExternalConnect(['LIN', 'LIN']);
-
-  // creation de 'keepDiameter5'
-
-  procTmp := TProcInstanceInternal.Create('keepDiameter5', IdentityDyn, ['inValue', 'kIn', 'outValue', 'kOut']);
-  procTmp.SetProcName('Identity');
-  procTmp.SetExeStep(1);
-  procTmp.SetExeOrder(2170);
-  procTmp.SetActiveState(5);
-  entityInternode.AddTInstance(procTmp);
-  // connection prot <-> attribut pour keepDiameter3
-  procTmp.ExternalConnect(['DIN', 'DIN']);
-
-
-
+  // connection port <-> attribut
+  procTmp.ExternalConnect(['zero','stockPeduncle']);
 
   ////////////////////////////////////////////////////////
   // ajout d'un manageur
   ////////////////////////////////////////////////////////
-  managerTmp := TManagerInternal.Create('InternodeManager_LE',InternodeManager_LE);
-  managerTmp.SetFunctName('InternodeManager_LE');
+  managerTmp := TManagerInternal.Create('PeduncleManager_LE',PeduncleManager_LE);
   managerTmp.SetExeMode(intra);
   managerTmp.SetExeOrder(500);
-  entityInternode.AddTManager(managerTmp);
+  entityPeduncle.AddTManager(managerTmp);
 
   /////////////////////////////////////
   // retourne la feuille créée
   ////////////////////////////////////}
-  result := entityInternode;
+  result := entityPeduncle;
 
 end;
 
