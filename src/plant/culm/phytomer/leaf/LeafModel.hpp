@@ -141,12 +141,7 @@ public:
                                            (_ligulo - _plasto));
 
         //LeafExpTime
-        if (_is_first_leaf and _is_on_mainstem) {
-            _exp_time = _predim / _ler;
-            _is_first_leaf = false;
-        } else {
             _exp_time = (_predim - _len) / _ler;
-        }
 
         //LeafLen
         if (_first_day == t) {

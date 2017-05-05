@@ -87,11 +87,8 @@ public:
         } else {
             _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (_index + 1. - _nb_leaf_param2);
         }
-        _inter_predim = std::max(1e-4, (1. - (_coeff_species*(1/_LL_BL))) * _leaf_predim - _leaf_length_to_IN_length);
+        _inter_predim = std::max(1e-4, _slope_length_IN * (1. - (_coeff_species*(1/_LL_BL))) * _leaf_predim - _leaf_length_to_IN_length);
 
-        if(t > _parameters.beginDate + 41) {
-            _inter_predim = _inter_predim;
-        }
         //ReductionINER
         if (_ftsw < _thresINER) {
             _reduction_iner = std::max(1e-4, (1. - (_thresINER - _ftsw) *
@@ -106,6 +103,7 @@ public:
 
         //InternodeManager
         step_state(t);
+
         //InternodeLen & InternodeExpTime
         if (_inter_phase == VEGETATIVE) {
             _inter_len = 0;

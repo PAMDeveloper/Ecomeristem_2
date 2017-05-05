@@ -60,25 +60,15 @@ public:
                      PlantModel::PLANT_PHASE });
         selector("P_STATE", artis::kernel::INT, {
                      PlantModel::PLANT_STATE });
-        selector("PAI", artis::kernel::DOUBLE, {
-                     PlantModel::PAI });
         selector("LIG", artis::kernel::DOUBLE, {
                      PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {
                      PlantModel::TT_LIG });
-        selector("IH", artis::kernel::DOUBLE, {
-                     PlantModel::IH });
 
         //ThermalTimeModel
         selector("TT", artis::kernel::DOUBLE, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::TT});
-        selector("BOOL_CROSSED_PLASTO", artis::kernel::DOUBLE, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::BOOL_CROSSED_PLASTO});
-        selector("PHENOSTAGE", artis::kernel::INT, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::PHENO_STAGE});
         selector("DD", artis::kernel::DOUBLE, {
                      PlantModel::THERMAL_TIME,
                      ThermalTimeModel::DD});
@@ -90,15 +80,9 @@ public:
                      ThermalTimeModel::SLA});
 
         //AssimilationModel
-        selector("ASSIM_NET", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::ASSIM});
         selector("ASSIM", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
-                     AssimilationModel::ASSIM_NET_COR});
-        selector("INTERC", artis::kernel::DOUBLE, {
-                     PlantModel::ASSIMILATION,
-                     AssimilationModel::INTERC});
+                     AssimilationModel::ASSIM}); 
         selector("LAI", artis::kernel::DOUBLE, {
                      PlantModel::ASSIMILATION,
                      AssimilationModel::LAI});
@@ -131,11 +115,6 @@ public:
         selector("DEFICIT", artis::kernel::DOUBLE, {
                      PlantModel::STOCK,
                      PlantStockModel::DEFICIT});
-
-        //TilleringModel
-        selector("CREATE_TILLER", artis::kernel::DOUBLE, {
-                     PlantModel::TILLERING,
-                     TilleringModel::CREATE});
 
         //RootModel
         selector("R_D", artis::kernel::DOUBLE, {

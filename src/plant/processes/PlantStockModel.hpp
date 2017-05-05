@@ -152,7 +152,7 @@ public:
 
     void compute(double t, bool /* update */) {
         //  indice de competition - Proposition
-        compute_IC(t);
+        // compute_IC(t);
 
         //  day_demand
         if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3 or
@@ -191,8 +191,8 @@ public:
         _supply_[0] = _supply;
 
 
-        //  reservoir_dispo
-        _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
+        //  reservoir_dispo @TODO : vérifier s'il faut borner au dessus de 0
+        _reservoir_dispo = std::max(0.,_leaf_stock_max * _leaf_biomass_sum - _stock);
 
         //  stock
         if (_state == plant::ELONG) {
