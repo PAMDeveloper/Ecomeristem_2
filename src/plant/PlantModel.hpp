@@ -52,7 +52,8 @@ public:
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM,
-                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH};
+                     PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
+                     LEAF_BIOM_STRUCT };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -86,6 +87,7 @@ public:
         Internal( PLASTO, &PlantModel::_plasto );
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
+        Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
     }
 
     virtual ~PlantModel()
@@ -127,7 +129,7 @@ public:
                 }
                 break;
             }
-            case plant::GROWTH:
+            case plant::GROWTH: {
                 if (boolCrossedPlasto > 0 and stock > 0) {
                     _phase = plant::NEW_PHYTOMER;
                 }
@@ -135,6 +137,7 @@ public:
                     _phase = plant::NOGROWTH2;
                 }
                 break;
+            }
             case plant::NOGROWTH: {
                 if (stock > 0) {
                     _phase = plant::GROWTH;
@@ -312,6 +315,8 @@ public:
         _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, _state);
         (*_stock_model)(t);
 
+        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
+
         compute_height(t);
     }
 
@@ -465,6 +470,7 @@ public:
         _MGR = parameters.get < double >("MGR_init");
         _TT_lig = 0;
         _IH = 0;
+        _leaf_biom_struct = 0;
 
         //
         _last_time = 0;
@@ -523,6 +529,7 @@ private:
     double _lig_1;
     double _TT_lig;
     double _IH;
+    double _leaf_biom_struct;
 
     //internal states
     int _phase;
