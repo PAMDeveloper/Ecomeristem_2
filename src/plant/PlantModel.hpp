@@ -403,6 +403,21 @@ public:
 
     void compute_height(double t)
     {
+        /* height delphi, proposition à vérifer
+         _height = 0;
+         if (_culm_models.empty()) {
+            return;
+         }
+
+         auto it = _culm_models.begin();
+         _height += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM);
+         if ((*it)->_phytomer_models.size() == 1) {
+            _height += (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
+         } else {
+             _height += (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_LEN);
+         }
+        end */
+
         _height = 0;
         if (_culm_models.empty()) {
             return;

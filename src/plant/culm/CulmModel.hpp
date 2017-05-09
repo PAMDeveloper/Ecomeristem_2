@@ -136,6 +136,11 @@ public:
         _leaf_blade_area_sum = 0;
         _last_ligulated_leaf = -1;
         _last_ligulated_leaf_len = 0;
+
+        // Modifs PHT, à vérifier
+        //_first_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+        //auto it = _phytomer_models.begin();
+
         while (it != _phytomer_models.end()) {
             //Phytomers
             compute_phytomers(it, previous_it, i, t);
@@ -286,6 +291,21 @@ public:
     int get_phytomer_number() const
     { return _phytomer_models.size(); }
 
+    // Proposition (florian) pour delete_leaf :
+//    void delete_leaf(double t, int index)
+//    {
+//        // Nécessite de placer delete leaf avant le compute culms
+//        double biomass = _phytomer_models[index]->get < double, PhytomerModel >(t, PhytomerModel::LEAF_BIOMASS);
+//        _deleted_senesc_dw = (1 - _realocationCoeff) * biomass
+
+//        //    delete phytomer_models[index]; @TODO : phytomer à détruire si feuille morte ? Intrenoeud mort aussi ?
+//        //    phytomer_models.erase(phytomer_models.begin() + index);
+
+//        _phytomer_models[index]->delete_leaf(t);
+//        ++_deleted_leaf_number;
+//    }
+
+    // Code c++ de base :
     //    void CulmModel::delete_leaf(double t, int index)
     //    {
     //        _deleted_senesc_dw =
@@ -299,15 +319,6 @@ public:
     //        phytomer_models[index]->delete_leaf(t);
 
     //        ++_deleted_leaf_number;
-
-    //#ifdef WITH_TRACE
-    //        utils::Trace::trace()
-    //                << utils::TraceElement("CULM", t, artis::utils::COMPUTE)
-    //                << "DELETE LEAF: " << _index
-    //                << " ; index = " << index
-    //                << " ; nb = " << _deleted_leaf_number;
-    //        utils::Trace::trace().flush();
-    //#endif
 
     //    }
 
