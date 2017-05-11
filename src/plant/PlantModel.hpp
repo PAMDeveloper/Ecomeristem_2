@@ -53,7 +53,7 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT };
+                     LEAF_BIOM_STRUCT, REALLOC_BIOMASS_SUM };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -88,7 +88,8 @@ public:
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
         Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
-        Internal( INTERNODE_BIOM_STRUCT, &PlantModel::_internode_biom_struct );
+        Internal( REALLOC_BIOMASS_SUM, &PlantModel::_realloc_biomass_sum );
+
     }
 
     virtual ~PlantModel()
@@ -317,7 +318,6 @@ public:
         (*_stock_model)(t);
 
         _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
-        _internode_biom_struct = _internode_biomass_sum + _culm_stock_sum;
 
         compute_height(t);
     }
@@ -326,7 +326,7 @@ public:
     void create_culm(double t, int n)
     {
         for (int i = 0; i < n; ++i) {
-            CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
+            CulmModel* meristem = new CulmModel(_culm_models.size() + 1, _plasto, _ligulo, _LL_BL);
             setsubmodel(CULMS, meristem);
             meristem->init(t, _parameters);
             _culm_models.push_back(meristem);
@@ -337,7 +337,7 @@ public:
     {
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         while (it != _culm_models.end()) {
-            (*it)->create_phytomer(t);
+            (*it)->create_phytomer(t, _plasto, _ligulo, _LL_BL);
             ++it;
         }
     }
@@ -362,9 +362,6 @@ public:
             (*it)->put(t, CulmModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
             (*it)->put(t, CulmModel::PLANT_BLADE_AREA_SUM, _leaf_blade_area_sum);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
-            (*it)->put(t, CulmModel::LL_BL, _LL_BL);
-            (*it)->put(t, CulmModel::PLASTO, _plasto);
-            (*it)->put(t, CulmModel::LIGULO, _ligulo);
             (*it)->put(t, CulmModel::MGR, _MGR);
             (**it)(t);
             ++it;
@@ -447,8 +444,13 @@ public:
         _coeff_Ligulo_PI = parameters.get < double >("coef_ligulo_PI");
         _coeff_MGR_PI = parameters.get < double >("coef_MGR_PI");
 
+        //Attributes for culmmodel
+        _plasto = parameters.get < double >("plasto_init");
+        _ligulo = _plasto * _coef_ligulo;
+        _LL_BL = _LL_BL_init;
+
         //local init
-        CulmModel* meristem = new CulmModel(1);
+        CulmModel* meristem = new CulmModel(1, _plasto, _ligulo, _LL_BL);
         setsubmodel(CULMS, meristem);
         meristem->init(t, parameters);
         _culm_models.push_back(meristem);
@@ -481,14 +483,10 @@ public:
         _state = plant::VEGETATIVE;
         _phase = plant::INIT;
         _height = 0;
-        _LL_BL = _LL_BL_init;
-        _plasto = parameters.get < double >("plasto_init");
-        _ligulo = _plasto * _coef_ligulo;
         _MGR = parameters.get < double >("MGR_init");
         _TT_lig = 0;
         _IH = 0;
         _leaf_biom_struct = 0;
-        _internode_biom_struct = 0;
 
         //
         _last_time = 0;
@@ -548,7 +546,6 @@ private:
     double _TT_lig;
     double _IH;
     double _leaf_biom_struct;
-    double _internode_biom_struct;
 
     //internal states
     int _phase;

@@ -37,22 +37,24 @@ public:
                      BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      CORRECTED_BIOMASS, TIME_FROM_APP,
-                     LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS
+                     LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS, LAST_LEAF_BIOMASS
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
-                     SLA, PLANT_PHASE, TEST_IC, LL_BL, PLASTO,
-                     LIGULO, MGR };
+                     SLA, PLANT_PHASE, TEST_IC, MGR };
 
 
     virtual ~LeafModel()
     { }
 
-    LeafModel(int index, bool is_on_mainstem) :
+    LeafModel(int index, bool is_on_mainstem, double plasto, double ligulo, double LL_BL) :
         _index(index),
         _is_first_leaf(_index == 1),
-        _is_on_mainstem(is_on_mainstem)
+        _is_on_mainstem(is_on_mainstem),
+        _plasto(plasto),
+        _ligulo(ligulo),
+        _LL_BL(LL_BL)
     {
         //internals
         Internal(LEAF_PHASE, &LeafModel::_leaf_phase);
@@ -80,6 +82,7 @@ public:
         Internal(IS_LIG, &LeafModel::_is_lig);
         Internal(IS_LIG_T, &LeafModel::_is_lig_t);
         Internal(OLD_BIOMASS, &LeafModel::_old_biomass);
+        Internal(LAST_LEAF_BIOMASS, &LeafModel::_last_leaf_biomass);
 
 
         //externals
@@ -92,9 +95,6 @@ public:
         External(DD, &LeafModel::_dd);
         External(DELTA_T, &LeafModel::_delta_t);
         External(SLA, &LeafModel::_sla);
-        External(LL_BL, &LeafModel::_LL_BL);
-        External(PLASTO, &LeafModel::_plasto);
-        External(LIGULO, &LeafModel::_ligulo);
         External(MGR, &LeafModel::_MGR);
     }
 
@@ -141,13 +141,12 @@ public:
                                            (_ligulo - _plasto));
 
         //LeafExpTime
-            _exp_time = (_predim - _len) / _ler;
+        _exp_time = (_predim - _len) / _ler;
 
         //LeafLen
         if (_first_day == t) {
             _len = _ler * _dd;
         } else {
-
             if (not (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
                      or _plant_phase == plant::NOGROWTH4)) {
                 _len = std::min(_predim,
@@ -221,7 +220,6 @@ public:
         }
 
         //LeafDemand
-        //         _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
         if (_first_day == t) {
             _demand = _biomass;
         } else {
@@ -269,7 +267,7 @@ public:
     }
 
     void init(double t,
-                         const ecomeristem::ModelParameters& parameters)
+              const ecomeristem::ModelParameters& parameters)
     {
         _parameters = parameters;
 
@@ -334,6 +332,9 @@ private:
     int _index;
     bool _is_first_leaf;
     bool _is_on_mainstem;
+    double _plasto;
+    double _ligulo;
+    double _LL_BL;
 
     // internal variable
     double _width;
@@ -366,10 +367,7 @@ private:
     double _last_leaf_biomass;
 
     // external variables
-    double _plasto;
-    double _ligulo;
     double _MGR;
-    double _LL_BL;
     double _ftsw;
     double _p;
     int _plant_phase;

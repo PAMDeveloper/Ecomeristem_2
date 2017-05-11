@@ -54,13 +54,15 @@ public:
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
                      PLANT_DEFICIT, PLANT_LEAF_BIOMASS_SUM,
-                     PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM,
-                     LL_BL, PLASTO, LIGULO, MGR };
+                     PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM, MGR };
 
 
-    CulmModel(int index):
+    CulmModel(int index, double plasto, double ligulo, double LL_BL):
         _index(index), _is_first_culm(index == 1),
-        _culm_stock_model(new CulmStockModel)
+        _culm_stock_model(new CulmStockModel),
+        _plasto(plasto),
+        _ligulo(ligulo),
+        _LL_BL(LL_BL)
     {
         // submodels
         Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
@@ -104,9 +106,6 @@ public:
         External(PLANT_LEAF_BIOMASS_SUM, &CulmModel::_plant_leaf_biomass_sum);
         External(PLANT_BLADE_AREA_SUM, &CulmModel::_plant_blade_area_sum);
         External(ASSIM, &CulmModel::_assim);
-        External(LL_BL, &CulmModel::_LL_BL);
-        External(PLASTO, &CulmModel::_plasto);
-        External(LIGULO, &CulmModel::_ligulo);
         External(MGR, &CulmModel::_MGR);
     }
 
@@ -136,6 +135,7 @@ public:
         _leaf_blade_area_sum = 0;
         _last_ligulated_leaf = -1;
         _last_ligulated_leaf_len = 0;
+        _realloc_biomass_sum = 0;
 
         // Modifs PHT, à vérifier
         //_first_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
@@ -183,12 +183,7 @@ public:
         (*it)->put < int >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
         (*it)->put < int >(t, PhytomerModel::PLANT_STATE, _plant_state);
         (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
-        (*it)->leaf()->put(t, LeafModel::LL_BL, _LL_BL);
-        (*it)->leaf()->put(t, LeafModel::PLASTO, _plasto);
-        (*it)->leaf()->put(t, LeafModel::LIGULO, _ligulo);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
-        (*it)->internode()->put(t, InternodeModel::PLASTO, _plasto);
-        (*it)->internode()->put(t, InternodeModel::LIGULO, _ligulo);
 
         if (_is_first_culm) {
             if (i == 0) {
@@ -271,7 +266,7 @@ public:
     }
 
 
-    void create_phytomer(double t)
+    void create_phytomer(double t, double plasto, double ligulo, double LL_BL)
     {
         if (t != _parameters.beginDate) {
             int index;
@@ -281,7 +276,7 @@ public:
                 index = _phytomer_models.back()->get_index() + 1;
             }
 
-            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm);
+            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm, plasto, ligulo, LL_BL);
             setsubmodel(PHYTOMERS, phytomer);
             phytomer->init(t, _parameters);
             _phytomer_models.push_back(phytomer);
@@ -400,7 +395,7 @@ public:
     //    }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
-        PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm);
+        PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _ligulo, _LL_BL);
 
         setsubmodel(PHYTOMERS, first_phytomer);
         first_phytomer->init(t, parameters);
@@ -437,6 +432,8 @@ private:
     //    attributes
     double _index;
     bool _is_first_culm;
+    double _plasto;
+    double _ligulo;
 
     //    internals
     double _nb_lig;
@@ -460,8 +457,6 @@ private:
 
 
     //    externals
-    double _plasto;
-    double _ligulo;
     double _MGR;
     double _LL_BL;
     double _dd;
