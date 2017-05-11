@@ -40,14 +40,17 @@ public:
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
     enum externals { PLANT_PHASE, PLANT_STATE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
-                     DD, DELTA_T, PLASTO, LIGULO};
+                     DD, DELTA_T};
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
     //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
     //                     LIG };
 
-    InternodeModel(int index, bool is_on_mainstem):
-    _index(index), _is_on_mainstem(is_on_mainstem)
+    InternodeModel(int index, bool is_on_mainstem, double plasto, double ligulo):
+        _index(index),
+        _is_on_mainstem(is_on_mainstem),
+        _plasto(plasto),
+        _ligulo(ligulo)
     {
         Internal(INTERNODE_PHASE, &InternodeModel::_inter_phase);
         Internal(INTERNODE_PHASE_1, &InternodeModel::_inter_phase_1);
@@ -71,8 +74,6 @@ public:
         External(FTSW, &InternodeModel::_ftsw);
         External(DD, &InternodeModel::_dd);
         External(DELTA_T, &InternodeModel::_delta_t);
-        External(PLASTO, &InternodeModel::_plasto);
-        External(LIGULO, &InternodeModel::_ligulo);
     }
 
     virtual ~InternodeModel()
@@ -133,10 +134,14 @@ public:
         _biomass = _inter_volume * _density;
 
         //InternodeDemand & InternodeLastDemand
-        _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
+        _last_demand = 0;
         if (_inter_phase == MATURITY or
-            _inter_phase == MATURITY_NOGROWTH) {
+                _inter_phase == MATURITY_NOGROWTH) {
             _demand = 0;
+            if (! _is_mature) {
+                _last_demand = _biomass - biomass_1;
+                _is_mature = true;
+            }
         } else {
             _demand = _biomass - biomass_1;
         }
@@ -192,7 +197,7 @@ public:
         _respINER = parameters.get < double >("resp_LER");
         _slopeINER = parameters.get < double >("slopeINER");
         _IN_length_to_IN_diam =
-            parameters.get < double >("IN_length_to_IN_diam");
+                parameters.get < double >("IN_length_to_IN_diam");
         _coef_lin_IN_diam = parameters.get < double >("coef_lin_IN_diam");
         _density = parameters.get < double >("density_IN");
         _coeff_species = parameters.get <double> ("coeff_species");
@@ -212,6 +217,7 @@ public:
         _first_day = t;
         _time_from_app = 0;
         _inter_predim = 0;
+        _is_mature = false;
 
     }
 
@@ -221,6 +227,8 @@ private:
     int _index;
     bool _is_first_internode;
     bool _is_on_mainstem;
+    double _ligulo;
+    double _plasto;
 
     // parameters
     double _LL_BL_init;
@@ -252,10 +260,9 @@ private:
     double _last_demand;
     double _time_from_app;
     double _first_day; //@TODO unused
+    bool _is_mature;
 
     // externals
-    double _ligulo;
-    double _plasto;
     int _plant_phase;
     int _plant_state;
     double _leaf_predim;

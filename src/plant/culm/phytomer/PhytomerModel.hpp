@@ -45,12 +45,15 @@ public:
                      PREDIM_PREVIOUS_LEAF, SLA, PLANT_PHASE, TEST_IC,
                      PLANT_STATE};
 
-    PhytomerModel(int index, bool is_on_mainstem) :
+    PhytomerModel(int index, bool is_on_mainstem, double plasto, double ligulo, double LL_BL) :
         _index(index),
         _is_first_phytomer(index == 1),
+        _plasto(plasto),
+        _ligulo(ligulo),
+        _LL_BL(LL_BL),
         _is_on_mainstem(is_on_mainstem),
-        _internode_model(new InternodeModel(_index, _is_on_mainstem)),
-        _leaf_model(new LeafModel(_index, _is_on_mainstem))
+        _internode_model(new InternodeModel(_index, _is_on_mainstem, _plasto, _ligulo)),
+        _leaf_model(new LeafModel(_index, _is_on_mainstem, _plasto, _ligulo, _LL_BL))
     {
         // submodels
         Submodels( ((LEAF, _leaf_model.get())) );
@@ -177,6 +180,9 @@ private:
     int _index;
     bool _is_first_phytomer;
     bool _is_on_mainstem;
+    double _plasto;
+    double _ligulo;
+    double _LL_BL;
 
     // submodels
     std::unique_ptr < InternodeModel > _internode_model;

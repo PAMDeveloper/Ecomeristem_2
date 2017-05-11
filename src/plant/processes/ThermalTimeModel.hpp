@@ -149,22 +149,22 @@ public:
 
 
 
-    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
+    void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
-
         //    paramaters variables
         _Tb = _parameters.get < double >("Tb");
         _coef_ligulo = _parameters.get < double >("coef_ligulo1");
         _FSLA = _parameters.get < double >("FSLA");
         _SLAp = _parameters.get < double >("SLAp");
+        _plasto_init = _parameters.get < double >("plasto_init");
 
         //    computed variables
         _tt_state = INIT;
         _deltaT = 0;
         _TT = 0;
         _boolCrossedPlasto = 0;
-        _plastoVisu = _plasto;
-        _liguloVisu = _plasto * _coef_ligulo;
+        _plastoVisu = _plasto_init;
+        _liguloVisu = _plasto_init * _coef_ligulo;
         _phenoStage = 1;
         _sla = 0;
         _DD = 0;
@@ -178,6 +178,7 @@ private:
     double _coef_ligulo;
     double _FSLA;
     double _SLAp;
+    double _plasto_init;
 
     //    parameters(t)
     double _Ta;

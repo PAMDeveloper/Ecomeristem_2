@@ -191,8 +191,12 @@ public:
         _supply_[0] = _supply;
 
 
-        //  reservoir_dispo @TODO : vérifier s'il faut borner au dessus de 0
-        _reservoir_dispo = std::max(0.,_leaf_stock_max * _leaf_biomass_sum - _stock);
+        //  reservoir_dispo
+         if (_state != plant::ELONG) {
+            _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
+         } else {
+             _reservoir_dispo = 0;
+         }
 
         //  stock
         if (_state == plant::ELONG) {
