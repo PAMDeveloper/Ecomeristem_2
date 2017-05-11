@@ -69,8 +69,6 @@ public:
         InternalS(REALLOC_BIOMASS, _leaf_model.get(), LeafModel::REALLOC_BIOMASS);
         InternalS(SENESC_DW, _leaf_model.get(), LeafModel::SENESC_DW);
         InternalS(SENESC_DW_SUM, _leaf_model.get(), LeafModel::SENESC_DW_SUM);
-        InternalS(LEAF_CORRECTED_BIOMASS, _leaf_model.get(), LeafModel::CORRECTED_BIOMASS);
-        InternalS(LEAF_CORRECTED_BLADE_AREA, _leaf_model.get(), LeafModel::CORRECTED_BLADE_AREA);
         InternalS(LEAF_LEN, _leaf_model.get(), LeafModel::LEAF_LEN);
         InternalS(INTERNODE_LAST_DEMAND, _internode_model.get(), InternodeModel::LAST_DEMAND);
         InternalS(INTERNODE_DEMAND, _internode_model.get(), InternodeModel::DEMAND);

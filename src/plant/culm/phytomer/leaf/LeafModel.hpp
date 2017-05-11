@@ -33,11 +33,10 @@ public:
 
     enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEAF_LEN, LER,
                      EXP_TIME, PLASTO_DELAY, LEAF_PREDIM, WIDTH,
-                     TT_LIG, BLADE_AREA, CORRECTED_BLADE_AREA,
-                     BIOMASS, DEMAND, LAST_DEMAND,
+                     TT_LIG, BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
-                     CORRECTED_BIOMASS, TIME_FROM_APP,
-                     LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS, LAST_LEAF_BIOMASS
+                     TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
+                     LAST_LEAF_BIOMASS, SLA_CSTE
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
@@ -69,12 +68,10 @@ public:
         Internal(WIDTH, &LeafModel::_width);
         Internal(TT_LIG, &LeafModel::_TT_Lig);
         Internal(BLADE_AREA, &LeafModel::_blade_area);
-        Internal(CORRECTED_BLADE_AREA, &LeafModel::_corrected_blade_area);
         Internal(BIOMASS, &LeafModel::_biomass);
         Internal(REALLOC_BIOMASS, &LeafModel::_realloc_biomass);
         Internal(SENESC_DW, &LeafModel::_senesc_dw);
         Internal(SENESC_DW_SUM, &LeafModel::_senesc_dw_sum);
-        Internal(CORRECTED_BIOMASS, &LeafModel::_corrected_biomass);
         Internal(DEMAND, &LeafModel::_demand);
         Internal(LAST_DEMAND, &LeafModel::_last_demand);
         Internal(TIME_FROM_APP, &LeafModel::_time_from_app);
@@ -83,6 +80,7 @@ public:
         Internal(IS_LIG_T, &LeafModel::_is_lig_t);
         Internal(OLD_BIOMASS, &LeafModel::_old_biomass);
         Internal(LAST_LEAF_BIOMASS, &LeafModel::_last_leaf_biomass);
+        Internal(SLA_CSTE, &LeafModel::_sla_cste);
 
 
         //externals
@@ -293,11 +291,9 @@ public:
         _TT_Lig = 0;
         _is_lig = false;
         _is_lig_t = false;
-        _corrected_blade_area = 0;
         _blade_area = 0;
         _biomass = 0;
         _old_biomass = 0;
-        _corrected_biomass = 0;
         _senesc_dw = 0;
         _senesc_dw_sum = 0;
         _demand = 0;
@@ -306,6 +302,7 @@ public:
         _lig_t = 0;
         _last_blade_area = 0;
         _last_leaf_biomass = 0;
+        _sla_cste = 0;
     }
 
     //    double get_blade_area() const
@@ -347,9 +344,7 @@ private:
     bool   _is_lig;
     bool   _is_lig_t;
     double _blade_area;
-    double _corrected_blade_area;
     double _biomass;
-    double _corrected_biomass;
     double _realloc_biomass;
     double _old_biomass;
     double _senesc_dw;

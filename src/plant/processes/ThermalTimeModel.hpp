@@ -149,7 +149,7 @@ public:
 
 
 
-    void init(double t, const ecomeristem::ModelParameters& parameters) {
+    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
         //    paramaters variables
         _Tb = _parameters.get < double >("Tb");
@@ -166,7 +166,7 @@ public:
         _plastoVisu = _plasto_init;
         _liguloVisu = _plasto_init * _coef_ligulo;
         _phenoStage = 1;
-        _sla = 0;
+        _sla = _FSLA;
         _DD = 0;
         _EDD = 0;
     }
