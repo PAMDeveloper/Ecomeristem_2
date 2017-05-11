@@ -133,12 +133,18 @@ public:
         _biomass = _inter_volume * _density;
 
         //InternodeDemand & InternodeLastDemand
-        _last_demand = _demand; //@TODO check pourquoi le calcul est le même dans LastDemand et Demand
         if (_inter_phase == MATURITY or
             _inter_phase == MATURITY_NOGROWTH) {
             _demand = 0;
+            if(!_is_mature ){
+                _last_demand = _biomass - biomass_1;
+                _is_mature = true;
+            } else {
+                _last_demand = 0;
+            }
         } else {
             _demand = _biomass - biomass_1;
+            _last_demand = 0;
         }
 
         //InternodeTimeFromApp
@@ -212,6 +218,7 @@ public:
         _first_day = t;
         _time_from_app = 0;
         _inter_predim = 0;
+        _is_mature = false;
 
     }
 
@@ -252,6 +259,7 @@ private:
     double _last_demand;
     double _time_from_app;
     double _first_day; //@TODO unused
+    bool _is_mature;
 
     // externals
     double _ligulo;

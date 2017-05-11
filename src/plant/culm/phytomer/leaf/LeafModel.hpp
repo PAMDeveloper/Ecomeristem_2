@@ -189,6 +189,10 @@ public:
             _blade_area = _last_blade_area * (1 - _TT_Lig / _life_span);
         }
 
+        if(t >= _parameters.beginDate + 35){
+
+        }
+
         //Biomass
         _old_biomass = 0;
         if (_first_day == t) {

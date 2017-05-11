@@ -53,7 +53,7 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT };
+                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -88,6 +88,7 @@ public:
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
         Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
+        Internal( INTERNODE_BIOM_STRUCT, &PlantModel::_internode_biom_struct );
     }
 
     virtual ~PlantModel()
@@ -316,6 +317,7 @@ public:
         (*_stock_model)(t);
 
         _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
+        _internode_biom_struct = _internode_biomass_sum + _culm_stock_sum;
 
         compute_height(t);
     }
@@ -486,6 +488,7 @@ public:
         _TT_lig = 0;
         _IH = 0;
         _leaf_biom_struct = 0;
+        _internode_biom_struct = 0;
 
         //
         _last_time = 0;
@@ -545,6 +548,7 @@ private:
     double _TT_lig;
     double _IH;
     double _leaf_biom_struct;
+    double _internode_biom_struct;
 
     //internal states
     int _phase;

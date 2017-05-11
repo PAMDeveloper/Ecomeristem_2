@@ -192,7 +192,7 @@ public:
 
 
         //  reservoir_dispo @TODO : vérifier s'il faut borner au dessus de 0
-        _reservoir_dispo = std::max(0.,_leaf_stock_max * _leaf_biomass_sum - _stock);
+        _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
 
         //  stock
         if (_state == plant::ELONG) {
@@ -200,7 +200,6 @@ public:
             _deficit = _culm_deficit;
         } else {
             double stock = 0;
-
             if (_seed_res > 0) {
                 if (_seed_res > _day_demand) {
                     stock = _stock + std::min(_reservoir_dispo, _supply + _realloc_biomass_sum);
@@ -210,8 +209,7 @@ public:
                                      _realloc_biomass_sum);
                 }
             } else {
-                stock = _stock + std::min(_reservoir_dispo, _supply - _day_demand +
-                                          _realloc_biomass_sum);
+                stock = _stock + std::min(_reservoir_dispo, _supply - _day_demand + _realloc_biomass_sum);
             }
 
             _stock = std::max(0., _deficit + stock);
@@ -238,7 +236,7 @@ public:
         // Realloc biomass
         if (_deleted_leaf_biomass > 0) {
             double qty = _deleted_leaf_biomass * _realocationCoeff;
-            _stock = std::max(0., qty + _deficit);
+            _stock = std::max(0., qty + _stock);
             _deficit = std::min(0., qty + _deficit);
         }
     }
