@@ -368,6 +368,7 @@ public:
         }
 
         _leaf_biomass_sum = 0;
+        _last_leaf_biomass_sum = 0;
         _leaf_last_demand_sum = 0;
         _leaf_demand_sum = 0;
         _internode_last_demand_sum = 0;
@@ -385,6 +386,7 @@ public:
 
         while (it != _culm_models.end()) {
             _leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
+            _last_leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LAST_LEAF_BIOMASS_SUM);
             _leaf_last_demand_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_LAST_DEMAND_SUM);
             _leaf_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_DEMAND_SUM);
             _internode_last_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LAST_DEMAND_SUM);
@@ -487,6 +489,7 @@ public:
         _TT_lig = 0;
         _IH = 0;
         _leaf_biom_struct = 0;
+        _last_leaf_biomass_sum = 0;
 
         //
         _last_time = 0;
@@ -546,6 +549,7 @@ private:
     double _TT_lig;
     double _IH;
     double _leaf_biom_struct;
+    double _last_leaf_biomass_sum;
 
     //internal states
     int _phase;

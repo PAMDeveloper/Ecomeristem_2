@@ -47,7 +47,8 @@ public:
                      INTERNODE_BIOMASS_SUM, INTERNODE_LEN_SUM,
                      LEAF_BLADE_AREA_SUM,
                      REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
-                     LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN
+                     LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
+                     LAST_LEAF_BIOMASS_SUM
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
@@ -88,6 +89,7 @@ public:
         Internal(SENESC_DW_SUM, &CulmModel::_senesc_dw_sum);
         Internal(LAST_LIGULATED_LEAF, &CulmModel::_last_ligulated_leaf);
         Internal(LAST_LIGULATED_LEAF_LEN, &CulmModel::_last_ligulated_leaf_len);
+        Internal(LAST_LEAF_BIOMASS_SUM, &CulmModel::_last_leaf_biomass_sum);
 
         //    externals
         External(DD, &CulmModel::_dd);
@@ -126,6 +128,7 @@ public:
         int i = 0;
         _nb_lig = 0;
         _leaf_biomass_sum = 0;
+        _last_leaf_biomass_sum = 0;
         _leaf_last_demand_sum = 0;
         _leaf_demand_sum = 0;
         _internode_last_demand_sum = 0;
@@ -225,12 +228,13 @@ public:
             }
         }
 
-
-//        if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS) == 0) {
             _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
-//        } else {
-//            _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BIOMASS);
-//        }
+
+            if ((*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS) == 0) {
+                _last_leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
+            } else {
+                _last_leaf_biomass_sum += (*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS);
+            }
 
         _leaf_last_demand_sum +=
                 (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LAST_DEMAND);
@@ -420,6 +424,7 @@ public:
         _last_ligulated_leaf_len = 0;
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
+        _last_leaf_biomass_sum = 0;
     }
 
 private:
@@ -450,6 +455,7 @@ private:
     double _senesc_dw_sum;
     int _last_ligulated_leaf;
     double _last_ligulated_leaf_len;
+    double _last_leaf_biomass_sum;
     //        double _lig;
     //        double _deleted_leaf_number;
     //        double _deleted_senesc_dw;
