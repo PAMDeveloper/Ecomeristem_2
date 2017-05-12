@@ -26,6 +26,7 @@
 #ifndef SAMPLE_ATOMIC_MODEL_HPP
 #define SAMPLE_ATOMIC_MODEL_HPP
 
+#include <plant/culm/culmmanager.h>
 #include <defines.hpp>
 #include <plant/culm/processes/CulmStockModel.hpp>
 #include <plant/culm/phytomer/PhytomerModel.hpp>
