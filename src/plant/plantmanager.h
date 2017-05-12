@@ -12,9 +12,7 @@ enum state_plant { NO_STATE = 0,
 
 enum phase_plant {  INITIAL = 0,
                     VEGETATIVE,
-                    PRE_ELONG,
                     ELONG,
-                    PRE_PI,
                     PI,
                     PRE_FLO,
                     FLO,
@@ -40,6 +38,14 @@ class test {
                 _bool_crossed_plasto, stock, _nb_leaf_max_after_pi,
                 _phenostage_at_pre_flo, _phenostage_pre_flo_to_flo,
                 _phenostage_to_end_filling, _phenostage_to_maturity;
+
+
+
+
+
+
+
+
 
         //Globals states
         _plant_state >> NEW_PHYTOMER;
@@ -73,25 +79,9 @@ class test {
                         if ( _nb_leaves == _nb_leaf_stem_elong and
                              _nb_leaves < _nb_leaf_pi) {
                             _plant_phase = ELONG;
-                            //Phytomer_Leaf_Creation
-                            //Phytomer_Internode_Creation
-                            //??Tiller_stock_individualisation?? -- //@TODO culmManager
-                            //Start_Internode_Elong
-                            //Tillers_Transition_To_Elong
-                            //Root_Transition_To_Elong
                         } else {
                             if(_nb_leaves == _nb_leaf_pi) {
                                 _plant_phase = PI;
-                                //Phytomer_leaf_creation
-                                //Phytomer_Internode_creation
-                                //??Tiller_stock_individualisation??
-                                //Start_Internode_Elong
-                                //Phytomer_Panicle_Creation
-                                //Phytomer_Peduncle_Creation
-                                //Phytomer_PanicleActivation
-                                //Tillers_Transition_To_PRE_PI
-                                //StoreThermalTimeAtPi
-                                //Root_Transition_To_PI
                             }
                         }
                     }
@@ -110,16 +100,6 @@ class test {
                         _plant_state << NEW_PHYTOMER;
                         if (_nb_leaves == _nb_leaf_pi) {
                             _plant_phase = PI;
-                            //Phytomer_Leaf_Creation
-                            //Phytomer_Internode_Creation
-                            //Start_Internode_Elong
-                            //Phytomer_Panicle_Creation
-                            //Phytomer_Peduncle_Creation
-                            //Phytomer_Panicle_Activation
-                            //Tillers_Transition_To_PI
-                            //Sotre_Thermal_Time_At_PI
-                            //Tillers_Store_Phenostage_At_PI
-                            //Root_Transition_To_PI
                         }
                     }
                 }
@@ -131,10 +111,7 @@ class test {
             if (isGrowing(_plant_state)) {
                 if (_bool_crossed_plasto >= 0) {
                     if (_nb_leaves == _nb_leaf_pi + _nb_leaf_max_after_pi + 1) {
-                        //Start_Internode_Elong
-                        //Phytomer_Peduncle_Activation
                         _plant_phase = PRE_FLO;
-                        //Store_Phenostage_At_Preflo
                     }
                 }
             }
@@ -144,8 +121,6 @@ class test {
         case PRE_FLO: {
             if (isGrowing(_plant_state)) {
                 if (_nb_leaves == _phenostage_at_pre_flo + _phenostage_pre_flo_to_flo) {
-                    //Panicle_Transition_To_Flo
-                    //Peduncle_Transition_To_Flo
                     _plant_phase = FLO;
                 }
             }
@@ -156,9 +131,6 @@ class test {
             if (isGrowing(_plant_state)) {
                 if (_nb_leaves == _phenostage_to_end_filling) {
                     _plant_phase = END_FILLING;
-                    //Tillers_Transition_To_End_Filling
-                    //Panicle_Transition_To_End_Filling
-                    //Peduncle_Transition_To_End_Filling
                 }
             }
             break;
@@ -168,9 +140,6 @@ class test {
             if (isGrowing(_plant_state)) {
                 if (_nb_leaves == _phenostage_to_maturity) {
                     _plant_phase = MATURITY;
-                    //Tillers_Transition_To_Maturity
-                    //Panicle_Transition_To_Maturity
-                    //Peduncle_Transition_To_Maturity
                 }
             }
             break;
