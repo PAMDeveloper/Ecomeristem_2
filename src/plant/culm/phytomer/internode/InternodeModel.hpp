@@ -165,14 +165,14 @@ public:
             _inter_phase = REALIZATION;
         } else if (_inter_phase == REALIZATION and _inter_len >= _inter_predim) {
             _inter_phase = MATURITY;
-        } else if (_inter_phase == REALIZATION and _plant_state & plant::NOGROWTH) {
+        } else if (_inter_phase == REALIZATION and (_plant_state & plant::NOGROWTH)) {
             _inter_phase = REALIZATION_NOGROWTH;
-        } else if (_inter_phase == REALIZATION_NOGROWTH and _plant_state & plant::NOGROWTH) {
+        } else if (_inter_phase == REALIZATION_NOGROWTH and (_plant_state & plant::NOGROWTH)) {
             _inter_phase = REALIZATION;
-        } else if (_inter_phase == MATURITY and _plant_state & plant::NOGROWTH) {
+        } else if (_inter_phase == MATURITY and (_plant_state & plant::NOGROWTH)) {
             _inter_phase = MATURITY_NOGROWTH;
         } else if (_inter_phase == MATURITY_NOGROWTH and
-                   (!(_plant_state & plant::NOGROWTH) or _plant_state & plant::NEW_PHYTOMER)) {
+                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER))) {
             _inter_phase = MATURITY;
         }
     }
@@ -256,8 +256,8 @@ private:
     bool _is_mature;
 
     // externals
-    int _plant_state;
-    int _plant_phase;
+    plant::plant_state _plant_state;
+    plant::plant_phase _plant_phase;
     double _leaf_predim;
     double _lig;
     bool _is_lig;

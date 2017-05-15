@@ -81,7 +81,7 @@ public:
             break;
         }
         case NO_STOCK: {
-            if (!(_plant_state & plant::NOGROWTH) or _plant_state & plant::NEW_PHYTOMER){
+            if (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER)){
                 _tt_state = STOCK_AVAILABLE;
             }
             break;
@@ -197,7 +197,7 @@ private:
     //    externals
     double _plasto;
     double _plasto_delay;
-    int _plant_state;
+    plant::plant_state _plant_state;
 };
 
 } // namespace model

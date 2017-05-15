@@ -252,10 +252,10 @@ public:
             _leaf_phase = LeafModel::LIG;
         } else if (_leaf_phase == LeafModel::LIG and _len < _predim) {
             _leaf_phase = LeafModel::INITIAL;
-        } else if (_leaf_phase == LeafModel::INITIAL and _plant_state & plant::NOGROWTH) {
+        } else if (_leaf_phase == LeafModel::INITIAL and (_plant_state & plant::NOGROWTH)) {
             _leaf_phase = LeafModel::NOGROWTH;
         } else if (_leaf_phase == LeafModel::NOGROWTH and
-                   (!(_plant_state & plant::NOGROWTH) or _plant_state & plant::NEW_PHYTOMER)) {
+                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER))) {
             _leaf_phase = LeafModel::INITIAL;
         }
     }
@@ -361,7 +361,7 @@ private:
     double _MGR;
     double _ftsw;
     double _p;
-    int _plant_state;
+    plant::plant_state _plant_state;
     double _fcstr;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;

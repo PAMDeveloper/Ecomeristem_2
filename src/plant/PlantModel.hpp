@@ -24,7 +24,7 @@
 
 #ifndef PLANT_MODEL_HPP
 #define PLANT_MODEL_HPP
-
+#include <QDebug>
 #include <defines.hpp>
 #include <plant/processes/ThermalTimeModel.hpp>
 #include <plant/processes/WaterBalanceModel.hpp>
@@ -105,6 +105,7 @@ public:
 
 
     void step_state(double t) {
+
         double stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
         double ic = _stock_model->get <double> (t-1, PlantStockModel::IC);
         double phenostage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
@@ -134,6 +135,7 @@ public:
         case plant::VEGETATIVE: {
             if ( bool_crossed_plasto >= 0) {
                 _plant_state << plant::NEW_PHYTOMER;
+
                 if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi - 1) {
                     _plant_phase = plant::ELONG;
                 } else if(phenostage == _nb_leaf_pi - 1) {
@@ -191,7 +193,7 @@ public:
         //Thermal time
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
-        _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_STATE, _plant_state);
+        _thermal_time_model->put < plant::plant_state >(t, ThermalTimeModel::PLANT_STATE, _plant_state);
         (*_thermal_time_model)(t);
 
         //Water balance
@@ -200,7 +202,9 @@ public:
         (*_water_balance_model)(t);
 
         // Manager
+        qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
         step_state(t);
+        qDebug() << "AFTER" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
 
         //LLBL - Plasto
         std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
@@ -289,8 +293,8 @@ public:
         _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
         _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
-        _root_model->put < int >(t, RootModel::PLANT_STATE, _plant_state);
-        _root_model->put < int >(t, RootModel::PLANT_PHASE, _plant_phase);
+        _root_model->put < plant::plant_state >(t, RootModel::PLANT_STATE, _plant_state);
+        _root_model->put < plant::plant_phase >(t, RootModel::PLANT_PHASE, _plant_phase);
         _root_model->put < double >(t, RootModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
         (*_root_model)(t);
 
@@ -301,7 +305,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, _plant_state);
+        _stock_model->put < plant::plant_state >(t, PlantStockModel::PLANT_STATE, _plant_state);
         _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
         _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
         _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
@@ -310,7 +314,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, _culm_stock_sum);
         _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, _culm_deficit_sum);
         _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
+        _stock_model->put < plant::plant_phase >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
         (*_stock_model)(t);
 
         _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
@@ -349,8 +353,8 @@ public:
             (*it)->put < int > (t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
             (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
             (*it)->put(t, CulmModel::SLA, _thermal_time_model->get < double >(t, ThermalTimeModel::SLA));
-            (*it)->put < int >(t, CulmModel::PLANT_STATE, _plant_state);
-            (*it)->put < int >(t, CulmModel::PLANT_PHASE, _plant_phase);
+            (*it)->put < plant::plant_state >(t, CulmModel::PLANT_STATE, _plant_state);
+            (*it)->put < plant::plant_phase >(t, CulmModel::PLANT_PHASE, _plant_phase);
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
             (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
             (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
@@ -562,8 +566,8 @@ private:
     double _last_leaf_biomass_sum;
 
     //internal states
-    int _plant_state;
-    int _plant_phase;
+    plant::plant_state _plant_state;
+    plant::plant_phase _plant_phase;
 
     //    double _demand_sum;
     //    bool _culm_is_computed;

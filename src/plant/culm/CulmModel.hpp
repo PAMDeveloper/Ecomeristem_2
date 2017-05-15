@@ -184,8 +184,8 @@ public:
         (*it)->put(t, PhytomerModel::FTSW, _ftsw);
         (*it)->put(t, PhytomerModel::FCSTR, _fcstr);
         (*it)->put(t, PhytomerModel::SLA, _sla);
-        (*it)->put < int >(t, PhytomerModel::PLANT_STATE, _plant_state);
-        (*it)->put < int >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
+        (*it)->put < plant::plant_state >(t, PhytomerModel::PLANT_STATE, _plant_state);
+        (*it)->put < plant::plant_phase >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
         (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
 
@@ -474,8 +474,8 @@ private:
     double _predim_leaf_on_mainstem;
     double _sla;
     double _test_ic;
-    int _plant_state;
-    int _plant_phase;
+    plant::plant_state _plant_state;
+    plant::plant_phase _plant_phase;
     double _plant_stock;
     double _plant_deficit;
     double _plant_biomass_sum;

@@ -306,8 +306,8 @@ private:
     double _demand_sum;
     double _leaf_last_demand_sum;
     double _internode_last_demand_sum;
-    int _plant_phase;
-    int _plant_state;
+    plant::plant_phase _plant_phase;
+    plant::plant_state _plant_state;
     double _leaf_biomass_sum;
     double _deleted_leaf_biomass;
     double _realloc_biomass_sum;

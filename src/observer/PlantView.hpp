@@ -56,10 +56,10 @@ public:
                      PlantModel::SENESC_DW_SUM });
         selector("PHT", artis::kernel::DOUBLE, {
                      PlantModel::HEIGHT });
-        selector("P_PHASE", artis::kernel::INT, {
-                     PlantModel::PLANT_PHASE });
-        selector("P_STATE", artis::kernel::INT, {
-                     PlantModel::PLANT_STATE });
+        //        selector("P_PHASE", artis::kernel::INT, {
+        //                     PlantModel::PLANT_PHASE });
+        //        selector("P_STATE", artis::kernel::INT, {
+        //                     PlantModel::PLANT_STATE });
         selector("LIG", artis::kernel::DOUBLE, {
                      PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {

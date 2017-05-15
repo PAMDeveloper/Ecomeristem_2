@@ -136,7 +136,7 @@ private:
     double _surplus;
 
     //    externals
-    int _plant_phase;
+    plant::plant_phase _plant_phase;
     double _assim;
     double _leaf_biomass_sum;
     double _internode_biomass_sum;

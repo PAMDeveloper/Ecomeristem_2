@@ -151,8 +151,8 @@ private:
     double _leaf_last_demand_sum;
     double _internode_demand_sum;
     double _internode_last_demand_sum;
-    int _plant_phase;
-    int _plant_state;
+    plant::plant_phase _plant_phase;
+    plant::plant_state _plant_state;
     double _culm_surplus_sum;
 };
 
