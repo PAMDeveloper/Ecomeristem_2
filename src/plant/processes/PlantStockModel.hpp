@@ -191,14 +191,14 @@ public:
 
 
         //  reservoir_dispo
-         if (_plant_phase != plant::ELONG) {
+         if (_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE ) {
             _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
          } else {
              _reservoir_dispo = 0;
          }
 
         //  stock
-        if (_plant_phase == plant::ELONG) {
+        if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
             _stock = _culm_stock;
             _deficit = _culm_deficit;
         } else {

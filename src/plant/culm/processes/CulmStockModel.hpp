@@ -49,7 +49,7 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        if (_plant_phase != plant::ELONG) {
+        if (_plant_phase != plant::ELONG and _plant_phase != plant::PI) {
             return;
         }
 
@@ -76,7 +76,7 @@ public:
         _deficit = std::min(0., _intermediate);
 
         //CulmSurplus
-        if (_plant_phase == plant::ELONG) {
+        if (_plant_phase == plant::ELONG or _plant_phase == plant::PI) {
             if (_first_day == t) {
                 _surplus = std::max(0., _plant_stock - _internode_demand_sum -
                                     _leaf_demand_sum - _leaf_last_demand_sum -
