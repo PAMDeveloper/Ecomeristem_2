@@ -136,9 +136,9 @@ public:
             if ( bool_crossed_plasto >= 0) {
                 _plant_state << plant::NEW_PHYTOMER;
 
-                if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi - 1) {
+                if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi) {
                     _plant_phase = plant::ELONG;
-                } else if(phenostage == _nb_leaf_pi - 1) {
+                } else if (phenostage == _nb_leaf_pi) {
                     _plant_phase = plant::PI;
                 }
             }
@@ -147,7 +147,7 @@ public:
         case plant::ELONG: {
             if (bool_crossed_plasto >= 0) {
                 _plant_state << plant::NEW_PHYTOMER;
-                if (phenostage == _nb_leaf_pi - 1) {
+                if (phenostage == _nb_leaf_pi) {
                     _plant_phase = plant::PI;
                 }
             }
@@ -155,9 +155,10 @@ public:
         }
         case plant::PI: {
             if (bool_crossed_plasto >= 0) {
-                if (phenostage < _nb_leaf_pi + _nb_leaf_max_after_pi) {
+                if (phenostage <= _nb_leaf_pi + _nb_leaf_max_after_pi) {
                     _plant_state << plant::NEW_PHYTOMER;
                 } else if (phenostage > _nb_leaf_pi + _nb_leaf_max_after_pi) {
+                    _plant_state << plant::NEW_PHYTOMER;
                     _plant_phase = plant::PRE_FLO;
                 }
             }
@@ -210,6 +211,7 @@ public:
         std::deque < CulmModel* >::const_iterator mainstem = _culm_models.begin();
 
         int nb_leaves = (*mainstem)->get_phytomer_number();
+
         if ( nb_leaves == _nb_leaf_param2 - 1 and
              _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
              _stock_model->get <double> (t-1, PlantStockModel::STOCK) > 0)
@@ -229,8 +231,9 @@ public:
 
 
         //Phytomer creation
-        if(_plant_state & plant::NEW_PHYTOMER)
+        if(_plant_state & plant::NEW_PHYTOMER) {
             create_phytomer(t);
+        }
 
         //Tillering
         _tillering_model->put < double >(t, TilleringModel::IC,
@@ -337,7 +340,9 @@ public:
     {
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         while (it != _culm_models.end()) {
-            (*it)->create_phytomer(t, _plasto, _ligulo, _LL_BL);
+            if ((*it)->get_phytomer_number() < _nb_leaf_pi + _nb_leaf_max_after_pi) {
+                (*it)->create_phytomer(t, _plasto, _ligulo, _LL_BL);
+            }
             ++it;
         }
     }

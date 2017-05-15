@@ -161,7 +161,7 @@ public:
         if (_inter_phase == INIT) {
             _inter_phase = VEGETATIVE;
         } else if (_inter_phase == VEGETATIVE and
-                   _plant_phase == plant::ELONG and _lig == t) { //_is_lig ou _lig == t ?
+                   (_plant_phase == plant::ELONG or _plant_phase == plant::PI) and _lig == t) { //_is_lig ou _lig == t ?
             _inter_phase = REALIZATION;
         } else if (_inter_phase == REALIZATION and _inter_len >= _inter_predim) {
             _inter_phase = MATURITY;
