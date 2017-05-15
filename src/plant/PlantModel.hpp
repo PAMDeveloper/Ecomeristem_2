@@ -82,8 +82,8 @@ public:
         Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
         Internal( PAI, &PlantModel::_leaf_blade_area_sum );
         Internal( HEIGHT, &PlantModel::_height );
-        Internal( PLANT_STATE, &PlantModel::_state );
-        Internal( PLANT_PHASE, &PlantModel::_phase );
+        Internal( PLANT_PHASE, &PlantModel::_plant_phase );
+        Internal( PLANT_STATE, &PlantModel::_plant_state );
         Internal( PLASTO, &PlantModel::_plasto );
         Internal( TT_LIG, &PlantModel::_TT_lig );
         Internal( IH, &PlantModel::_IH );
@@ -105,84 +105,80 @@ public:
 
 
     void step_state(double t) {
-        int old_phase;
-
-        double nbleaf_pi = _parameters.get < double >("nbleaf_pi");
-        double nbleaf_culm_elong = _parameters.get < double >("nb_leaf_stem_elong");
         double stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
-        double phenoStage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
-        double boolCrossedPlasto = _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
+        double ic = _stock_model->get <double> (t-1, PlantStockModel::IC);
+        double phenostage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
+        double bool_crossed_plasto = _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
+        double FTSW  = _water_balance_model->get<double> (t, WaterBalanceModel::FTSW);
 
-        do {
-            old_phase = (int)_phase;
+        if (FTSW <= 0 or ic <= -1) {
+            _plant_state = plant::KILL;
+            _plant_phase = plant::DEAD;
+            return;
+        }
 
-            switch (_phase) {
-            case plant::INIT: {
-                _phase = plant::INITIAL;
-                _state = plant::VEGETATIVE;
-                break;
+        //Globals states
+        _plant_state >> plant::NEW_PHYTOMER;
+        if (stock <= 0) {
+            _plant_state << plant::NOGROWTH;
+            return;
+        } else {
+            _plant_state >> plant::NOGROWTH;
+        }
+
+        switch (_plant_phase) {
+        case plant::INITIAL: {
+            _plant_phase = plant::VEGETATIVE;
+            break;
+        }
+        case plant::VEGETATIVE: {
+            if ( bool_crossed_plasto >= 0) {
+                _plant_state << plant::NEW_PHYTOMER;
+                if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi - 1) {
+                    _plant_phase = plant::ELONG;
+                } else if(phenostage == _nb_leaf_pi - 1) {
+                    _plant_phase = plant::PI;
+                }
             }
-            case plant::INITIAL: {
-                if (stock > 0 and phenoStage < nbleaf_pi) {
-                    _phase = plant::GROWTH;
+            break;
+        }
+        case plant::ELONG: {
+            if (bool_crossed_plasto >= 0) {
+                _plant_state << plant::NEW_PHYTOMER;
+                if (phenostage == _nb_leaf_pi - 1) {
+                    _plant_phase = plant::PI;
                 }
-                else {
-                    _phase = plant::KILL;
-                }
-                break;
             }
-            case plant::GROWTH: {
-                if (boolCrossedPlasto > 0 and stock > 0) {
-                    _phase = plant::NEW_PHYTOMER;
+            break;
+        }
+        case plant::PI: {
+            if (bool_crossed_plasto >= 0) {
+                if (phenostage < _nb_leaf_pi + _nb_leaf_max_after_pi) {
+                    _plant_state << plant::NEW_PHYTOMER;
+                } else if (phenostage > _nb_leaf_pi + _nb_leaf_max_after_pi) {
+                    _plant_phase = plant::PRE_FLO;
                 }
-                if (stock <= 0) {
-                    _phase = plant::NOGROWTH2;
-                }
-                break;
             }
-            case plant::NOGROWTH: {
-                if (stock > 0) {
-                    _phase = plant::GROWTH;
-                }
-                break;
+            break;
+        }
+        case plant::PRE_FLO: {
+            if (phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo) {
+                _plant_phase = plant::FLO;
             }
-            case plant::KILL: break;
-            case plant::NEW_PHYTOMER: {
-                if (phenoStage == nbleaf_culm_elong) {
-                    _state = plant::ELONG;
-                }
-                _phase = plant::NEW_PHYTOMER3;
-                break;
+            break;
+        }
+        case plant::FLO: {
+            if (phenostage == _phenostage_to_end_filling) {
+                _plant_phase = plant::END_FILLING;
             }
-            case plant::NOGROWTH2: {
-                _last_time = t;
-                _phase = plant::NOGROWTH3;
-                break;
+            break;
+        }
+        case plant::END_FILLING: {
+            if (phenostage == _phenostage_to_maturity) {
+                _plant_phase = plant::MATURITY;
             }
-            case plant::NOGROWTH3: {
-                if (t == _last_time + 1) {
-                    _phase = plant::NOGROWTH4;
-                }
-                break;
-            }
-            case plant::NOGROWTH4: {
-                if (stock > 0) {
-                    _phase = plant::GROWTH;
-                }
-                break;
-            }
-            case plant::NEW_PHYTOMER3: {
-                if (boolCrossedPlasto <= 0) {
-                    _phase = plant::GROWTH;
-                }
-                if (stock <= 0) {
-                    _phase = plant::NOGROWTH2;
-                }
-                break;
-            }
-            case plant::LIG: break;
-            };
-        } while (old_phase != _phase);
+            break;
+        }}
     }
 
 
@@ -195,7 +191,7 @@ public:
         //Thermal time
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
-        _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_PHASE, _phase);
+        _thermal_time_model->put < int >(t, ThermalTimeModel::PLANT_STATE, _plant_state);
         (*_thermal_time_model)(t);
 
         //Water balance
@@ -229,7 +225,7 @@ public:
 
 
         //Phytomer creation
-        if(_phase == plant::NEW_PHYTOMER or _phase == plant::NEW_PHYTOMER3) //@TODO virer un état
+        if(_plant_state & plant::NEW_PHYTOMER)
             create_phytomer(t);
 
         //Tillering
@@ -293,8 +289,8 @@ public:
         _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _root_model->put < double >(t, RootModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
         _root_model->put < double >(t, RootModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
-        _root_model->put < double >(t, RootModel::PLANT_PHASE, _phase);
-        _root_model->put < double >(t, RootModel::PLANT_STATE, _state);
+        _root_model->put < int >(t, RootModel::PLANT_STATE, _plant_state);
+        _root_model->put < int >(t, RootModel::PLANT_PHASE, _plant_phase);
         _root_model->put < double >(t, RootModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
         (*_root_model)(t);
 
@@ -305,7 +301,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, _phase);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, _plant_state);
         _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
         _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
         _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
@@ -314,7 +310,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, _culm_stock_sum);
         _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, _culm_deficit_sum);
         _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
-        _stock_model->put < int >(t, PlantStockModel::PLANT_STATE, _state);
+        _stock_model->put < int >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
         (*_stock_model)(t);
 
         _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
@@ -353,8 +349,8 @@ public:
             (*it)->put < int > (t, CulmModel::PHENO_STAGE, _thermal_time_model->get < int >(t, ThermalTimeModel::PHENO_STAGE));
             (*it)->put(t, CulmModel::PREDIM_LEAF_ON_MAINSTEM, _predim_leaf_on_mainstem);
             (*it)->put(t, CulmModel::SLA, _thermal_time_model->get < double >(t, ThermalTimeModel::SLA));
-            (*it)->put < int >(t, CulmModel::PLANT_PHASE, _phase);
-            (*it)->put < int >(t, CulmModel::PLANT_STATE, _state);
+            (*it)->put < int >(t, CulmModel::PLANT_STATE, _plant_state);
+            (*it)->put < int >(t, CulmModel::PLANT_PHASE, _plant_phase);
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
             (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
             (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
@@ -445,6 +441,12 @@ public:
         _coeff_Plasto_PI = parameters.get < double >("coef_plasto_PI");
         _coeff_Ligulo_PI = parameters.get < double >("coef_ligulo_PI");
         _coeff_MGR_PI = parameters.get < double >("coef_MGR_PI");
+        _nb_leaf_pi = _parameters.get < double >("nbleaf_pi");
+        _nb_leaf_stem_elong = _parameters.get < double >("nb_leaf_stem_elong");
+        _nb_leaf_max_after_pi = _parameters.get < double >("nb_leaf_max_after_PI");
+        _phenostage_pre_flo_to_flo  = _parameters.get < double >("phenostage_PRE_FLO_to_FLO");
+        _phenostage_to_end_filling = _parameters.get < double >("phenostage_to_end_filling");
+        _phenostage_to_maturity = _parameters.get < double >("phenostage_to_maturity");
 
         //Attributes for culmmodel
         _plasto = parameters.get < double >("plasto_init");
@@ -482,8 +484,8 @@ public:
         _culm_stock_sum = 0;
         _culm_deficit_sum = 0;
         _culm_surplus_sum = 0;
-        _state = plant::VEGETATIVE;
-        _phase = plant::INIT;
+        _plant_phase = plant::VEGETATIVE;
+        _plant_state = plant::NO_STATE;
         _height = 0;
         _MGR = parameters.get < double >("MGR_init");
         _TT_lig = 0;
@@ -493,6 +495,8 @@ public:
 
         //
         _last_time = 0;
+
+
     }
     bool is_dead() const
     { /*return not culm_models.empty() and culm_models[0]->is_dead();*/ }
@@ -523,6 +527,12 @@ private:
     double _nb_Leaf_Max_After_PI;
     double _LL_BL_init;
     double _coef_ligulo;
+    double _nb_leaf_pi;
+    double _nb_leaf_stem_elong;
+    double _nb_leaf_max_after_pi;
+    double _phenostage_pre_flo_to_flo;
+    double _phenostage_to_end_filling;
+    double _phenostage_to_maturity;
 
     // vars
     double _predim_leaf_on_mainstem;
@@ -552,8 +562,8 @@ private:
     double _last_leaf_biomass_sum;
 
     //internal states
-    int _phase;
-    int _state;
+    int _plant_state;
+    int _plant_phase;
 
     //    double _demand_sum;
     //    bool _culm_is_computed;

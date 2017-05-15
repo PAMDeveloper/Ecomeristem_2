@@ -41,7 +41,7 @@ public:
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
-                     SLA, PLANT_PHASE, TEST_IC, MGR };
+                     SLA, PLANT_STATE, TEST_IC, MGR };
 
 
     virtual ~LeafModel()
@@ -84,7 +84,7 @@ public:
 
 
         //externals
-        External(PLANT_PHASE, &LeafModel::_plant_phase);
+        External(PLANT_STATE, &LeafModel::_plant_state);
         External(TEST_IC, &LeafModel::_test_ic);
         External(FCSTR, &LeafModel::_fcstr);
         External(LEAF_PREDIM_ON_MAINSTEM, &LeafModel::_predim_leaf_on_mainstem);
@@ -145,8 +145,7 @@ public:
         if (_first_day == t) {
             _len = _ler * _dd;
         } else {
-            if (not (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
-                     or _plant_phase == plant::NOGROWTH4)) {
+            if (!(_plant_state & plant::NOGROWTH)) {
                 _len = std::min(_predim,
                                 _len + _ler * std::min(_delta_t, _exp_time));
             }
@@ -253,13 +252,10 @@ public:
             _leaf_phase = LeafModel::LIG;
         } else if (_leaf_phase == LeafModel::LIG and _len < _predim) {
             _leaf_phase = LeafModel::INITIAL;
-        } else if (_leaf_phase == LeafModel::INITIAL and
-                   (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
-                    or _plant_phase == plant::NOGROWTH4)) {
+        } else if (_leaf_phase == LeafModel::INITIAL and _plant_state & plant::NOGROWTH) {
             _leaf_phase = LeafModel::NOGROWTH;
         } else if (_leaf_phase == LeafModel::NOGROWTH and
-                   (_plant_phase == plant::GROWTH or
-                    _plant_phase == plant::NEW_PHYTOMER3)) {
+                   (!(_plant_state & plant::NOGROWTH) or _plant_state & plant::NEW_PHYTOMER)) {
             _leaf_phase = LeafModel::INITIAL;
         }
     }
@@ -365,7 +361,7 @@ private:
     double _MGR;
     double _ftsw;
     double _p;
-    int _plant_phase;
+    int _plant_state;
     double _fcstr;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;

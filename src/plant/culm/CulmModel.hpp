@@ -100,8 +100,8 @@ public:
         External(PHENO_STAGE, &CulmModel::_pheno_stage);
         External(PREDIM_LEAF_ON_MAINSTEM, &CulmModel::_predim_leaf_on_mainstem);
         External(SLA, &CulmModel::_sla);
-        External(PLANT_PHASE, &CulmModel::_plant_phase);
         External(PLANT_STATE, &CulmModel::_plant_state);
+        External(PLANT_PHASE, &CulmModel::_plant_phase);
         External(TEST_IC, &CulmModel::_test_ic);
         External(PLANT_STOCK, &CulmModel::_plant_stock);
         External(PLANT_DEFICIT, &CulmModel::_plant_deficit);
@@ -174,7 +174,7 @@ public:
         _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_STATE, _plant_state);
+        _culm_stock_model->put(t, CulmStockModel::PLANT_PHASE, _plant_phase);
         (*_culm_stock_model)(t);
     }
 
@@ -184,8 +184,8 @@ public:
         (*it)->put(t, PhytomerModel::FTSW, _ftsw);
         (*it)->put(t, PhytomerModel::FCSTR, _fcstr);
         (*it)->put(t, PhytomerModel::SLA, _sla);
-        (*it)->put < int >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
         (*it)->put < int >(t, PhytomerModel::PLANT_STATE, _plant_state);
+        (*it)->put < int >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
         (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
 
@@ -474,8 +474,8 @@ private:
     double _predim_leaf_on_mainstem;
     double _sla;
     double _test_ic;
-    int _plant_phase;
     int _plant_state;
+    int _plant_phase;
     double _plant_stock;
     double _plant_deficit;
     double _plant_biomass_sum;

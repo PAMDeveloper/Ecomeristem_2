@@ -77,8 +77,8 @@ public:
 
 
         // externals
-        External(PLANT_PHASE, &PhytomerModel::_plant_phase);
         External(PLANT_STATE, &PhytomerModel::_plant_state);
+        External(PLANT_PHASE, &PhytomerModel::_plant_phase);
         External(TEST_IC, &PhytomerModel::_test_ic);
         External(FCSTR, &PhytomerModel::_fcstr);
         External(PREDIM_LEAF_ON_MAINSTEM, &PhytomerModel::_predim_leaf_on_mainstem);
@@ -112,7 +112,7 @@ public:
             _leaf_model->put(t, LeafModel::LEAF_PREDIM_ON_MAINSTEM, _predim_leaf_on_mainstem);
             _leaf_model->put(t, LeafModel::PREVIOUS_LEAF_PREDIM, _predim_previous_leaf);
             _leaf_model->put(t, LeafModel::SLA, _sla);
-            _leaf_model->put < int >(t, LeafModel::PLANT_PHASE, _plant_phase); //@TODO set real value
+            _leaf_model->put < int >(t, LeafModel::PLANT_STATE, _plant_state);
             _leaf_model->put(t, LeafModel::TEST_IC, _test_ic);
             (*_leaf_model)(t);
         }
@@ -120,8 +120,8 @@ public:
         _internode_model->put(t, InternodeModel::DD, _dd);
         _internode_model->put(t, InternodeModel::DELTA_T, _delta_t);
         _internode_model->put(t, InternodeModel::FTSW, _ftsw);
-        _internode_model->put < int >(t, InternodeModel::PLANT_PHASE, _plant_phase);
         _internode_model->put < int >(t, InternodeModel::PLANT_STATE, _plant_state);
+        _internode_model->put < int >(t, InternodeModel::PLANT_PHASE, _plant_phase);
         _internode_model->put(t, InternodeModel::LIG, _leaf_model->get < double > (t, LeafModel::LIG_T));
         _internode_model->put(t, InternodeModel::LEAF_PREDIM, _leaf_model->get < double > (t, LeafModel::LEAF_PREDIM));
         _internode_model->put(t, InternodeModel::IS_LIG, _leaf_model->get < bool > (t, LeafModel::IS_LIG));
@@ -188,8 +188,8 @@ private:
 
     // external variables
     double _ftsw;
-    int _plant_phase;
     int _plant_state;
+    int _plant_phase;
     double _fcstr;
     double _predim_leaf_on_mainstem;
     double _predim_previous_leaf;

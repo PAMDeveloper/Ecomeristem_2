@@ -75,11 +75,11 @@ public:
             _last_value = _root_demand;
             _root_biomass = _root_demand;
         } else {
-            if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH4) {
+            if (_plant_state & plant::NOGROWTH) {
                 _root_demand = 0;
                 _last_value = 0;
             } else {
-                if (_plant_state == plant::ELONG or _plant_state == plant::PI) {
+                if (_plant_phase == plant::ELONG or _plant_phase == plant::PI) {
                     if (_leaf_demand_sum + _leaf_last_demand_sum + _internode_demand_sum
                             + _internode_last_demand_sum == 0) {
                         _root_demand = _last_value * _root_demand_coef;
@@ -151,8 +151,8 @@ private:
     double _leaf_last_demand_sum;
     double _internode_demand_sum;
     double _internode_last_demand_sum;
-    double _plant_phase;
-    double _plant_state;
+    int _plant_phase;
+    int _plant_state;
     double _culm_surplus_sum;
 };
 

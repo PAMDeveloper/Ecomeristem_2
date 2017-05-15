@@ -14,7 +14,7 @@ public:
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
                      PLANT_DEFICIT, INTERNODE_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
-                     REALLOC_BIOMASS_SUM, PLANT_STATE};
+                     REALLOC_BIOMASS_SUM, PLANT_PHASE};
 
 
     CulmStockModel() {
@@ -40,7 +40,7 @@ public:
                  &CulmStockModel::_internode_last_demand_sum);
         External(LEAF_LAST_DEMAND_SUM, &CulmStockModel::_leaf_last_demand_sum);
         External(REALLOC_BIOMASS_SUM, &CulmStockModel::_realloc_biomass_sum);
-        External(PLANT_STATE, &CulmStockModel::_plant_state);
+        External(PLANT_PHASE, &CulmStockModel::_plant_phase);
 
     }
 
@@ -49,7 +49,7 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        if (_plant_state != plant::ELONG) {
+        if (_plant_phase != plant::ELONG) {
             return;
         }
 
@@ -76,7 +76,7 @@ public:
         _deficit = std::min(0., _intermediate);
 
         //CulmSurplus
-        if (_plant_state == plant::ELONG) {
+        if (_plant_phase == plant::ELONG) {
             if (_first_day == t) {
                 _surplus = std::max(0., _plant_stock - _internode_demand_sum -
                                     _leaf_demand_sum - _leaf_last_demand_sum -
@@ -136,7 +136,7 @@ private:
     double _surplus;
 
     //    externals
-    int    _plant_state;
+    int _plant_phase;
     double _assim;
     double _leaf_biomass_sum;
     double _internode_biomass_sum;

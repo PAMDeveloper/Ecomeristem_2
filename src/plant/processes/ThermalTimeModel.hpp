@@ -38,7 +38,7 @@ public:
     enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO,
                      PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD };
 
-    enum externals {  PLANT_PHASE, PLASTO_DELAY, PLASTO };
+    enum externals {  PLANT_STATE, PLASTO_DELAY, PLASTO };
 
 
     ThermalTimeModel() {
@@ -56,7 +56,7 @@ public:
 
         //    external variables
         External(PLASTO_DELAY, &ThermalTimeModel::_plasto_delay);
-        External(PLANT_PHASE, &ThermalTimeModel::_plant_phase);
+        External(PLANT_STATE, &ThermalTimeModel::_plant_state);
         External(PLASTO, &ThermalTimeModel::_plasto);
 
     }
@@ -75,14 +75,13 @@ public:
             break;
         }
         case STOCK_AVAILABLE: {
-            if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3 or
-                    _plant_phase == plant::NOGROWTH4) {
+            if (_plant_state & plant::NOGROWTH) {
                 _tt_state = NO_STOCK;
             }
             break;
         }
         case NO_STOCK: {
-            if (_plant_phase == plant::GROWTH or _plant_phase == plant::NEW_PHYTOMER3){
+            if (!(_plant_state & plant::NOGROWTH) or _plant_state & plant::NEW_PHYTOMER){
                 _tt_state = STOCK_AVAILABLE;
             }
             break;
@@ -198,7 +197,7 @@ private:
     //    externals
     double _plasto;
     double _plasto_delay;
-    int _plant_phase;
+    int _plant_state;
 };
 
 } // namespace model

@@ -66,8 +66,8 @@ public:
         Internal(LAST_DEMAND, &InternodeModel::_last_demand);
         Internal(TIME_FROM_APP, &InternodeModel::_time_from_app);
 
-        External(PLANT_PHASE, &InternodeModel::_plant_phase);
         External(PLANT_STATE, &InternodeModel::_plant_state);
+        External(PLANT_PHASE, &InternodeModel::_plant_phase);
         External(LIG, &InternodeModel::_lig);
         External(IS_LIG, &InternodeModel::_is_lig);
         External(LEAF_PREDIM, &InternodeModel::_leaf_predim);
@@ -161,25 +161,18 @@ public:
         if (_inter_phase == INIT) {
             _inter_phase = VEGETATIVE;
         } else if (_inter_phase == VEGETATIVE and
-                   _plant_state == plant::ELONG and _lig == t) { //_is_lig ou _lig == t ?
+                   _plant_phase == plant::ELONG and _lig == t) { //_is_lig ou _lig == t ?
             _inter_phase = REALIZATION;
         } else if (_inter_phase == REALIZATION and _inter_len >= _inter_predim) {
             _inter_phase = MATURITY;
-        } else if (_inter_phase == REALIZATION and
-                   (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
-                    or _plant_phase == plant::NOGROWTH4)) {
+        } else if (_inter_phase == REALIZATION and _plant_state & plant::NOGROWTH) {
             _inter_phase = REALIZATION_NOGROWTH;
-        } else if (_inter_phase == REALIZATION_NOGROWTH and
-                   (_plant_phase == plant::GROWTH or
-                    _plant_phase == plant::NEW_PHYTOMER3)) {
+        } else if (_inter_phase == REALIZATION_NOGROWTH and _plant_state & plant::NOGROWTH) {
             _inter_phase = REALIZATION;
-        } else if (_inter_phase == MATURITY and
-                   (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3
-                    or _plant_phase == plant::NOGROWTH4)) {
+        } else if (_inter_phase == MATURITY and _plant_state & plant::NOGROWTH) {
             _inter_phase = MATURITY_NOGROWTH;
         } else if (_inter_phase == MATURITY_NOGROWTH and
-                   (_plant_phase == plant::GROWTH or
-                    _plant_phase == plant::NEW_PHYTOMER3)) {
+                   (!(_plant_state & plant::NOGROWTH) or _plant_state & plant::NEW_PHYTOMER)) {
             _inter_phase = MATURITY;
         }
     }
@@ -263,8 +256,8 @@ private:
     bool _is_mature;
 
     // externals
-    int _plant_phase;
     int _plant_state;
+    int _plant_phase;
     double _leaf_predim;
     double _lig;
     bool _is_lig;

@@ -59,12 +59,12 @@ public:
         External(DEMAND_SUM, &PlantStockModel::_demand_sum);
         External(LEAF_LAST_DEMAND_SUM, &PlantStockModel::_leaf_last_demand_sum);
         External(INTERNODE_LAST_DEMAND_SUM, &PlantStockModel::_internode_last_demand_sum);
+        External(PLANT_STATE, &PlantStockModel::_plant_state);
         External(PLANT_PHASE, &PlantStockModel::_plant_phase);
         External(LEAF_BIOMASS_SUM, &PlantStockModel::_leaf_biomass_sum);
         External(DELETED_LEAF_BIOMASS, &PlantStockModel::_deleted_leaf_biomass);
         External(REALLOC_BIOMASS_SUM, &PlantStockModel::_realloc_biomass_sum);
         External(ASSIM, &PlantStockModel::_assim);
-        External(PLANT_STATE, &PlantStockModel::_state);
         External(CULM_STOCK, &PlantStockModel::_culm_stock);
         External(CULM_DEFICIT, &PlantStockModel::_culm_deficit);
         External(CULM_SURPLUS_SUM, &PlantStockModel::_culm_surplus_sum);
@@ -155,8 +155,7 @@ public:
         // compute_IC(t);
 
         //  day_demand
-        if (_plant_phase == plant::NOGROWTH or _plant_phase == plant::NOGROWTH3 or
-                _plant_phase == plant::NOGROWTH4) {
+        if (_plant_state & plant::NOGROWTH) {
             _day_demand = 0;
         } else {
             if (_demand_sum == 0) {
@@ -192,14 +191,14 @@ public:
 
 
         //  reservoir_dispo
-         if (_state != plant::ELONG) {
+         if (_plant_phase != plant::ELONG) {
             _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
          } else {
              _reservoir_dispo = 0;
          }
 
         //  stock
-        if (_state == plant::ELONG) {
+        if (_plant_phase == plant::ELONG) {
             _stock = _culm_stock;
             _deficit = _culm_deficit;
         } else {
@@ -223,7 +222,7 @@ public:
         }
 
         //  surplus
-        if (_state == plant::ELONG) {
+        if (_plant_phase == plant::ELONG) {
             _surplus = _culm_surplus_sum;
         } else {
             if (_seed_res > 0) {
@@ -308,10 +307,10 @@ private:
     double _leaf_last_demand_sum;
     double _internode_last_demand_sum;
     int _plant_phase;
+    int _plant_state;
     double _leaf_biomass_sum;
     double _deleted_leaf_biomass;
     double _realloc_biomass_sum;
-    int _state;
     double _culm_stock;
     double _culm_deficit;
     double _culm_surplus_sum;
