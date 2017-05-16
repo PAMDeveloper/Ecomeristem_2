@@ -104,6 +104,13 @@ public:
     }
 
 
+    bool is_phytomer_creatable() {
+        return (_plant_phase == plant::VEGETATIVE
+                || _plant_phase == plant::ELONG
+                || _plant_phase == plant::PI
+                );
+    }
+
     void step_state(double t) {
 
         double stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
@@ -119,7 +126,7 @@ public:
         }
 
         //Globals states
-        _plant_state >> plant::NEW_PHYTOMER;
+        _plant_state >> plant::NEW_PHYTOMER_AVAILABLE;
         if (stock <= 0) {
             _plant_state << plant::NOGROWTH;
             return;
@@ -127,8 +134,8 @@ public:
             _plant_state >> plant::NOGROWTH;
         }
 
-        if ( bool_crossed_plasto >= 0) {
-            _plant_state << plant::NEW_PHYTOMER;
+        if ( bool_crossed_plasto >= 0 && is_phytomer_creatable()) {
+            _plant_state << plant::NEW_PHYTOMER_AVAILABLE;
         }
 
         switch (_plant_phase) {
@@ -157,21 +164,18 @@ public:
             break;
         }
         case plant::PRE_FLO: {
-            _plant_state >> plant::NEW_PHYTOMER;
             if (phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo) {
                 _plant_phase = plant::FLO;
             }
             break;
         }
         case plant::FLO: {
-            _plant_state >> plant::NEW_PHYTOMER;
             if (phenostage == _phenostage_to_end_filling) {
                 _plant_phase = plant::END_FILLING;
             }
             break;
         }
         case plant::END_FILLING: {
-            _plant_state >> plant::NEW_PHYTOMER;
             if (phenostage == _phenostage_to_maturity) {
                 _plant_phase = plant::MATURITY;
             }
@@ -199,6 +203,7 @@ public:
 
         // Manager
         qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
+        qDebug() << "NB CULMS:" << _culm_models.size();
         step_state(t);
         qDebug() << "AFTER" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
 
@@ -224,37 +229,43 @@ public:
         }
 
 
+        /****************************************************/
 
         //Phytomer creation
-        if(_plant_state & plant::NEW_PHYTOMER) {
-            create_phytomer(t);
-        }
+//        std::deque < CulmModel* >::const_iterator it_on_culms = _culm_models.begin();
+//        while (it_on_culms != _culm_models.end()) {
+//            (*it_on_culms)->create_phytomer(t, _plasto, _ligulo, _LL_BL);
+//            ++it_on_culms;
+//        }
 
         //Tillering
-        _tillering_model->put < double >(t, TilleringModel::IC,
-                                         _stock_model->get < double >(t-1, PlantStockModel::IC));
-        _tillering_model->put < double >(t, TilleringModel::BOOL_CROSSED_PLASTO,
-                                         _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO));
+        double P = _parameters.get(t).P;
+        double ic = _stock_model->get < double >(t-1, PlantStockModel::IC);
+        double boolCrossedPlasto = _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
 
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-        double n = 0;
+        double tae = 0;
         while(it != _culm_models.end()) {
-            if ((*it)->get_phytomer_number() >= _nbleaf_enabling_tillering) {
-                ++n;
+            int nb_potential_phytomer = (*it)->is_phytomer_creatable() ? 1 : 0;
+            if ((*it)->get_phytomer_number() + nb_potential_phytomer >= _nbleaf_enabling_tillering) {
+                ++tae;
             }
             it++;
         }
-        _tillering_model->put <double> (t, TilleringModel::TAE, n);
-        (*_tillering_model)(t);
 
-        //culm creation
-        if (_tillering_model->get < double >(t, TilleringModel::CREATE) > 0
-                and _tillering_model->get < double >(t, TilleringModel::NB_TILLERS) > 0) {
-            create_culm(t, _tillering_model->get < double >(t, TilleringModel::NB_TILLERS));
+        if (ic > _Ict) {
+            _nb_tillers = _nb_tillers + _nbExistingTillers;
+        }
+
+        if (boolCrossedPlasto > 0 and _nb_tillers >= 1 and ic > _Ict * ((P * _resp_Ict) + 1)) {
+            _nb_tillers = std::min(_nb_tillers, tae);
+            _nbExistingTillers = _nbExistingTillers + _nb_tillers;
+            create_culm(t, _nb_tillers);
         }
 
         //CulmModel
         compute_culms(t);
+
 
         //Lig update @TODO : vérifier placement équations TT_lig et IH
         _lig_1 = _lig;
@@ -330,17 +341,6 @@ public:
         }
     }
 
-    void create_phytomer(double t)
-    {
-        std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-        while (it != _culm_models.end()) {
-            if ((*it)->get_phytomer_number() < _nb_leaf_pi + _nb_leaf_max_after_pi) {
-                (*it)->create_phytomer(t, _plasto, _ligulo, _LL_BL);
-            }
-            ++it;
-        }
-    }
-
     void compute_culms(double t)
     {
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
@@ -362,6 +362,9 @@ public:
             (*it)->put(t, CulmModel::PLANT_BLADE_AREA_SUM, _leaf_blade_area_sum);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
             (*it)->put(t, CulmModel::MGR, _MGR);
+            (*it)->put(t, CulmModel::PLASTO, _plasto);
+            (*it)->put(t, CulmModel::LIGULO, _ligulo);
+            (*it)->put(t, CulmModel::LL_BL, _LL_BL);
             (**it)(t);
             ++it;
         }
@@ -448,6 +451,10 @@ public:
         _phenostage_pre_flo_to_flo  = _parameters.get < double >("phenostage_PRE_FLO_to_FLO");
         _phenostage_to_end_filling = _parameters.get < double >("phenostage_to_end_filling");
         _phenostage_to_maturity = _parameters.get < double >("phenostage_to_maturity");
+        _Ict = _parameters.get < double >("Ict");
+        _resp_Ict = _parameters.get < double >("resp_Ict");
+
+
 
         //Attributes for culmmodel
         _plasto = parameters.get < double >("plasto_init");
@@ -472,6 +479,8 @@ public:
         _predim_leaf_on_mainstem = 0;
 
         //internal variables (local)
+        _nb_tillers = 0;
+        _nbExistingTillers = 1;
         _lig = 0;
         _lig_1 = 0;
         _leaf_biomass_sum = 0;
@@ -532,10 +541,14 @@ private:
     double _phenostage_pre_flo_to_flo;
     double _phenostage_to_end_filling;
     double _phenostage_to_maturity;
+    double _Ict;
+    double _resp_Ict;
 
     // vars
     double _predim_leaf_on_mainstem;
     // internals
+    double _nb_tillers;
+    double _nbExistingTillers;
     double _plasto;
     double _ligulo;
     double _MGR;

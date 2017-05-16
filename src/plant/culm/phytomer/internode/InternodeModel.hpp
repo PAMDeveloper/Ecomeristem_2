@@ -172,7 +172,7 @@ public:
         } else if (_inter_phase == MATURITY and (_plant_state & plant::NOGROWTH)) {
             _inter_phase = MATURITY_NOGROWTH;
         } else if (_inter_phase == MATURITY_NOGROWTH and
-                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER))) {
+                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER_AVAILABLE))) {
             _inter_phase = MATURITY;
         }
     }

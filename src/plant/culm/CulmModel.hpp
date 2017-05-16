@@ -26,7 +26,6 @@
 #ifndef SAMPLE_ATOMIC_MODEL_HPP
 #define SAMPLE_ATOMIC_MODEL_HPP
 
-#include <plant/culm/culmmanager.h>
 #include <defines.hpp>
 #include <plant/culm/processes/CulmStockModel.hpp>
 #include <plant/culm/phytomer/PhytomerModel.hpp>
@@ -51,9 +50,6 @@ public:
 
     enum submodels { CULM_STOCK, PHYTOMERS };
 
-    enum sub_internals {
-
-    };
 
     enum internals { STOCK, DEFICIT, SURPLUS, NB_LIG, STEM_LEAF_PREDIM,
                      LEAF_BIOMASS_SUM, LEAF_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
@@ -62,22 +58,22 @@ public:
                      LEAF_BLADE_AREA_SUM,
                      REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
-                     LAST_LEAF_BIOMASS_SUM
-                   };
+                     LAST_LEAF_BIOMASS_SUM };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
                      PLANT_DEFICIT, PLANT_LEAF_BIOMASS_SUM,
-                     PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM, MGR };
+                     PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM, MGR,
+                     PLASTO, LIGULO, LL_BL};
 
 
-    CulmModel(int index, double plasto, double ligulo, double LL_BL):
+    CulmModel(int index, double plasto, double ligulo, double plant_LL_BL):
         _index(index), _is_first_culm(index == 1),
         _culm_stock_model(new CulmStockModel),
         _plasto(plasto),
         _ligulo(ligulo),
-        _LL_BL(LL_BL)
+        _LL_BL(plant_LL_BL)
     {
         // submodels
         Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
@@ -88,6 +84,7 @@ public:
         InternalS(STOCK, _culm_stock_model.get(), CulmStockModel::STOCK);
         InternalS(DEFICIT, _culm_stock_model.get(), CulmStockModel::DEFICIT);
         InternalS(SURPLUS, _culm_stock_model.get(), CulmStockModel::SURPLUS);
+
 
         Internal(NB_LIG, &CulmModel::_nb_lig);
         Internal(STEM_LEAF_PREDIM, &CulmModel::_stem_leaf_predim);
@@ -123,6 +120,9 @@ public:
         External(PLANT_BLADE_AREA_SUM, &CulmModel::_plant_blade_area_sum);
         External(ASSIM, &CulmModel::_assim);
         External(MGR, &CulmModel::_MGR);
+        External(PLASTO, &CulmModel::_plasto);
+        External(LIGULO, &CulmModel::_ligulo);
+        External(LL_BL, &CulmModel::_LL_BL);
     }
 
     virtual ~CulmModel()
@@ -135,11 +135,49 @@ public:
     }
 
 
+    bool is_phytomer_creatable() {
+        return (_culm_phase == REALIZATION
+                || _culm_phase == PRE_ELONG
+                || (_culm_phase == ELONG && _nb_lig > 0)
+                || _culm_phase == PRE_PI
+                || (_culm_phase == PI && _plant_phase == plant::PI)
+                );
+    }
+
     void step_state(double t)
     {
+        if(_plant_phase == plant::PI &&
+                (_last_phase != PRE_PI
+                || (_culm_phase == ELONG || _culm_phase == PRE_ELONG) )) {
+            _culm_phase = PRE_PI;
+            _culm_phenostage_at_pre_pi = _culm_phenostage;
+            _last_phase = _culm_phase;
+        }
+
+//        if( _plant_phase == plant::PI
+//                && (_culm_phase == ELONG || _culm_phase == PRE_ELONG) ) {
+//            _culm_phase = PRE_PI;
+//        }
+
+        if(_plant_phase == plant::END_FILLING) {
+            _culm_phase = END_FILLING;
+            _last_phase = _culm_phase;
+        }
+
+        if(_plant_phase == plant::MATURITY) {
+            _culm_phase = MATURITY;
+            _last_phase = _culm_phase;
+        }
+
+
+
+        if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
+            create_phytomer(t);
+        }
+
         switch( _culm_phase  ) {
         case INITIAL: {
-            _last_state = _culm_phase ;
+            _last_phase = _culm_phase ;
             if(  _plant_phase == plant::ELONG ) {
                 _culm_phase  = PRE_ELONG;
             } else {
@@ -148,55 +186,52 @@ public:
             break;
         }
         case REALIZATION: {
-            _last_state = _culm_phase ;
-            if(  _plant_state & plant::NEW_PHYTOMER ) {
-                //create_phytomer();
+            _last_phase = _culm_phase ;
+            if(_plant_phase == plant::ELONG) {
+                if( _nb_lig > 0) {
+                    _culm_phase  = ELONG;
+                } else {
+                    _culm_phase  = PRE_ELONG;
+                }
             }
             break;
         }
         case PRE_ELONG: {
-            _last_state = _culm_phase ;
-            if( _plant_state & plant::NEW_PHYTOMER ) {
-                //create_phytomer()
-            }
-
-            if( _nb_lig > 0 ) {
-                //internode_elongation()
+            _last_phase = _culm_phase ;
+            if( _nb_lig > 0) {
                 _culm_phase  = ELONG;
             }
             break;
         }
         case ELONG: {
-             _last_state = _culm_phase;
-            if( _nb_lig <= 0 ) {
-                _culm_phase  = PRE_ELONG;
-            } else if( _plant_state & plant::NEW_PHYTOMER ) {
-                //create_phytomer()
+             _last_phase = _culm_phase;
+//            else if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) {
                 //internode_elongation()
-            }
+//            }
             break;
         }
         case PRE_PI: {
-            if( _plant_state & plant::NEW_PHYTOMER ) {
-                //create_phytomer();
-                if( _last_state == ELONG ) {
-                    //internode_elongation()
-                }
+            if(_culm_phenostage >= _culm_phenostage_at_pre_pi + _coeff_pi_lag) {
+                _culm_phase = PI;
             }
-            _last_state = _culm_phase ;
+//            if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) {
+//                if( _last_phase == ELONG ) {
+//                    //internode_elongation()
+//                }
+//            }
+            _last_phase = _culm_phase ;
             break;
         }
         case PI: {
-            _last_state = _culm_phase ;
-            if( _plant_state & plant::NEW_PHYTOMER) {
+            _last_phase = _culm_phase ;
+            if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE) {
                 if( _plant_phase == plant::PI) {
-                    //create_phytomer();
+                    //internode_elongation()
                     if(!_started_PI) {
                         _started_PI = true;
                         //create_panicle();
                         //create_peduncle();
                     }
-                    //internode_elongation()
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
                     //peduncle_elongation()
                     _culm_phase  = PRE_FLO;
@@ -205,7 +240,7 @@ public:
             break;
         }
         case PRE_FLO: {
-            _last_state = _culm_phase ;
+            _last_phase = _culm_phase ;
             if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
     //            PanicleTransitionToFLO( );
     //            PeduncleTransitionToFLO( );
@@ -213,32 +248,13 @@ public:
             }
             break;
         }
-        case FLO: {
-            _last_state = _culm_phase ;
-            _culm_phase  = FLO;
-            break;
-        }
-        case END_FILLING:
-        {
-            _last_state = _culm_phase ;
-            _culm_phase  = END_FILLING;
-            break;
-        }
-        case MATURITY:
-        {
-            _last_state = _culm_phase ;
-            _culm_phase  = MATURITY;
-            break;
-        }
-        case DEAD: {
-             _last_state = _culm_phase ;
-            _culm_phase  = DEAD;
-            break;
-        }}
+      }
     }
 
     //@TODO gérer le deleteLeaf et le reallocBiomassSum var
     void compute(double t, bool /* update */) {
+        step_state(t);
+
         auto it = _phytomer_models.begin();
         std::deque < PhytomerModel* >::iterator previous_it;
         int i = 0;
@@ -386,7 +402,7 @@ public:
     }
 
 
-    void create_phytomer(double t, double plasto, double ligulo, double LL_BL)
+    void create_phytomer(double t)
     {
         if (t != _parameters.beginDate) {
             int index;
@@ -396,7 +412,7 @@ public:
                 index = _phytomer_models.back()->get_index() + 1;
             }
 
-            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm, plasto, ligulo, LL_BL);
+            PhytomerModel* phytomer = new PhytomerModel(index, _is_first_culm, _plasto, _ligulo, _LL_BL);
             setsubmodel(PHYTOMERS, phytomer);
             phytomer->init(t, _parameters);
             _phytomer_models.push_back(phytomer);
@@ -529,6 +545,7 @@ public:
         _nb_leaf_pi = _parameters.get < double >("nbleaf_pi");
         _nb_leaf_max_after_pi = _parameters.get < double >("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo  = _parameters.get < double >("phenostage_PRE_FLO_to_FLO");
+        _coeff_pi_lag = _parameters.get < double >("coeff_PI_lag");
 
         //    internals
         _nb_lig = 0;
@@ -549,8 +566,9 @@ public:
 
         _started_PI = false;
         _culm_phase = INITIAL;
-        _last_state = _culm_phase;
+        _last_phase = _culm_phase;
         _culm_phenostage = 1;
+        _culm_phenostage_at_pre_pi = 0;
     }
 
 private:
@@ -563,19 +581,20 @@ private:
     //    attributes
     double _index;
     bool _is_first_culm;
-    double _plasto;
-    double _ligulo;
+
 
     //parameters
     double _nb_leaf_pi;
     double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
+    double _coeff_pi_lag;
 
     //    internals
     bool _started_PI;
     double _culm_phenostage;
+    double _culm_phenostage_at_pre_pi;
     culm_phase _culm_phase;
-    culm_phase _last_state;
+    culm_phase _last_phase;
 
     double _nb_lig;
     double _stem_leaf_predim;
@@ -603,6 +622,8 @@ private:
     plant::plant_phase _plant_phase;
     double _MGR;
     double _LL_BL;
+    double _plasto;
+    double _ligulo;
     double _dd;
     double _delta_t;
     double _ftsw;

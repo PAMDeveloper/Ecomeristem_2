@@ -255,7 +255,7 @@ public:
         } else if (_leaf_phase == LeafModel::INITIAL and (_plant_state & plant::NOGROWTH)) {
             _leaf_phase = LeafModel::NOGROWTH;
         } else if (_leaf_phase == LeafModel::NOGROWTH and
-                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER))) {
+                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER_AVAILABLE))) {
             _leaf_phase = LeafModel::INITIAL;
         }
     }

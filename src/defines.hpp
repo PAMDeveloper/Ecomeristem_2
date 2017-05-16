@@ -20,7 +20,7 @@ namespace plant {
 
 enum plant_state { NO_STATE = 0,
                    NOGROWTH = 1,
-                   NEW_PHYTOMER = 2,
+                   NEW_PHYTOMER_AVAILABLE = 2,
                    LIG = 4,
                    KILL = 8 };
 
