@@ -127,56 +127,51 @@ public:
             _plant_state >> plant::NOGROWTH;
         }
 
+        if ( bool_crossed_plasto >= 0) {
+            _plant_state << plant::NEW_PHYTOMER;
+        }
+
         switch (_plant_phase) {
         case plant::INITIAL: {
             _plant_phase = plant::VEGETATIVE;
             break;
         }
         case plant::VEGETATIVE: {
-            if ( bool_crossed_plasto >= 0) {
-                _plant_state << plant::NEW_PHYTOMER;
-
-                if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi) {
-                    _plant_phase = plant::ELONG;
-                } else if (phenostage == _nb_leaf_pi) {
-                    _plant_phase = plant::PI;
-                }
+            if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi) {
+                _plant_phase = plant::ELONG;
+            } else if (phenostage == _nb_leaf_pi) {
+                _plant_phase = plant::PI;
             }
             break;
         }
         case plant::ELONG: {
-            if (bool_crossed_plasto >= 0) {
-                _plant_state << plant::NEW_PHYTOMER;
-                if (phenostage == _nb_leaf_pi) {
-                    _plant_phase = plant::PI;
-                }
+            if (phenostage == _nb_leaf_pi) {
+                _plant_phase = plant::PI;
             }
             break;
         }
         case plant::PI: {
-            if (bool_crossed_plasto >= 0) {
-                if (phenostage <= _nb_leaf_pi + _nb_leaf_max_after_pi) {
-                    _plant_state << plant::NEW_PHYTOMER;
-                } else if (phenostage > _nb_leaf_pi + _nb_leaf_max_after_pi) {
-                    _plant_state << plant::NEW_PHYTOMER;
-                    _plant_phase = plant::PRE_FLO;
-                }
+            if (phenostage > _nb_leaf_pi + _nb_leaf_max_after_pi) {
+                _plant_phase = plant::PRE_FLO;
             }
             break;
         }
         case plant::PRE_FLO: {
+            _plant_state >> plant::NEW_PHYTOMER;
             if (phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo) {
                 _plant_phase = plant::FLO;
             }
             break;
         }
         case plant::FLO: {
+            _plant_state >> plant::NEW_PHYTOMER;
             if (phenostage == _phenostage_to_end_filling) {
                 _plant_phase = plant::END_FILLING;
             }
             break;
         }
         case plant::END_FILLING: {
+            _plant_state >> plant::NEW_PHYTOMER;
             if (phenostage == _phenostage_to_maturity) {
                 _plant_phase = plant::MATURITY;
             }
@@ -199,7 +194,7 @@ public:
 
         //Water balance
         _water_balance_model->put < double >(t, WaterBalanceModel::INTERC,
-                         _assimilation_model->get < double >(t-1, AssimilationModel::INTERC));
+                                             _assimilation_model->get < double >(t-1, AssimilationModel::INTERC));
         (*_water_balance_model)(t);
 
         // Manager
@@ -223,7 +218,7 @@ public:
             _MGR = _MGR * _coeff_MGR_PI;
         } else if ( nb_leaves >= _nb_leaf_param2 - 1 and
                     _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
-                     nb_leaves < _nb_Leaf_PI + _nb_Leaf_Max_After_PI + 1)
+                    nb_leaves < _nb_leaf_pi + _nb_leaf_max_after_pi + 1)
         {
             _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves - 1 -_nb_leaf_param2);
         }
@@ -244,8 +239,7 @@ public:
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         double n = 0;
         while(it != _culm_models.end()) {
-            if ((*it)->get_phytomer_number() >=
-                    _nbleaf_enabling_tillering) {
+            if ((*it)->get_phytomer_number() >= _nbleaf_enabling_tillering) {
                 ++n;
             }
             it++;
@@ -301,10 +295,10 @@ public:
         _root_model->put < double >(t, RootModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
         (*_root_model)(t);
 
-//        search_deleted_leaf(t); //on passe avant pour le realloc biomass
+        //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
 
         // Stock
-         double demand_sum = _leaf_demand_sum + _internode_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
+        double demand_sum = _leaf_demand_sum + _internode_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
@@ -440,19 +434,17 @@ public:
         _parameters = parameters;
         _nbleaf_enabling_tillering =
                 parameters.get < double >("nb_leaf_enabling_tillering");
-//        _realocationCoeff = parameters.get < double >("realocationCoeff");
+        //        _realocationCoeff = parameters.get < double >("realocationCoeff");
         _LL_BL_init = parameters.get < double >("LL_BL_init");
         _nb_leaf_param2 = parameters.get < double >("nb_leaf_param2");
         _slope_LL_BL_at_PI = parameters.get < double >("slope_LL_BL_at_PI");
-        _nb_Leaf_PI = parameters.get < double >("nbleaf_pi");
-        _nb_Leaf_Max_After_PI = parameters.get < double >("nb_leaf_max_after_PI");
+        _nb_leaf_pi = parameters.get < double >("nbleaf_pi");
+        _nb_leaf_max_after_pi = parameters.get < double >("nb_leaf_max_after_PI");
         _coef_ligulo = parameters.get < double >("coef_ligulo1");
         _coeff_Plasto_PI = parameters.get < double >("coef_plasto_PI");
         _coeff_Ligulo_PI = parameters.get < double >("coef_ligulo_PI");
         _coeff_MGR_PI = parameters.get < double >("coef_MGR_PI");
-        _nb_leaf_pi = _parameters.get < double >("nbleaf_pi");
         _nb_leaf_stem_elong = _parameters.get < double >("nb_leaf_stem_elong");
-        _nb_leaf_max_after_pi = _parameters.get < double >("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo  = _parameters.get < double >("phenostage_PRE_FLO_to_FLO");
         _phenostage_to_end_filling = _parameters.get < double >("phenostage_to_end_filling");
         _phenostage_to_maturity = _parameters.get < double >("phenostage_to_maturity");
@@ -532,13 +524,11 @@ private:
     double _nbleaf_enabling_tillering;
     double _nb_leaf_param2;
     double _slope_LL_BL_at_PI;
-    double _nb_Leaf_PI;
-    double _nb_Leaf_Max_After_PI;
+    double _nb_leaf_pi;
+    double _nb_leaf_max_after_pi;
     double _LL_BL_init;
     double _coef_ligulo;
-    double _nb_leaf_pi;
     double _nb_leaf_stem_elong;
-    double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
     double _phenostage_to_end_filling;
     double _phenostage_to_maturity;

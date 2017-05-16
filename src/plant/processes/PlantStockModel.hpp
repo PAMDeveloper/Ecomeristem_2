@@ -191,10 +191,10 @@ public:
 
 
         //  reservoir_dispo
-         if (_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE ) {
-            _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
-         } else {
+         if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
              _reservoir_dispo = 0;
+         } else  {
+             _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
          }
 
         //  stock
@@ -222,7 +222,7 @@ public:
         }
 
         //  surplus
-        if (_plant_phase == plant::ELONG) {
+        if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
             _surplus = _culm_surplus_sum;
         } else {
             if (_seed_res > 0) {

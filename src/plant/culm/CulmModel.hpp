@@ -36,6 +36,19 @@ namespace model {
 class CulmModel : public CoupledModel < CulmModel >
 {
 public:
+    enum culm_phase {   INITIAL = 0,
+                        REALIZATION = 1,
+                        PRE_ELONG = 2,
+                        ELONG = 3,
+                        PRE_PI = 4,
+                        PI = 5,
+                        PRE_FLO = 6,
+                        FLO = 7,
+                        END_FILLING = 8,
+                        MATURITY = 9,
+                        DEAD = 10};
+
+
     enum submodels { CULM_STOCK, PHYTOMERS };
 
     enum sub_internals {
@@ -97,7 +110,7 @@ public:
         External(DELTA_T, &CulmModel::_delta_t);
         External(FTSW, &CulmModel::_ftsw);
         External(FCSTR, &CulmModel::_fcstr);
-        External(PHENO_STAGE, &CulmModel::_pheno_stage);
+        External(PHENO_STAGE, &CulmModel::_plant_phenostage);
         External(PREDIM_LEAF_ON_MAINSTEM, &CulmModel::_predim_leaf_on_mainstem);
         External(SLA, &CulmModel::_sla);
         External(PLANT_STATE, &CulmModel::_plant_state);
@@ -121,6 +134,108 @@ public:
         //        }
     }
 
+
+    void step_state(double t)
+    {
+        switch( _culm_phase  ) {
+        case INITIAL: {
+            _last_state = _culm_phase ;
+            if(  _plant_phase == plant::ELONG ) {
+                _culm_phase  = PRE_ELONG;
+            } else {
+                _culm_phase  = REALIZATION;
+            }
+            break;
+        }
+        case REALIZATION: {
+            _last_state = _culm_phase ;
+            if(  _plant_state & plant::NEW_PHYTOMER ) {
+                //create_phytomer();
+            }
+            break;
+        }
+        case PRE_ELONG: {
+            _last_state = _culm_phase ;
+            if( _plant_state & plant::NEW_PHYTOMER ) {
+                //create_phytomer()
+            }
+
+            if( _nb_lig > 0 ) {
+                //internode_elongation()
+                _culm_phase  = ELONG;
+            }
+            break;
+        }
+        case ELONG: {
+             _last_state = _culm_phase;
+            if( _nb_lig <= 0 ) {
+                _culm_phase  = PRE_ELONG;
+            } else if( _plant_state & plant::NEW_PHYTOMER ) {
+                //create_phytomer()
+                //internode_elongation()
+            }
+            break;
+        }
+        case PRE_PI: {
+            if( _plant_state & plant::NEW_PHYTOMER ) {
+                //create_phytomer();
+                if( _last_state == ELONG ) {
+                    //internode_elongation()
+                }
+            }
+            _last_state = _culm_phase ;
+            break;
+        }
+        case PI: {
+            _last_state = _culm_phase ;
+            if( _plant_state & plant::NEW_PHYTOMER) {
+                if( _plant_phase == plant::PI) {
+                    //create_phytomer();
+                    if(!_started_PI) {
+                        _started_PI = true;
+                        //create_panicle();
+                        //create_peduncle();
+                    }
+                    //internode_elongation()
+                } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
+                    //peduncle_elongation()
+                    _culm_phase  = PRE_FLO;
+                }
+            }
+            break;
+        }
+        case PRE_FLO: {
+            _last_state = _culm_phase ;
+            if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
+    //            PanicleTransitionToFLO( );
+    //            PeduncleTransitionToFLO( );
+                _culm_phase  = FLO;
+            }
+            break;
+        }
+        case FLO: {
+            _last_state = _culm_phase ;
+            _culm_phase  = FLO;
+            break;
+        }
+        case END_FILLING:
+        {
+            _last_state = _culm_phase ;
+            _culm_phase  = END_FILLING;
+            break;
+        }
+        case MATURITY:
+        {
+            _last_state = _culm_phase ;
+            _culm_phase  = MATURITY;
+            break;
+        }
+        case DEAD: {
+             _last_state = _culm_phase ;
+            _culm_phase  = DEAD;
+            break;
+        }}
+    }
 
     //@TODO gérer le deleteLeaf et le reallocBiomassSum var
     void compute(double t, bool /* update */) {
@@ -291,6 +406,8 @@ public:
     int get_phytomer_number() const
     { return _phytomer_models.size(); }
 
+
+
     // Proposition (florian) pour delete_leaf :
 //    void delete_leaf(double t, int index)
 //    {
@@ -409,6 +526,9 @@ public:
 
         //parameters
         _parameters = parameters;
+        _nb_leaf_pi = _parameters.get < double >("nbleaf_pi");
+        _nb_leaf_max_after_pi = _parameters.get < double >("nb_leaf_max_after_PI");
+        _phenostage_pre_flo_to_flo  = _parameters.get < double >("phenostage_PRE_FLO_to_FLO");
 
         //    internals
         _nb_lig = 0;
@@ -426,6 +546,11 @@ public:
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
         _last_leaf_biomass_sum = 0;
+
+        _started_PI = false;
+        _culm_phase = INITIAL;
+        _last_state = _culm_phase;
+        _culm_phenostage = 1;
     }
 
 private:
@@ -441,7 +566,17 @@ private:
     double _plasto;
     double _ligulo;
 
+    //parameters
+    double _nb_leaf_pi;
+    double _nb_leaf_max_after_pi;
+    double _phenostage_pre_flo_to_flo;
+
     //    internals
+    bool _started_PI;
+    double _culm_phenostage;
+    culm_phase _culm_phase;
+    culm_phase _last_state;
+
     double _nb_lig;
     double _stem_leaf_predim;
     double _leaf_biomass_sum;
@@ -462,20 +597,19 @@ private:
     //        double _deleted_senesc_dw;
     //        bool _deleted_senesc_dw_computed;
 
-
     //    externals
+    int _plant_phenostage;
+    plant::plant_state _plant_state;
+    plant::plant_phase _plant_phase;
     double _MGR;
     double _LL_BL;
     double _dd;
     double _delta_t;
     double _ftsw;
     double _fcstr;
-    int _pheno_stage;
     double _predim_leaf_on_mainstem;
     double _sla;
     double _test_ic;
-    plant::plant_state _plant_state;
-    plant::plant_phase _plant_phase;
     double _plant_stock;
     double _plant_deficit;
     double _plant_biomass_sum;

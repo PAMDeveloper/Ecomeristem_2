@@ -9,16 +9,45 @@
 #include <artis/utils/DoubleTime.hpp>
 #include <ModelParameters.hpp>
 
+#include <type_traits> //necessary for enum type checking on states
+
 class PlantModel;
 
 // Plant enums
 namespace plant {
+
+
 
 enum plant_state { NO_STATE = 0,
                    NOGROWTH = 1,
                    NEW_PHYTOMER = 2,
                    LIG = 4,
                    KILL = 8 };
+
+
+template <typename E, typename std::enable_if<std::is_enum<E>::value>::type* = nullptr>
+class States
+{
+public:
+    int states;
+
+    bool operator&(E state)
+    {return (states & static_cast<int>(state)) != 0;}
+    void operator<<(E state)
+    {states = states | static_cast<int>(state);}
+    void operator>>(E state)
+    {states = states & !static_cast<int>(state);}
+
+    operator int() {return states;}
+    bool is(E state)
+    {return (states & static_cast<int>(state)) != 0;}
+    void add(E state)
+    {states = states | static_cast<int>(state);}
+    void del(E state)
+    {states = states & !static_cast<int>(state);}
+};
+
+typedef States <plant_state> plant_states;
 
 enum plant_phase {  INITIAL = 0,
                     VEGETATIVE = 1,
