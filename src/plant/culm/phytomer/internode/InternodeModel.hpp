@@ -39,7 +39,7 @@ public:
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
-    enum externals { PLANT_PHASE, PLANT_STATE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
+    enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
                      DD, DELTA_T};
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
@@ -68,6 +68,7 @@ public:
 
         External(PLANT_STATE, &InternodeModel::_plant_state);
         External(PLANT_PHASE, &InternodeModel::_plant_phase);
+        External(CULM_PHASE, &InternodeModel::_culm_phase);
         External(LIG, &InternodeModel::_lig);
         External(IS_LIG, &InternodeModel::_is_lig);
         External(LEAF_PREDIM, &InternodeModel::_leaf_predim);
@@ -155,13 +156,17 @@ public:
             }
         }
     }
-
+#include <QDebug>
     void step_state(double t) {
+        if(qAbs(t - _parameters.beginDate - 42) <= 8) {
+            t = t;
+            qDebug() << _index << _culm_phase;
+        }
         _inter_phase_1 = _inter_phase;
         if (_inter_phase == INIT) {
             _inter_phase = VEGETATIVE;
         } else if (_inter_phase == VEGETATIVE and
-                   (_plant_phase == plant::ELONG or _plant_phase == plant::PI) and _lig == t) { //_is_lig ou _lig == t ?
+                   (_culm_phase == culm::ELONG or _culm_phase == culm::PI) and _lig == t) { //_is_lig ou _lig == t ?
             _inter_phase = REALIZATION;
         } else if (_inter_phase == REALIZATION and _inter_len >= _inter_predim) {
             _inter_phase = MATURITY;
@@ -258,6 +263,7 @@ private:
     // externals
     plant::plant_state _plant_state;
     plant::plant_phase _plant_phase;
+    culm::culm_phase _culm_phase;
     double _leaf_predim;
     double _lig;
     bool _is_lig;

@@ -30,7 +30,6 @@
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/PlantStockModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
-#include <plant/processes/TilleringModel.hpp>
 #include <plant/root/RootModel.hpp>
 #include <plant/culm/CulmModel.hpp>
 
@@ -40,7 +39,7 @@ class PlantModel : public CoupledModel < PlantModel >
 {
 public:
     enum submodels { THERMAL_TIME, WATER_BALANCE, STOCK, ASSIMILATION,
-                     TILLERING, ROOT, CULMS};
+                     ROOT, CULMS};
 
     /* LAI, DELTA_T, DD, EDD, IH, LIGULO_VISU, PHENO_STAGE,
                      PLASTO_VISU, TT, TT_LIG, BOOL_CROSSED_PLASTO,
@@ -60,7 +59,6 @@ public:
         _water_balance_model(new WaterBalanceModel),
         _stock_model(new PlantStockModel),
         _assimilation_model(new AssimilationModel),
-        _tillering_model(new TilleringModel),
         _root_model(new RootModel)
     {
         // submodels
@@ -68,7 +66,6 @@ public:
         Submodels( ((WATER_BALANCE, _water_balance_model.get())) );
         Submodels( ((STOCK, _stock_model.get())) );
         Submodels( ((ASSIMILATION, _assimilation_model.get())) );
-        Submodels( ((TILLERING, _tillering_model.get())) );
         Submodels( ((ROOT, _root_model.get())) );
 
         // local internals
@@ -108,6 +105,7 @@ public:
         return (_plant_phase == plant::VEGETATIVE
                 || _plant_phase == plant::ELONG
                 || _plant_phase == plant::PI
+                || _plant_phase == plant::PRE_FLO
                 );
     }
 
@@ -132,10 +130,6 @@ public:
             return;
         } else {
             _plant_state >> plant::NOGROWTH;
-        }
-
-        if ( bool_crossed_plasto >= 0 && is_phytomer_creatable()) {
-            _plant_state << plant::NEW_PHYTOMER_AVAILABLE;
         }
 
         switch (_plant_phase) {
@@ -181,6 +175,10 @@ public:
             }
             break;
         }}
+
+        if ( bool_crossed_plasto >= 0 && is_phytomer_creatable()) {
+            _plant_state << plant::NEW_PHYTOMER_AVAILABLE;
+        }
     }
 
 
@@ -472,7 +470,6 @@ public:
         _water_balance_model->init(t, parameters);
         _stock_model->init(t, parameters);
         _assimilation_model->init(t, parameters);
-        _tillering_model->init(t, parameters);
         _root_model->init(t, parameters);
 
         //vars
@@ -523,7 +520,6 @@ private:
     std::unique_ptr < model::WaterBalanceModel > _water_balance_model;
     std::unique_ptr < model::PlantStockModel > _stock_model;
     std::unique_ptr < model::AssimilationModel > _assimilation_model;
-    std::unique_ptr < model::TilleringModel > _tillering_model;
     std::unique_ptr < model::RootModel > _root_model;
 
     // parameters

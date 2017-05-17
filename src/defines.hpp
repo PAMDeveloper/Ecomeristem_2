@@ -13,6 +13,21 @@
 
 class PlantModel;
 
+namespace culm {
+enum culm_phase {   INITIAL = 0,
+                    REALIZATION = 1,
+                    PRE_ELONG = 2,
+                    ELONG = 3,
+                    PRE_PI = 4,
+                    PI = 5,
+                    PRE_FLO = 6,
+                    FLO = 7,
+                    END_FILLING = 8,
+                    MATURITY = 9,
+                    DEAD = 10};
+
+}
+
 // Plant enums
 namespace plant {
 

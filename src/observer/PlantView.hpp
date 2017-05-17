@@ -35,7 +35,6 @@
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
 #include <plant/processes/PlantStockModel.hpp>
-#include <plant/processes/TilleringModel.hpp>
 #include <plant/root/RootModel.hpp>
 
 using namespace model;

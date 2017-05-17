@@ -35,18 +35,6 @@ namespace model {
 class CulmModel : public CoupledModel < CulmModel >
 {
 public:
-    enum culm_phase {   INITIAL = 0,
-                        REALIZATION = 1,
-                        PRE_ELONG = 2,
-                        ELONG = 3,
-                        PRE_PI = 4,
-                        PI = 5,
-                        PRE_FLO = 6,
-                        FLO = 7,
-                        END_FILLING = 8,
-                        MATURITY = 9,
-                        DEAD = 10};
-
 
     enum submodels { CULM_STOCK, PHYTOMERS };
 
@@ -136,36 +124,35 @@ public:
 
 
     bool is_phytomer_creatable() {
-        return (_culm_phase == REALIZATION
-                || _culm_phase == PRE_ELONG
-                || (_culm_phase == ELONG && _nb_lig > 0)
-                || _culm_phase == PRE_PI
-                || (_culm_phase == PI && _plant_phase == plant::PI)
+        return (_culm_phase == culm::REALIZATION
+                || _culm_phase == culm::PRE_ELONG
+                || (_culm_phase == culm::ELONG && _nb_lig > 0)
+                || _culm_phase == culm::PRE_PI
+                || (_culm_phase == culm::PI && _plant_phase == plant::PI)
                 );
     }
 
     void step_state(double t)
     {
         if(_plant_phase == plant::PI &&
-                (_last_phase != PRE_PI
-                || (_culm_phase == ELONG || _culm_phase == PRE_ELONG) )) {
-            _culm_phase = PRE_PI;
+                (_last_phase != culm::PRE_PI
+                || (_culm_phase == culm::ELONG || _culm_phase == culm::PRE_ELONG) )) {
+            _culm_phase = culm::PRE_PI;
             _culm_phenostage_at_pre_pi = _culm_phenostage;
             _last_phase = _culm_phase;
         }
 
-//        if( _plant_phase == plant::PI
-//                && (_culm_phase == ELONG || _culm_phase == PRE_ELONG) ) {
-//            _culm_phase = PRE_PI;
-//        }
+        if( _plant_phase == plant::PI && _is_first_culm) {
+            _culm_phase = culm::PI;
+        }
 
         if(_plant_phase == plant::END_FILLING) {
-            _culm_phase = END_FILLING;
+            _culm_phase = culm::END_FILLING;
             _last_phase = _culm_phase;
         }
 
         if(_plant_phase == plant::MATURITY) {
-            _culm_phase = MATURITY;
+            _culm_phase = culm::MATURITY;
             _last_phase = _culm_phase;
         }
 
@@ -176,43 +163,43 @@ public:
         }
 
         switch( _culm_phase  ) {
-        case INITIAL: {
+        case culm::INITIAL: {
             _last_phase = _culm_phase ;
             if(  _plant_phase == plant::ELONG ) {
-                _culm_phase  = PRE_ELONG;
+                _culm_phase  = culm::PRE_ELONG;
             } else {
-                _culm_phase  = REALIZATION;
+                _culm_phase  = culm::REALIZATION;
             }
             break;
         }
-        case REALIZATION: {
+        case culm::REALIZATION: {
             _last_phase = _culm_phase ;
             if(_plant_phase == plant::ELONG) {
                 if( _nb_lig > 0) {
-                    _culm_phase  = ELONG;
+                    _culm_phase  = culm::ELONG;
                 } else {
-                    _culm_phase  = PRE_ELONG;
+                    _culm_phase  = culm::PRE_ELONG;
                 }
             }
             break;
         }
-        case PRE_ELONG: {
+        case culm::PRE_ELONG: {
             _last_phase = _culm_phase ;
             if( _nb_lig > 0) {
-                _culm_phase  = ELONG;
+                _culm_phase  = culm::ELONG;
             }
             break;
         }
-        case ELONG: {
+        case culm::ELONG: {
              _last_phase = _culm_phase;
 //            else if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) {
                 //internode_elongation()
 //            }
             break;
         }
-        case PRE_PI: {
-            if(_culm_phenostage >= _culm_phenostage_at_pre_pi + _coeff_pi_lag) {
-                _culm_phase = PI;
+        case culm::PRE_PI: {
+            if(_culm_phenostage == _culm_phenostage_at_pre_pi + _coeff_pi_lag && get_phytomer_number() >= 3) {
+                _culm_phase = culm::PI;
             }
 //            if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) {
 //                if( _last_phase == ELONG ) {
@@ -222,7 +209,7 @@ public:
             _last_phase = _culm_phase ;
             break;
         }
-        case PI: {
+        case culm::PI: {
             _last_phase = _culm_phase ;
             if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE) {
                 if( _plant_phase == plant::PI) {
@@ -234,17 +221,17 @@ public:
                     }
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
                     //peduncle_elongation()
-                    _culm_phase  = PRE_FLO;
+                    _culm_phase  = culm::PRE_FLO;
                 }
             }
             break;
         }
-        case PRE_FLO: {
+        case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
             if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
     //            PanicleTransitionToFLO( );
     //            PeduncleTransitionToFLO( );
-                _culm_phase  = FLO;
+                _culm_phase  = culm::FLO;
             }
             break;
         }
@@ -319,6 +306,7 @@ public:
         (*it)->put < plant::plant_phase >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
         (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
+        (*it)->internode()->put(t, InternodeModel::CULM_PHASE, _culm_phase);
 
         if (_is_first_culm) {
             if (i == 0) {
@@ -565,7 +553,7 @@ public:
         _last_leaf_biomass_sum = 0;
 
         _started_PI = false;
-        _culm_phase = INITIAL;
+        _culm_phase = culm::INITIAL;
         _last_phase = _culm_phase;
         _culm_phenostage = 1;
         _culm_phenostage_at_pre_pi = 0;
@@ -593,8 +581,8 @@ private:
     bool _started_PI;
     double _culm_phenostage;
     double _culm_phenostage_at_pre_pi;
-    culm_phase _culm_phase;
-    culm_phase _last_phase;
+    culm::culm_phase _culm_phase;
+    culm::culm_phase _last_phase;
 
     double _nb_lig;
     double _stem_leaf_predim;
