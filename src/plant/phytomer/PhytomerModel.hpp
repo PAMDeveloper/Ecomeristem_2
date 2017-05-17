@@ -23,8 +23,8 @@
  */
 
 #include <defines.hpp>
-#include <plant/culm/phytomer/internode/InternodeModel.hpp>
-#include <plant/culm/phytomer/leaf/LeafModel.hpp>
+#include <plant/phytomer/InternodeModel.hpp>
+#include <plant/phytomer/LeafModel.hpp>
 
 namespace model {
 

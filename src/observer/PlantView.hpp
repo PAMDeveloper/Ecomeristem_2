@@ -35,7 +35,7 @@
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
 #include <plant/processes/PlantStockModel.hpp>
-#include <plant/root/RootModel.hpp>
+#include <plant/RootModel.hpp>
 
 using namespace model;
 namespace observer {

@@ -27,8 +27,8 @@
 #define SAMPLE_ATOMIC_MODEL_HPP
 
 #include <defines.hpp>
-#include <plant/culm/processes/CulmStockModel.hpp>
-#include <plant/culm/phytomer/PhytomerModel.hpp>
+#include <plant/processes/CulmStockModel.hpp>
+#include <plant/phytomer/PhytomerModel.hpp>
 
 namespace model {
 

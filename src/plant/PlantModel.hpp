@@ -30,8 +30,8 @@
 #include <plant/processes/WaterBalanceModel.hpp>
 #include <plant/processes/PlantStockModel.hpp>
 #include <plant/processes/AssimilationModel.hpp>
-#include <plant/root/RootModel.hpp>
-#include <plant/culm/CulmModel.hpp>
+#include <plant/RootModel.hpp>
+#include <plant/CulmModel.hpp>
 
 using namespace model;
 
