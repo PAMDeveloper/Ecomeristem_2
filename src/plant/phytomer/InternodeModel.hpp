@@ -29,10 +29,10 @@
 
 namespace model {
 
-class InternodeModel : public CoupledModel < InternodeModel >
+class InternodeModel : public AtomicModel < InternodeModel >
 {
 public:
-    enum internode_phase {  INIT, VEGETATIVE, REALIZATION,
+    enum internode_phase {  INITIAL, VEGETATIVE, REALIZATION,
                             REALIZATION_NOGROWTH, MATURITY,
                             MATURITY_NOGROWTH };
 
@@ -93,8 +93,7 @@ public:
 
         //ReductionINER
         if (_ftsw < _thresINER) {
-            _reduction_iner = std::max(1e-4, (1. - (_thresINER - _ftsw) *
-                                              _slopeINER) *
+            _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw)  * //@TODO vérifier l'équation
                                        (1. + (_p * _respINER)));
         } else {
             _reduction_iner = 1. + _p * _respINER;
@@ -115,7 +114,7 @@ public:
                 _inter_len = _iner * _dd;
                 _exp_time = (_inter_predim - _inter_len) / _iner;
             } else {
-                if (_inter_phase != REALIZATION_NOGROWTH and _inter_phase != MATURITY_NOGROWTH) {
+                if (!(_plant_state & plant::NOGROWTH)) {
                     _exp_time = (_inter_predim - _inter_len) / _iner;
                     _inter_len = std::min(_inter_predim, _inter_len + _iner * std::min(_delta_t, _exp_time));
                 }
@@ -136,8 +135,7 @@ public:
 
         //InternodeDemand & InternodeLastDemand
         _last_demand = 0;
-        if (_inter_phase == MATURITY or
-                _inter_phase == MATURITY_NOGROWTH) {
+        if (_inter_phase == MATURITY) {
             _demand = 0;
             if (! _is_mature) {
                 _last_demand = _biomass - biomass_1;
@@ -151,34 +149,29 @@ public:
         if (_first_day == t) {
             _time_from_app = _dd;
         } else {
-            if (_inter_phase != REALIZATION_NOGROWTH) {
+            if (!(_plant_state & plant::NOGROWTH)) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
     }
 #include <QDebug>
     void step_state(double t) {
-        if(qAbs(t - _parameters.beginDate - 42) <= 8) {
-            t = t;
-            qDebug() << _index << _culm_phase;
-        }
         _inter_phase_1 = _inter_phase;
-        if (_inter_phase == INIT) {
+
+        switch (_inter_phase) {
+        case INITIAL:
             _inter_phase = VEGETATIVE;
-        } else if (_inter_phase == VEGETATIVE and
-                   (_culm_phase == culm::ELONG or _culm_phase == culm::PI) and _lig == t) { //_is_lig ou _lig == t ?
-            _inter_phase = REALIZATION;
-        } else if (_inter_phase == REALIZATION and _inter_len >= _inter_predim) {
-            _inter_phase = MATURITY;
-        } else if (_inter_phase == REALIZATION and (_plant_state & plant::NOGROWTH)) {
-            _inter_phase = REALIZATION_NOGROWTH;
-        } else if (_inter_phase == REALIZATION_NOGROWTH and (_plant_state & plant::NOGROWTH)) {
-            _inter_phase = REALIZATION;
-        } else if (_inter_phase == MATURITY and (_plant_state & plant::NOGROWTH)) {
-            _inter_phase = MATURITY_NOGROWTH;
-        } else if (_inter_phase == MATURITY_NOGROWTH and
-                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER_AVAILABLE))) {
-            _inter_phase = MATURITY;
+            break;
+        case VEGETATIVE:
+            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI) and _lig == t) {
+                _inter_phase = REALIZATION;
+            }
+            break;
+        case REALIZATION:
+            if(_inter_len >= _inter_predim) {
+                _inter_phase = MATURITY;
+            }
+            break;
         }
     }
 
@@ -201,8 +194,8 @@ public:
         _coeff_species = parameters.get <double> ("coeff_species");
 
         //internals
-        _inter_phase = INIT;
-        _inter_phase_1 = INIT;
+        _inter_phase = INITIAL;
+        _inter_phase_1 = INITIAL;
         _inter_len = 0;
         _reduction_iner = 0;
         _iner = 0;
@@ -216,7 +209,6 @@ public:
         _time_from_app = 0;
         _inter_predim = 0;
         _is_mature = false;
-
     }
 
 private:
@@ -244,8 +236,8 @@ private:
 
     // internals
     double _LL_BL;
-    double _inter_phase;
-    double _inter_phase_1;
+    internode_phase _inter_phase;
+    internode_phase _inter_phase_1;
     double _inter_len;
     double _inter_predim;
     double _reduction_iner;

@@ -33,9 +33,7 @@ namespace model {
 class ThermalTimeModel : public AtomicModel < ThermalTimeModel >
 {
 public:
-    enum tt_state { INIT, DEAD, STOCK_AVAILABLE, NO_STOCK };
-
-    enum internals { STATE, DELTA_T, TT, BOOL_CROSSED_PLASTO,
+    enum internals { DELTA_T, TT, BOOL_CROSSED_PLASTO,
                      PLASTO_VISU, LIGULO_VISU, PHENO_STAGE, SLA, DD, EDD };
 
     enum externals {  PLANT_STATE, PLASTO_DELAY, PLASTO };
@@ -43,7 +41,6 @@ public:
 
     ThermalTimeModel() {
         //    computed variables
-        Internal(STATE, &ThermalTimeModel::_tt_state);
         Internal(DELTA_T, &ThermalTimeModel::_deltaT);
         Internal(TT, &ThermalTimeModel::_TT);
         Internal(BOOL_CROSSED_PLASTO, &ThermalTimeModel::_boolCrossedPlasto);
@@ -65,85 +62,34 @@ public:
     {}
 
 
-    void step_state() {
-        switch (_tt_state) {
-        case INIT: {
-            _tt_state = STOCK_AVAILABLE;
-            break;
-        }
-        case DEAD: {
-            break;
-        }
-        case STOCK_AVAILABLE: {
-            if (_plant_state & plant::NOGROWTH) {
-                _tt_state = NO_STOCK;
-            }
-            break;
-        }
-        case NO_STOCK: {
-            if (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER_AVAILABLE)){
-                _tt_state = STOCK_AVAILABLE;
-            }
-            break;
-        }};
-    }
-
 
     void compute(double t, bool /* update */) {
-        // parameters
         _Ta = _parameters.get(t).Temperature;
 
-        //ThermalTimeManager
-        step_state();
-
-        //DeltaT
         _deltaT = _Ta - _Tb;
-
-        //TT
         _TT = _TT + _deltaT;
 
-        //DD
-        if (_tt_state == STOCK_AVAILABLE) {
+        if (! (_plant_state & plant::NOGROWTH)) {
             double tempDD = _DD + _deltaT + _plasto_delay;
 
             _boolCrossedPlasto = tempDD - _plasto;
-
-            if (_boolCrossedPlasto <= 0) {
-                _EDD = _deltaT + _plasto_delay;
-            } else {
-                _EDD = _plasto - _DD;
-            }
+            _plastoVisu = _plastoVisu - _plasto_delay;
+            _liguloVisu = _liguloVisu - _plasto_delay;
 
             if (_boolCrossedPlasto >= 0) {
+                _EDD = _plasto - _DD;
                 _DD = tempDD - _plasto;
+                _phenoStage = _phenoStage + 1;
             } else {
+                _EDD = _deltaT + _plasto_delay;
                 _DD = tempDD;
             }
-        }
-
-        //PhenoStage
-        if (_tt_state == STOCK_AVAILABLE) {
-            if (_boolCrossedPlasto >= 0) {
-                _phenoStage = _phenoStage + 1;
-            }
-        }
-
-        // SLA
-        _sla = _FSLA - _SLAp * std::log(_phenoStage);
-
-        //PlastoVisu
-        if (_tt_state == STOCK_AVAILABLE) {
-            _plastoVisu = _plastoVisu - _plasto_delay;
         } else {
             _plastoVisu = _plastoVisu + _EDD;
-        }
-
-        //LiguloVisu
-        if (_tt_state == STOCK_AVAILABLE) {
-            _liguloVisu = _liguloVisu - _plasto_delay;
-        } else {
             _liguloVisu = _liguloVisu + _EDD;
         }
+
+        _sla = _FSLA - _SLAp * std::log(_phenoStage);
     }
 
 
@@ -158,7 +104,6 @@ public:
         _plasto_init = _parameters.get < double >("plasto_init");
 
         //    computed variables
-        _tt_state = INIT;
         _deltaT = 0;
         _TT = 0;
         _boolCrossedPlasto = 0;
@@ -183,7 +128,6 @@ private:
     double _Ta;
 
     //    internals
-    int _tt_state;
     double _deltaT;
     double _TT;
     double _boolCrossedPlasto;

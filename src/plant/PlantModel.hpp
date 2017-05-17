@@ -152,7 +152,7 @@ public:
             break;
         }
         case plant::PI: {
-            if (phenostage > _nb_leaf_pi + _nb_leaf_max_after_pi) {
+            if (phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1) {
                 _plant_phase = plant::PRE_FLO;
             }
             break;
@@ -229,13 +229,6 @@ public:
 
         /****************************************************/
 
-        //Phytomer creation
-//        std::deque < CulmModel* >::const_iterator it_on_culms = _culm_models.begin();
-//        while (it_on_culms != _culm_models.end()) {
-//            (*it_on_culms)->create_phytomer(t, _plasto, _ligulo, _LL_BL);
-//            ++it_on_culms;
-//        }
-
         //Tillering
         double P = _parameters.get(t).P;
         double ic = _stock_model->get < double >(t-1, PlantStockModel::IC);
@@ -269,10 +262,11 @@ public:
         _lig_1 = _lig;
         mainstem = _culm_models.begin();
         _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG);
+
         //TT_Lig
         if (t != _parameters.beginDate) {
             if (_lig_1 == _lig) {
-                if (_thermal_time_model->get < int >(t, ThermalTimeModel::STATE) == ThermalTimeModel::STOCK_AVAILABLE) {
+                if (!(_plant_state & plant::NOGROWTH)) {
                     _TT_lig = _TT_lig + _thermal_time_model->get < double >(t, ThermalTimeModel::EDD);
                 }
             } else {
@@ -280,7 +274,7 @@ public:
             }
         }
         //IH
-        if (_thermal_time_model->get < int >(t, ThermalTimeModel::STATE) == ThermalTimeModel::STOCK_AVAILABLE) {
+        if (!(_plant_state & plant::NOGROWTH)) {
             _IH = _lig + std::min(1., _TT_lig / _thermal_time_model->get < double >(t, ThermalTimeModel::LIGULO_VISU));
         }
 

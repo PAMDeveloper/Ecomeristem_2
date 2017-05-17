@@ -22,11 +22,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <model/models/ModelParameters.hpp>
+#include <defines.hpp>
 
-namespace ecomeristem { namespace panicle {
+#define _USE_MATH_DEFINES
+#include <math.h>
 
-class PanicleModel
+namespace model {
+
+class PanicleModel : public AtomicModel < PanicleModel >
 {
 public:
     PanicleModel()

@@ -29,7 +29,7 @@ namespace model {
 class LeafModel : public AtomicModel < LeafModel >
 {
 public:
-    enum phase_t   { INIT, INITIAL, LIG, NOGROWTH };
+    enum leaf_phase   { INITIAL, VEGETATIVE, LIG };
 
     enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEAF_LEN, LER,
                      EXP_TIME, PLASTO_DELAY, LEAF_PREDIM, WIDTH,
@@ -146,8 +146,7 @@ public:
             _len = _ler * _dd;
         } else {
             if (!(_plant_state & plant::NOGROWTH)) {
-                _len = std::min(_predim,
-                                _len + _ler * std::min(_delta_t, _exp_time));
+                _len = std::min(_predim, _len + _ler * std::min(_delta_t, _exp_time));
             }
         }
 
@@ -197,7 +196,7 @@ public:
             _sla_cste = _sla;
             _old_biomass = _biomass;
         } else {
-            if (_leaf_phase != LeafModel::NOGROWTH) {
+            if (!(_plant_state & plant::NOGROWTH)) {
                 if (not _is_lig || _is_lig_t) {
                     _old_biomass = _biomass;
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
@@ -238,7 +237,7 @@ public:
         if (_first_day == t) {
             _time_from_app = _dd;
         } else {
-            if (_leaf_phase != LeafModel::NOGROWTH) {
+            if (!(_plant_state & plant::NOGROWTH)) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
@@ -246,17 +245,15 @@ public:
 
     //@TODO modifier LIG en flag pour signifier le bool _lig
     void step_state() {
-        if (_leaf_phase == LeafModel::INIT) {
-            _leaf_phase = LeafModel::INITIAL;
-        } else if (_leaf_phase == LeafModel::INITIAL and _len >= _predim) {
-            _leaf_phase = LeafModel::LIG;
-        } else if (_leaf_phase == LeafModel::LIG and _len < _predim) {
-            _leaf_phase = LeafModel::INITIAL;
-        } else if (_leaf_phase == LeafModel::INITIAL and (_plant_state & plant::NOGROWTH)) {
-            _leaf_phase = LeafModel::NOGROWTH;
-        } else if (_leaf_phase == LeafModel::NOGROWTH and
-                   (!(_plant_state & plant::NOGROWTH) or (_plant_state & plant::NEW_PHYTOMER_AVAILABLE))) {
-            _leaf_phase = LeafModel::INITIAL;
+        switch (_leaf_phase) {
+        case LeafModel::INITIAL:
+            _leaf_phase = LeafModel::VEGETATIVE;
+            break;
+        case LeafModel::VEGETATIVE:
+            if(_len >= _predim && !(_plant_state & plant::NOGROWTH)) {
+                _leaf_phase = LeafModel::LIG;
+            }
+            break;
         }
     }
 
@@ -280,7 +277,7 @@ public:
         _realloc_biomass = 0;
         _first_day = t;
         _life_span = 0;
-        _leaf_phase = LeafModel::INIT;
+        _leaf_phase = LeafModel::INITIAL;
         _predim = 0;
         _reduction_ler = 0;
         _ler = 0;
@@ -331,7 +328,7 @@ private:
 
     // internal variable
     double _width;
-    double _leaf_phase;
+    leaf_phase _leaf_phase;
     double _predim;
     double _first_day;
     double _life_span;

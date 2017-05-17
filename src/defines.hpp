@@ -13,10 +13,20 @@
 
 class PlantModel;
 
+namespace peduncle {
+enum peduncle_phase {   INITIAL = 0,
+                        TRANSITION = 1,
+                        REALIZATION = 2,
+                        FLO = 3,
+                        END_FILLING = 4,
+                        MATURITY = 5,
+                        DEAD = 6 };
+
+}
+
 namespace culm {
 enum culm_phase {   INITIAL = 0,
-                    REALIZATION = 1,
-                    PRE_ELONG = 2,
+                    VEGETATIVE = 1,
                     ELONG = 3,
                     PRE_PI = 4,
                     PI = 5,
@@ -24,15 +34,12 @@ enum culm_phase {   INITIAL = 0,
                     FLO = 7,
                     END_FILLING = 8,
                     MATURITY = 9,
-                    DEAD = 10};
+                    DEAD = 10 };
 
 }
 
 // Plant enums
 namespace plant {
-
-
-
 enum plant_state { NO_STATE = 0,
                    NOGROWTH = 1,
                    NEW_PHYTOMER_AVAILABLE = 2,

@@ -124,96 +124,51 @@ public:
 
 
     bool is_phytomer_creatable() {
-        return (_culm_phase == culm::REALIZATION
-                || _culm_phase == culm::PRE_ELONG
-                || (_culm_phase == culm::ELONG && _nb_lig > 0)
-                || _culm_phase == culm::PRE_PI
-                || (_culm_phase == culm::PI && _plant_phase == plant::PI)
-                );
+        return (_culm_phase == culm::VEGETATIVE
+                || _culm_phase == culm::ELONG
+                || _culm_phase == culm::PI
+                )
+                && (get_phytomer_number() < _nb_leaf_pi + _nb_leaf_max_after_pi);
     }
 
-    void step_state(double t)
-    {
-        if(_plant_phase == plant::PI &&
-                (_last_phase != culm::PRE_PI
-                || (_culm_phase == culm::ELONG || _culm_phase == culm::PRE_ELONG) )) {
-            _culm_phase = culm::PRE_PI;
-            _culm_phenostage_at_pre_pi = _culm_phenostage;
-            _last_phase = _culm_phase;
+    void step_state(double t) {
+
+        if(_plant_phase == plant::PI && _lag == -1) {
+            _lag = true;
+            _culm_phenostage_at_lag = _culm_phenostage;
+        }
+
+        if(_lag) {
+            if(_culm_phenostage == _culm_phenostage_at_lag + _coeff_pi_lag && get_phytomer_number() >= 3) {
+                _culm_phase = culm::PI;
+                _lag = false;
+            }
         }
 
         if( _plant_phase == plant::PI && _is_first_culm) {
             _culm_phase = culm::PI;
         }
 
-        if(_plant_phase == plant::END_FILLING) {
-            _culm_phase = culm::END_FILLING;
-            _last_phase = _culm_phase;
-        }
-
-        if(_plant_phase == plant::MATURITY) {
-            _culm_phase = culm::MATURITY;
-            _last_phase = _culm_phase;
-        }
-
-
-
-        if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
-            create_phytomer(t);
-        }
-
         switch( _culm_phase  ) {
         case culm::INITIAL: {
-            _last_phase = _culm_phase ;
-            if(  _plant_phase == plant::ELONG ) {
-                _culm_phase  = culm::PRE_ELONG;
-            } else {
-                _culm_phase  = culm::REALIZATION;
-            }
+            _culm_phase  = culm::VEGETATIVE;
             break;
         }
-        case culm::REALIZATION: {
-            _last_phase = _culm_phase ;
+        case culm::VEGETATIVE: {
             if(_plant_phase == plant::ELONG) {
                 if( _nb_lig > 0) {
                     _culm_phase  = culm::ELONG;
-                } else {
-                    _culm_phase  = culm::PRE_ELONG;
                 }
             }
             break;
         }
-        case culm::PRE_ELONG: {
-            _last_phase = _culm_phase ;
-            if( _nb_lig > 0) {
-                _culm_phase  = culm::ELONG;
-            }
-            break;
-        }
         case culm::ELONG: {
-             _last_phase = _culm_phase;
-//            else if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) {
-                //internode_elongation()
-//            }
-            break;
-        }
-        case culm::PRE_PI: {
-            if(_culm_phenostage == _culm_phenostage_at_pre_pi + _coeff_pi_lag && get_phytomer_number() >= 3) {
-                _culm_phase = culm::PI;
-            }
-//            if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) {
-//                if( _last_phase == ELONG ) {
-//                    //internode_elongation()
-//                }
-//            }
-            _last_phase = _culm_phase ;
             break;
         }
         case culm::PI: {
             _last_phase = _culm_phase ;
             if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE) {
                 if( _plant_phase == plant::PI) {
-                    //internode_elongation()
                     if(!_started_PI) {
                         _started_PI = true;
                         //create_panicle();
@@ -240,6 +195,10 @@ public:
 
     //@TODO gérer le deleteLeaf et le reallocBiomassSum var
     void compute(double t, bool /* update */) {
+        if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
+            create_phytomer(t);
+        }
+
         step_state(t);
 
         auto it = _phytomer_models.begin();
@@ -275,8 +234,23 @@ public:
             ++i;
         }
 
+        //Floral_organs
+        compute_peduncle(t);
+        compute_panicle(t);
+
+
         //StockModel
         compute_stock(t);
+    }
+
+    void compute_peduncle(double t) {
+        //put FindFirstNonVegetativePredimOrgan length (from top) INTERNODE_LENGTH_PREDIM
+        //put FindFirstNonVegetativePredimOrgan diam (from top) INTERNODE_DIAM_PREDIM
+
+    }
+
+    void compute_panicle(double t) {
+
     }
 
     void compute_stock(double t) {
@@ -556,7 +530,8 @@ public:
         _culm_phase = culm::INITIAL;
         _last_phase = _culm_phase;
         _culm_phenostage = 1;
-        _culm_phenostage_at_pre_pi = 0;
+        _culm_phenostage_at_lag = 0;
+        _lag = false;
     }
 
 private:
@@ -580,10 +555,10 @@ private:
     //    internals
     bool _started_PI;
     double _culm_phenostage;
-    double _culm_phenostage_at_pre_pi;
+    double _culm_phenostage_at_lag;
     culm::culm_phase _culm_phase;
     culm::culm_phase _last_phase;
-
+    bool _lag;
     double _nb_lig;
     double _stem_leaf_predim;
     double _leaf_biomass_sum;
