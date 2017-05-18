@@ -33,7 +33,7 @@ class PanicleModel : public AtomicModel < PanicleModel >
 {
 public:
     enum internals { GRAIN_NB, FERTILE_GRAIN_NB, RESERVOIR_DISPO, DAY_DEMAND, WEIGHT, FILLED_GRAIN_NB };
-    enum externals { DELTA_T, FCSTR, TEST_IC };
+    enum externals { DELTA_T, FCSTR, TEST_IC, PLANT_PHASE };
 
     PanicleModel()
     {
@@ -47,6 +47,7 @@ public:
         External(DELTA_T, &PanicleModel::_delta_t);
         External(FCSTR, &PanicleModel::_fcstr);
         External(TEST_IC, &PanicleModel::_test_ic);
+        External(PLANT_PHASE, &PanicleModel::_plant_phase);
     }
 
     virtual ~PanicleModel()
@@ -54,20 +55,21 @@ public:
 
     void compute(double t, bool /* update */)
     {
-        //@TODO : INIT ??
-        _grain_nb = _grain_nb + (_spike_creation_rate * _delta_t * _fcstr * _test_ic);
-        _fertile_grain_nb = _grain_nb;
-
-        // Transition to flo
-        if (_culm_phase == culm::PRE_FLO) { //@TODO : Set first day pre_flo->flo, only computed once
-            // Panicle Fertile Grain Nb
-            _fertile_grain_nb = _fertile_grain_nb * _fcstr * _test_ic;
+        if(!_preflo_passed) {
+            _grain_nb = _grain_nb + (_spike_creation_rate * _delta_t * _fcstr * _test_ic);
+            _fertile_grain_nb = _grain_nb;
         }
 
         // Floraison
         if (_plant_phase == plant::FLO) {
+            if (!_preflo_passed) {
+                // Panicle Fertile Grain Nb
+                _fertile_grain_nb = _fertile_grain_nb * _fcstr * _test_ic;
+                _preflo_passed = true;
+            }
+
             // Panicle Reservoir Dispo
-            _reservoir_dispo = std::max(0, _fertile_grain_nb * _gdw - _weight);
+            _reservoir_dispo = std::max(0., _fertile_grain_nb * _gdw - _weight);
 
             // Panicle Day Demand
             _day_demand = std::min(_grain_filling_rate * _delta_t * _fcstr * _test_ic, _reservoir_dispo);
@@ -89,6 +91,7 @@ public:
         _gdw = _parameters.get < double >("gdw");
 
         // Internals
+        _preflo_passed = false;
         _grain_nb = 0;
         _fertile_grain_nb = 0;;
         _reservoir_dispo = 0;
@@ -107,6 +110,7 @@ private:
     double _gdw;
 
     // Internals
+    bool _preflo_passed;
     double _grain_nb;
     double _fertile_grain_nb;
     double _reservoir_dispo;
@@ -119,7 +123,6 @@ private:
     double _fcstr;
     double _test_ic;
     plant::plant_phase _plant_phase;
-    culm::culm_phase _culm_phase;
 
 };
 

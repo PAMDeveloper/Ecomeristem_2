@@ -55,7 +55,7 @@ public:
     { }
 
 
-    void compute(double /* t */, bool /* update */)
+    void compute(double t, bool /* update */)
     {
         _p = _parameters.get(t).P;
 
@@ -72,7 +72,7 @@ public:
         }
 
         //INER
-        _iner = _inter_predim * _reduction_iner / (_plasto + _internode_index * (_ligulo - _plasto));
+//        _iner = _inter_predim * _reduction_iner / (_plasto + _internode_index * (_ligulo - _plasto));
 
 
     }
@@ -126,4 +126,4 @@ private:
 
 };
 
-} } // namespace ecomeristem peduncle
+}

@@ -29,6 +29,8 @@
 #include <defines.hpp>
 #include <plant/processes/CulmStockModel.hpp>
 #include <plant/phytomer/PhytomerModel.hpp>
+#include <plant/floralorgan/PanicleModel.hpp>
+#include <plant/floralorgan/PeduncleModel.hpp>
 
 namespace model {
 
@@ -36,7 +38,7 @@ class CulmModel : public CoupledModel < CulmModel >
 {
 public:
 
-    enum submodels { CULM_STOCK, PHYTOMERS };
+    enum submodels { CULM_STOCK, PHYTOMERS, PANICLE, PEDUNCLE };
 
 
     enum internals { STOCK, DEFICIT, SURPLUS, NB_LIG, STEM_LEAF_PREDIM,
@@ -170,9 +172,12 @@ public:
             if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE) {
                 if( _plant_phase == plant::PI) {
                     if(!_started_PI) {
+                        _panicle_model = std::unique_ptr<PanicleModel>(new PanicleModel());
+                        setsubmodel(PANICLE, _panicle_model.get());
+                        _panicle_model->init(t, _parameters);
+                        _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel());
+                        Submodels( ((PANICLE, _peduncle_model.get())) );
                         _started_PI = true;
-                        //create_panicle();
-                        //create_peduncle();
                     }
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
                     //peduncle_elongation()
@@ -184,7 +189,6 @@ public:
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
             if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
-    //            PanicleTransitionToFLO( );
     //            PeduncleTransitionToFLO( );
                 _culm_phase  = culm::FLO;
             }
@@ -235,9 +239,15 @@ public:
         }
 
         //Floral_organs
-        compute_peduncle(t);
-        compute_panicle(t);
+//        compute_peduncle(t);
 
+        if(_panicle_model.get()) {
+            _panicle_model->put (t, PanicleModel::DELTA_T, _delta_t);
+            _panicle_model->put < plant::plant_phase >(t, PanicleModel::PLANT_PHASE, _plant_phase);
+            _panicle_model->put(t, PanicleModel::FCSTR, _fcstr);
+            _panicle_model->put(t, PanicleModel::TEST_IC, _test_ic);
+            (*_panicle_model)(t);
+        }
 
         //StockModel
         compute_stock(t);
@@ -246,10 +256,6 @@ public:
     void compute_peduncle(double t) {
         //put FindFirstNonVegetativePredimOrgan length (from top) INTERNODE_LENGTH_PREDIM
         //put FindFirstNonVegetativePredimOrgan diam (from top) INTERNODE_DIAM_PREDIM
-
-    }
-
-    void compute_panicle(double t) {
 
     }
 
@@ -540,6 +546,8 @@ private:
     //  submodels
     std::unique_ptr < CulmStockModel > _culm_stock_model;
     std::deque < PhytomerModel* > _phytomer_models;
+    std::unique_ptr < PanicleModel > _panicle_model;
+    std::unique_ptr < PeduncleModel > _peduncle_model;
 
     //    attributes
     double _index;
