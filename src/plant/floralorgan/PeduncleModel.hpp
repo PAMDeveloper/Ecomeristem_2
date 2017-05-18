@@ -35,20 +35,16 @@ class PeduncleModel : public AtomicModel < PeduncleModel >
 {
 public:
 
-    enum internals { LENGTH_PREDIM, DIAM_PREDIM, REDUCTION_INER };
-    enum externals { INTERNODE_LENGTH_PREDIM, INTERNODE_DIAM_PREDIM, INTERNODE_INDEX, FTSW };
+    enum internals {  };
+    enum externals { PLANT_PHASE };
 
 
     PeduncleModel()
     {
         Internal(LENGTH_PREDIM, &PeduncleModel::_length_predim);
-        Internal(DIAM_PREDIM, &PeduncleModel::_diam_predim);
-        Internal(REDUCTION_INER, &PeduncleModel::_reduction_iner);
 
-        External(INTERNODE_LENGTH_PREDIM, &PeduncleModel::_internode_length);
-        External(INTERNODE_DIAM_PREDIM, &PeduncleModel::_internode_diam);
-        External(INTERNODE_INDEX, &PeduncleModel::_internode_index);
-         External(FTSW, &PeduncleModel::_ftsw);
+        External(PLANT_PHASE, &PeduncleModel::_plant_phase);
+
     }
 
     virtual ~PeduncleModel()
@@ -59,21 +55,61 @@ public:
     {
         _p = _parameters.get(t).P;
 
-        //predim  @TODO nettoyer les inits hors du compute
-        _length_predim = _internode_length * _ratio_in_ped;
-        _diam_predim = _internode_diam * _peduncle_diam;
+        if (_plant_phase == plant::FLO) {
+            // FLO, rien à calculer
+        } else if (_plant_phase == plant::END_FILLING) {
+            // END_FILLING, rien à calculer
+        } else if (_plant_phase == plant::MATURITY) {
+            // MATURITY
+                // ComputeInternodeExpTime
 
-        //ReductionINER
-        if (_ftsw < _thresINER) {
-            _reduction_iner = max(1e-4, ((1./_thresINER) * _ftsw)  * //@TODO vérifier l'équation
-                                       (1. + (_p * _respINER)));
+                // SumOfBiomassOnCulmInInternodeRec
         } else {
-            _reduction_iner = 1. + _p * _respINER;
+            if(_is_predim == false) {
+                // INIT
+                    // ComputePeduncleLengthPredim
+
+                    // ComputePeduncleDiameterPredim
+
+                    // ComputeReductionINER
+
+                    // ComputeINER
+
+                    // initLen : Mult2Values(INER, DDRealization)
+
+                    // ComputeInternodeVolume
+
+                    // ComputeInternodeExpTime
+
+                    // ComputeInternodeBiomass
+
+                    // SumOfBiomassOnCulmInInternodeRec
+                _is_predim = true;
+                _is_in_transition = true;
+            } else if (_is_in_transition) {
+                // TRANSITION, rien à calculer
+                _is_in_transition = false;
+            } else {
+                // REALIZATION
+                    // ComputeReductionINER
+
+                    // ComputeINER_LE
+
+                    // ComputeInternodeExpTime
+
+                    // UpdateInternodeLength
+
+                    // ComputeInternodeVolume
+
+                    // ComputeInternodeDemand
+
+                    // ComputeInternodeBiomass
+
+                    // SumOfBiomassOnCulmInInternodeRec
+
+                    // TransitionToMatureState
+            }
         }
-
-        //INER
-//        _iner = _inter_predim * _reduction_iner / (_plasto + _internode_index * (_ligulo - _plasto));
-
 
     }
 
@@ -81,48 +117,25 @@ public:
               const ecomeristem::ModelParameters&  parameters )
     {
         _parameters = parameters;
+
         // parameters
-        _ratio_in_ped = _parameters.get < double >("ratio_INPed");
-        _peduncle_diam = _parameters.get < double >("peduncle_diam");
-        _thresINER = parameters.get < double >("thresINER");
-        _respINER = parameters.get < double >("resp_LER");
 
         // internals
-        _length_predim = 0;
-        _diam_predim = 0;
-        _reduction_iner = 0;
-//        _peduncle_phase = peduncle::INITIAL;
-//        _time_from_app = 0;
+        _is_predim = false;
+        _is_in_transition = false;
+
     }
 private:
     ecomeristem::ModelParameters  _parameters;
+
     // parameters
-    double _ratio_in_ped;
-    double _peduncle_diam;
-    double _thresINER;
-    double _respINER;
-
-    // externals
-    double _internode_length;
-    double _internode_diam;
-    double _internode_index;
-    double _ftsw;
-    double _p;
-
-//    culm::culm_phase _culm_phase;
-//    plant::plant_state _plant_state;
-//    plant::plant_phase _plant_phase;
 
     // internals
-    double _length_predim;
-    double _diam_predim;
-    double _reduction_iner;
-//    double _time_from_app;
-//    peduncle::peduncle_phase _peduncle_phase;
-//    double _volume;
-//    double _DDInitiation;
-//    double _DDRealization;
-//    double _stock;
+    bool _is_predim;
+    bool _is_in_transition;
+
+    // externals
+    plant::plant_phase _plant_phase;
 
 };
 
