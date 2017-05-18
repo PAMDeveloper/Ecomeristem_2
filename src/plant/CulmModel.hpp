@@ -177,8 +177,8 @@ public:
                         _panicle_model = std::unique_ptr<PanicleModel>(new PanicleModel());
                         setsubmodel(PANICLE, _panicle_model.get());
                         _panicle_model->init(t, _parameters);
-                        _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel());
-                        Submodels( ((PANICLE, _peduncle_model.get())) );
+
+                        //Peduncle_creation()
                         _started_PI = true;
                     }
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
