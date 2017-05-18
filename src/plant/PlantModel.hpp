@@ -317,7 +317,9 @@ public:
         _stock_model->put < plant::plant_phase >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
         (*_stock_model)(t);
 
-        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
+        //@TODO: Variable de visu, à retirer
+        _leaf_biom_struct = _leaf_biomass_sum + (_leaf_biomass_sum * _leaf_stock_max);
+//        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
 
         compute_height(t);
     }
@@ -448,6 +450,7 @@ public:
         _phenostage_to_maturity = _parameters.get < double >("phenostage_to_maturity");
         _Ict = _parameters.get < double >("Ict");
         _resp_Ict = _parameters.get < double >("resp_Ict");
+        _leaf_stock_max = parameters.get < double >("leaf_stock_max");
 
 
 
@@ -537,6 +540,7 @@ private:
     double _phenostage_to_maturity;
     double _Ict;
     double _resp_Ict;
+    double _leaf_stock_max;
 
     // vars
     double _predim_leaf_on_mainstem;
