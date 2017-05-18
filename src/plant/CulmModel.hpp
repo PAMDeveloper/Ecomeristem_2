@@ -48,9 +48,9 @@ public:
                      LEAF_BLADE_AREA_SUM,
                      REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
-                     LAST_LEAF_BIOMASS_SUM };
+                     LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND };
 
-    enum externals { DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
+    enum externals { BOOL_CROSSED_PLASTO, DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
                      PLANT_DEFICIT, PLANT_LEAF_BIOMASS_SUM,
@@ -91,8 +91,10 @@ public:
         Internal(LAST_LIGULATED_LEAF, &CulmModel::_last_ligulated_leaf);
         Internal(LAST_LIGULATED_LEAF_LEN, &CulmModel::_last_ligulated_leaf_len);
         Internal(LAST_LEAF_BIOMASS_SUM, &CulmModel::_last_leaf_biomass_sum);
+        Internal(PANICLE_DAY_DEMAND, &CulmModel::_panicle_day_demand);
 
         //    externals
+        External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
         External(DD, &CulmModel::_dd);
         External(DELTA_T, &CulmModel::_delta_t);
         External(FTSW, &CulmModel::_ftsw);
@@ -135,7 +137,7 @@ public:
 
     void step_state(double t) {
 
-        if(_plant_phase == plant::PI && _lag == -1) {
+        if(_plant_phase == plant::PI && _lag == false) {
             _lag = true;
             _culm_phenostage_at_lag = _culm_phenostage;
         }
@@ -181,7 +183,7 @@ public:
                     }
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
                     //peduncle_elongation()
-                    _culm_phase  = culm::PRE_FLO;
+                    _culm_phase = culm::PRE_FLO;
                 }
             }
             break;
@@ -189,16 +191,20 @@ public:
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
             if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
-    //            PeduncleTransitionToFLO( );
-                _culm_phase  = culm::FLO;
+                //            PeduncleTransitionToFLO( );
+                _culm_phase = culm::FLO;
             }
             break;
         }
-      }
+        }
     }
 
     //@TODO gérer le deleteLeaf et le reallocBiomassSum var
     void compute(double t, bool /* update */) {
+        if(_bool_crossed_plasto >= 0) {
+            _culm_phenostage = _culm_phenostage +1;
+        }
+
         if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
             create_phytomer(t);
         }
@@ -239,7 +245,7 @@ public:
         }
 
         //Floral_organs
-//        compute_peduncle(t);
+        //        compute_peduncle(t);
 
         if(_panicle_model.get()) {
             _panicle_model->put (t, PanicleModel::DELTA_T, _delta_t);
@@ -247,6 +253,8 @@ public:
             _panicle_model->put(t, PanicleModel::FCSTR, _fcstr);
             _panicle_model->put(t, PanicleModel::TEST_IC, _test_ic);
             (*_panicle_model)(t);
+            _panicle_day_demand = _panicle_model->get < double >(t, PanicleModel::DAY_DEMAND);
+            _panicle_weight = _panicle_model->get < double >(t, PanicleModel::WEIGHT);
         }
 
         //StockModel
@@ -273,6 +281,8 @@ public:
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::PLANT_PHASE, _plant_phase);
+        _culm_stock_model->put(t, CulmStockModel::PANICLE_DAY_DEMAND, _panicle_day_demand);
+        _culm_stock_model->put(t, CulmStockModel::PANICLE_WEIGHT, _panicle_weight);
         (*_culm_stock_model)(t);
     }
 
@@ -328,13 +338,13 @@ public:
             }
         }
 
-            _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
+        _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
 
-            if ((*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS) == 0) {
-                _last_leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
-            } else {
-                _last_leaf_biomass_sum += (*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS);
-            }
+        if ((*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS) == 0) {
+            _last_leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
+        } else {
+            _last_leaf_biomass_sum += (*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS);
+        }
 
         _leaf_last_demand_sum +=
                 (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LAST_DEMAND);
@@ -349,15 +359,15 @@ public:
         _internode_len_sum += (*it)->get < double, InternodeModel >(
                     t, PhytomerModel::INTERNODE_LEN);
 
-//        if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA) == 0) {
-            _leaf_blade_area_sum +=
-                    (*it)->get < double, LeafModel >(
-                        t, PhytomerModel::LEAF_BLADE_AREA);
-//        } else {
-//            _leaf_blade_area_sum +=
-//                    (*it)->get < double, LeafModel >(
-//                        t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA);
-//        }
+        //        if ((*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA) == 0) {
+        _leaf_blade_area_sum +=
+                (*it)->get < double, LeafModel >(
+                    t, PhytomerModel::LEAF_BLADE_AREA);
+        //        } else {
+        //            _leaf_blade_area_sum +=
+        //                    (*it)->get < double, LeafModel >(
+        //                        t, PhytomerModel::LEAF_CORRECTED_BLADE_AREA);
+        //        }
 
         _realloc_biomass_sum +=
                 (*it)->get < double, LeafModel >(
@@ -393,18 +403,18 @@ public:
 
 
     // Proposition (florian) pour delete_leaf :
-//    void delete_leaf(double t, int index)
-//    {
-//        // Nécessite de placer delete leaf avant le compute culms
-//        double biomass = _phytomer_models[index]->get < double, PhytomerModel >(t, PhytomerModel::LEAF_BIOMASS);
-//        _deleted_senesc_dw = (1 - _realocationCoeff) * biomass
+    //    void delete_leaf(double t, int index)
+    //    {
+    //        // Nécessite de placer delete leaf avant le compute culms
+    //        double biomass = _phytomer_models[index]->get < double, PhytomerModel >(t, PhytomerModel::LEAF_BIOMASS);
+    //        _deleted_senesc_dw = (1 - _realocationCoeff) * biomass
 
-//        //    delete phytomer_models[index]; @TODO : phytomer à détruire si feuille morte ? Intrenoeud mort aussi ?
-//        //    phytomer_models.erase(phytomer_models.begin() + index);
+    //        //    delete phytomer_models[index]; @TODO : phytomer à détruire si feuille morte ? Intrenoeud mort aussi ?
+    //        //    phytomer_models.erase(phytomer_models.begin() + index);
 
-//        _phytomer_models[index]->delete_leaf(t);
-//        ++_deleted_leaf_number;
-//    }
+    //        _phytomer_models[index]->delete_leaf(t);
+    //        ++_deleted_leaf_number;
+    //    }
 
     // Code c++ de base :
     //    void CulmModel::delete_leaf(double t, int index)
@@ -531,6 +541,8 @@ public:
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
         _last_leaf_biomass_sum = 0;
+        _panicle_day_demand = 0;
+        _panicle_weight = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -582,6 +594,9 @@ private:
     int _last_ligulated_leaf;
     double _last_ligulated_leaf_len;
     double _last_leaf_biomass_sum;
+    double _panicle_day_demand;
+    double _panicle_weight;
+
     //        double _lig;
     //        double _deleted_leaf_number;
     //        double _deleted_senesc_dw;
@@ -595,6 +610,7 @@ private:
     double _LL_BL;
     double _plasto;
     double _ligulo;
+    double _bool_crossed_plasto;
     double _dd;
     double _delta_t;
     double _ftsw;

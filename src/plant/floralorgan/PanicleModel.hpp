@@ -32,7 +32,8 @@ namespace model {
 class PanicleModel : public AtomicModel < PanicleModel >
 {
 public:
-    enum internals { GRAIN_NB, FERTILE_GRAIN_NB, RESERVOIR_DISPO, DAY_DEMAND, WEIGHT, FILLED_GRAIN_NB };
+    enum internals { GRAIN_NB, FERTILE_GRAIN_NB, RESERVOIR_DISPO,
+                     DAY_DEMAND, WEIGHT, FILLED_GRAIN_NB };
     enum externals { DELTA_T, FCSTR, TEST_IC, PLANT_PHASE };
 
     PanicleModel()
@@ -55,11 +56,6 @@ public:
 
     void compute(double t, bool /* update */)
     {
-        if(!_preflo_passed) {
-            _grain_nb = _grain_nb + (_spike_creation_rate * _delta_t * _fcstr * _test_ic);
-            _fertile_grain_nb = _grain_nb;
-        }
-
         // Floraison
         if (_plant_phase == plant::FLO) {
             if (!_preflo_passed) {
@@ -79,6 +75,11 @@ public:
 
             // Panicle Filled Grain Nb
             _filled_grain_nb = (_fertile_grain_nb * _weight) / (_fertile_grain_nb * _gdw);
+        }
+
+        if(!_preflo_passed) {
+            _grain_nb = _grain_nb + (_spike_creation_rate * _delta_t * _fcstr * _test_ic);
+            _fertile_grain_nb = _grain_nb;
         }
 
     }

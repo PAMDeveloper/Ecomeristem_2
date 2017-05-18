@@ -50,7 +50,7 @@ public:
     enum internals { LIG, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
-                     INTERNODE_DEMAND_SUM,
+                     INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
                      LEAF_BIOM_STRUCT, REALLOC_BIOMASS_SUM };
 
@@ -76,6 +76,7 @@ public:
         Internal( INTERNODE_BIOMASS_SUM, &PlantModel::_internode_biomass_sum );
         Internal( INTERNODE_DEMAND_SUM, &PlantModel::_internode_demand_sum );
         Internal( INTERNODE_LAST_DEMAND_SUM, &PlantModel::_internode_last_demand_sum );
+        Internal( PANICLE_DEMAND_SUM, &PlantModel::_panicle_demand_sum );
         Internal( SENESC_DW_SUM, &PlantModel::_senesc_dw_sum );
         Internal( PAI, &PlantModel::_leaf_blade_area_sum );
         Internal( HEIGHT, &PlantModel::_height );
@@ -247,7 +248,6 @@ public:
         if (ic > _Ict) {
             _nb_tillers = _nb_tillers + _nbExistingTillers;
         }
-
         if (boolCrossedPlasto > 0 and _nb_tillers >= 1 and ic > _Ict * ((P * _resp_Ict) + 1)) {
             _nb_tillers = std::min(_nb_tillers, tae);
             _nbExistingTillers = _nbExistingTillers + _nb_tillers;
@@ -301,7 +301,7 @@ public:
         //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
 
         // Stock
-        double demand_sum = _leaf_demand_sum + _internode_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
+        double demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
@@ -337,6 +337,7 @@ public:
     {
         std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
         while (it != _culm_models.end()) {
+            (*it)->put(t, CulmModel::BOOL_CROSSED_PLASTO, _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO));
             (*it)->put(t, CulmModel::DD, _thermal_time_model->get < double >(t, ThermalTimeModel::DD));
             (*it)->put(t, CulmModel::DELTA_T, _thermal_time_model->get < double >(t, ThermalTimeModel::DELTA_T));
             (*it)->put(t, CulmModel::FTSW, _water_balance_model->get < double >(t, WaterBalanceModel::FTSW));
@@ -374,11 +375,13 @@ public:
         _culm_stock_sum = 0;
         _culm_deficit_sum = 0;
         _culm_surplus_sum = 0;
+        _panicle_demand_sum = 0;
 
         it = _culm_models.begin();
         _predim_leaf_on_mainstem = (*it)->get <double, CulmModel> (t, CulmModel::STEM_LEAF_PREDIM);
 
         while (it != _culm_models.end()) {
+            _panicle_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::PANICLE_DAY_DEMAND);
             _leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LEAF_BIOMASS_SUM);
             _last_leaf_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::LAST_LEAF_BIOMASS_SUM);
             _leaf_last_demand_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_LAST_DEMAND_SUM);
@@ -485,6 +488,7 @@ public:
         _culm_stock_sum = 0;
         _culm_deficit_sum = 0;
         _culm_surplus_sum = 0;
+        _panicle_demand_sum = 0;
         _plant_phase = plant::VEGETATIVE;
         _plant_state = plant::NO_STATE;
         _height = 0;
@@ -556,6 +560,7 @@ private:
     double _culm_stock_sum;
     double _culm_deficit_sum;
     double _culm_surplus_sum;
+    double _panicle_demand_sum;
     double _height;
     double _lig_1;
     double _TT_lig;

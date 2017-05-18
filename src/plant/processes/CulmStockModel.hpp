@@ -14,7 +14,8 @@ public:
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
                      PLANT_DEFICIT, INTERNODE_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
-                     REALLOC_BIOMASS_SUM, PLANT_PHASE};
+                     REALLOC_BIOMASS_SUM, PLANT_PHASE, PANICLE_DAY_DEMAND,
+                     PANICLE_WEIGHT };
 
 
     CulmStockModel() {
@@ -41,6 +42,8 @@ public:
         External(LEAF_LAST_DEMAND_SUM, &CulmStockModel::_leaf_last_demand_sum);
         External(REALLOC_BIOMASS_SUM, &CulmStockModel::_realloc_biomass_sum);
         External(PLANT_PHASE, &CulmStockModel::_plant_phase);
+        External(PANICLE_DAY_DEMAND, &CulmStockModel::_panicle_day_demand);
+        External(PANICLE_WEIGHT, &CulmStockModel::_panicle_weight);
 
     }
 
@@ -70,7 +73,7 @@ public:
                         _plant_biomass_sum;
 
         _intermediate = stock + deficit + _supply - _internode_demand_sum -
-                _leaf_demand_sum - _leaf_last_demand_sum -
+                _leaf_demand_sum - _leaf_last_demand_sum - _panicle_day_demand -
                 _internode_last_demand_sum + _realloc_biomass_sum;
 
         //Deficit
@@ -81,13 +84,12 @@ public:
             _surplus = std::max(0., _plant_stock - _internode_demand_sum -
                                 _leaf_demand_sum - _leaf_last_demand_sum -
                                 _internode_last_demand_sum + _supply -
-                                _max_reservoir_dispo +
-                                _realloc_biomass_sum);
+                                _max_reservoir_dispo + _realloc_biomass_sum);
         } else {
             _surplus = std::max(0., _stock - _internode_demand_sum -
-                                _leaf_demand_sum - _leaf_last_demand_sum -
-                                _internode_last_demand_sum + _supply -
-                                _max_reservoir_dispo +
+                                _leaf_demand_sum - _panicle_day_demand -
+                                _leaf_last_demand_sum - _internode_last_demand_sum
+                                + _supply - _max_reservoir_dispo +
                                 _realloc_biomass_sum);
         }
 
@@ -146,6 +148,8 @@ private:
     double _internode_last_demand_sum;
     double _leaf_last_demand_sum;
     double _realloc_biomass_sum;
+    double _panicle_day_demand;
+    double _panicle_weight;
 };
 
 } // namespace model
