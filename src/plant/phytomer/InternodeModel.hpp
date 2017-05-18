@@ -154,7 +154,7 @@ public:
             }
         }
     }
-#include <QDebug>
+
     void step_state(double t) {
         _inter_phase_1 = _inter_phase;
 
