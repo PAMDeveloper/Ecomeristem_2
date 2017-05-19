@@ -218,13 +218,13 @@ public:
 
             _plasto = _plasto * _coeff_Plasto_PI;
             _ligulo = _ligulo * _coeff_Ligulo_PI;
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves - 1 -_nb_leaf_param2);
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 2 -_nb_leaf_param2);
             _MGR = _MGR * _coeff_MGR_PI;
         } else if ( nb_leaves >= _nb_leaf_param2 - 1 and
                     _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
                     nb_leaves < _nb_leaf_pi + _nb_leaf_max_after_pi + 1)
         {
-            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves - 1 -_nb_leaf_param2);
+            _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 2 -_nb_leaf_param2);
         }
 
 
@@ -288,6 +288,7 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
 
+
         //Root
         _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
         _root_model->put < double >(t, RootModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
@@ -330,6 +331,9 @@ public:
         for (int i = 0; i < n; ++i) {
             CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
             setsubmodel(CULMS, meristem);
+            meristem->put(t, CulmModel::LL_BL, _LL_BL);
+            meristem->put(t, CulmModel::PLASTO, _plasto);
+            meristem->put(t, CulmModel::LIGULO, _ligulo);
             meristem->init(t, _parameters);
             _culm_models.push_back(meristem);
         }
@@ -462,6 +466,9 @@ public:
         //local init
         CulmModel* meristem = new CulmModel(1);
         setsubmodel(CULMS, meristem);
+        meristem->put(t, CulmModel::LL_BL, _LL_BL);
+        meristem->put(t, CulmModel::PLASTO, _plasto);
+        meristem->put(t, CulmModel::LIGULO, _ligulo);
         meristem->init(t, parameters);
         _culm_models.push_back(meristem);
 

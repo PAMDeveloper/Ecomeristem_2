@@ -67,7 +67,6 @@ public:
         // Root Demand Coef
         _root_demand_coef = _coeff1_R_d * std::exp(_coeff2_R_d * (t - _parameters.beginDate + 1)) * (_P * _resp_R_d + 1);
 
-
         // Root Demand
         if (t == _parameters.beginDate) {
             _root_demand = (_leaf_demand_sum + _leaf_last_demand_sum +
@@ -115,7 +114,7 @@ public:
         }
     }
 
-    void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
+    void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
 
         //    parameters variables

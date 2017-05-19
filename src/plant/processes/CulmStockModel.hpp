@@ -87,8 +87,8 @@ public:
                                 _max_reservoir_dispo + _realloc_biomass_sum);
         } else {
             _surplus = std::max(0., _stock - _internode_demand_sum -
-                                _leaf_demand_sum - _panicle_day_demand -
-                                _leaf_last_demand_sum - _internode_last_demand_sum
+                                _leaf_demand_sum - _leaf_last_demand_sum -
+                                _internode_last_demand_sum - _panicle_day_demand
                                 + _supply - _max_reservoir_dispo +
                                 _realloc_biomass_sum);
         }
