@@ -36,8 +36,8 @@ class PeduncleModel : public AtomicModel < PeduncleModel >
 public:
 
     enum internals { LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
-                     LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND };
-    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD };
+                     LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND };
+    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD, DELTA_T };
 
 
     PeduncleModel(int index, bool is_on_mainstem, double plasto, double ligulo):
@@ -55,12 +55,14 @@ public:
         Internal(EXP_TIME, &PeduncleModel::_exp_time);
         Internal(BIOMASS, &PeduncleModel::_biomass);
         Internal(DEMAND, &PeduncleModel::_demand);
+        Internal(LAST_DEMAND, &PeduncleModel::_last_demand);
 
         External(PLANT_PHASE, &PeduncleModel::_plant_phase);
         External(INTER_PREDIM, &PeduncleModel::_inter_predim); //FirstNonVegetativeInternode
         External(INTER_DIAM, &PeduncleModel::_inter_diam); //FirstNonVegetativeInternode
         External(FTSW, &PeduncleModel::_ftsw);
         External(DD, &PeduncleModel::_dd);
+        External(DELTA_T, &PeduncleModel::_delta_t);
     }
 
     virtual ~PeduncleModel()
@@ -70,64 +72,58 @@ public:
     void compute(double t, bool /* update */)
     {
         _p = _parameters.get(t).P;
+        if(t == _first_day) {
+            //Peduncle Length Predim
+            _length_predim = _ratio_in_ped * _inter_predim;
 
-        if (_plant_phase == plant::PRE_FLO) {
-            if (_is_predim == false) {
-                //Peduncle Length Predim
-                _length_predim = _ratio_in_ped * _inter_predim;
-
-                //Peduncle Diameter Predim
-                _diameter_predim = _peduncle_diam * _inter_diam;
-
-                //Reduction INER
-                if (_ftsw < _thresINER) {
-                    _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw)  * //@TODO vérifier l'équation
-                                               (1. + (_p * _respINER)));
-                } else {
-                    _reduction_iner = 1. + _p * _respINER;
-                }
-
-                //INER //@TODO: quel index ? quel plasto ? quel ligulo ?
-                _iner = _length_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
-
-                //LEN
-                _length = _iner * _dd;
-                double radius = _inter_diam / 2;
-                _volume = _length * M_PI * radius * radius;
-
-                //EXP TIME
-                _exp_time = (_length_predim - _length) / _iner;
-
-                //Biomass
-                _biomass = _volume * _density;
-
-                //Demand
-                _demand = _biomass;
-
-                _is_predim = true;
-                _is_in_transition = true;
-
-            } else if (_is_in_transition) {
-                _is_in_transition = false;
-
-            } else {
-                //Reduction INER
-                //INER
-                //Exp time
-                //LEN
-                //Volume
-                //Demand
-                //Biomass
-                //Mature state test
-            }
-        } else if (_plant_phase == plant::MATURITY) {
-            //Exp time
+            //Peduncle Diameter Predim
+            _diameter_predim = _peduncle_diam * _inter_diam;
         }
 
+        if(!_is_mature and _plant_phase != plant::MATURITY) {
+
+            //Reduction INER
+            if (_ftsw < _thresINER) {
+                _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw)  * //@TODO vérifier l'équation
+                                           (1. + (_p * _respINER)));
+            } else {
+                _reduction_iner = 1. + _p * _respINER;
+            }
+
+            //INER //@TODO: quel index ? quel plasto ? quel ligulo ?
+            _iner = _length_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
+
+            //Length and Exp time
+            if (t == _first_day) {
+                _length = _iner * _dd;
+                _exp_time = (_length_predim - _length) / _iner;
+            } else {
+                _exp_time = (_length_predim - _length) / _iner;
+                _length = _length + (_iner * std::min(_delta_t, _exp_time));
+            }
+
+            //Volume
+            double radius = _inter_diam / 2;
+            _volume = _length * M_PI * radius * radius;
+
+            //Biomass and Demand
+            if(t == _first_day) {
+                _biomass = _biomass = _volume * _density;
+                _demand = _biomass;
+            } else {
+                _demand = (_density * _volume) - _biomass;
+                _biomass = _density * _volume;
+            }
+
+            if(_length == _length_predim) {
+                _is_mature = true;
+                _last_demand = _demand;
+                _demand = 0;
+            }
+        }
     }
 
-    void init(double /* t */,
-              const ecomeristem::ModelParameters&  parameters )
+    void init(double t, const ecomeristem::ModelParameters&  parameters )
     {
         _parameters = parameters;
 
@@ -139,8 +135,7 @@ public:
         _density = _parameters.get < double >("density_IN");
 
         // internals
-        _is_predim = false;
-        _is_in_transition = false;
+        _is_mature = false;
         _length_predim = 0;
         _diameter_predim = 0;
         _reduction_iner = 0;
@@ -149,6 +144,7 @@ public:
         _volume = 0;
         _exp_time = 0;
         _biomass = 0;
+        _first_day = t;
     }
 private:
     ecomeristem::ModelParameters  _parameters;
@@ -169,8 +165,7 @@ private:
     double _density;
 
     // internals
-    bool _is_predim;
-    bool _is_in_transition;
+    bool _is_mature;
     double _length_predim;
     double _diameter_predim;
     double _reduction_iner;
@@ -180,6 +175,8 @@ private:
     double _exp_time;
     double _biomass;
     double _demand;
+    double _last_demand;
+    double _first_day;
 
     // externals
     plant::plant_phase _plant_phase;
@@ -187,6 +184,7 @@ private:
     double _inter_diam;
     double _ftsw;
     double _dd;
+    double _delta_t;
 
 };
 

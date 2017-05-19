@@ -177,12 +177,12 @@ public:
                         _panicle_model = std::unique_ptr<PanicleModel>(new PanicleModel());
                         setsubmodel(PANICLE, _panicle_model.get());
                         _panicle_model->init(t, _parameters);
-
-                        //Peduncle_creation()
                         _started_PI = true;
                     }
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
-                    //peduncle_elongation()
+                    _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm, _plasto, _ligulo));
+                    setsubmodel(PEDUNCLE, _peduncle_model.get());
+                    _peduncle_model->init(t, _parameters);
                     _culm_phase = culm::PRE_FLO;
                 }
             }
@@ -239,14 +239,21 @@ public:
             //Sum
             compute_vars(it, previous_it, i, t);
 
+            //GetLastINnonVegetative
+//            if(_peduncle_model.get()) {
+//                _peduncle_iner_phase = (*it)->internode()->get(t, InternodeModel::INTERNODE_PHASE);
+//                if(_peduncle_interphase != InternodeModel::VEGETATIVE) {
+//                    _peduncle_inerlen_predim = (*it)->internode()->get(t, InternodeModel::INTERNODE_PREDIM);
+//                    _peduncle_inerdiam_predim = (*it)->internode()->get(t, InternodeModel::INTER_DIAMETER);
+//                }
+//            }
+
             previous_it = it;
             ++it;
             ++i;
         }
 
         //Floral_organs
-        //        compute_peduncle(t);
-
         if(_panicle_model.get()) {
             _panicle_model->put (t, PanicleModel::DELTA_T, _delta_t);
             _panicle_model->put < plant::plant_phase >(t, PanicleModel::PLANT_PHASE, _plant_phase);
@@ -256,6 +263,18 @@ public:
             _panicle_day_demand = _panicle_model->get < double >(t, PanicleModel::DAY_DEMAND);
             _panicle_weight = _panicle_model->get < double >(t, PanicleModel::WEIGHT);
         }
+
+        //PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD, DELTA_T
+
+//        if(_peduncle_model.get()) {
+//            _peduncle_model->put < plant::plant_phase >(t, PeduncleModel::PLANT_PHASE, _plant_phase);
+//            _peduncle_model->put (t, PeduncleModel::INTER_PREDIM, _peduncle_inerlen_predim);
+//            _peduncle_model->put (t, PeduncleModel::INTER_DIAM, _peduncle_inerdiam_predim);
+//            _panicle_model->put(t, PeduncleModel::FTSW, _ftsw);
+//            _panicle_model->put(t, PeduncleModel::DD, _dd);
+//            _peduncle_model->put (t, PeduncleModel::DELTA_T, _delta_t);
+//            (*_peduncle_model)(t);
+//        }
 
         //StockModel
         compute_stock(t);
@@ -543,6 +562,8 @@ public:
         _last_leaf_biomass_sum = 0;
         _panicle_day_demand = 0;
         _panicle_weight = 0;
+        _peduncle_inerlen_predim = 0;
+        _peduncle_inerdiam_predim = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -550,6 +571,7 @@ public:
         _culm_phenostage = 1;
         _culm_phenostage_at_lag = 0;
         _lag = false;
+        _peduncle_iner_phase = InternodeModel::VEGETATIVE;
     }
 
 private:
@@ -596,6 +618,9 @@ private:
     double _last_leaf_biomass_sum;
     double _panicle_day_demand;
     double _panicle_weight;
+    double _peduncle_inerlen_predim;
+    double _peduncle_inerdiam_predim;
+    InternodeModel::internode_phase _peduncle_iner_phase;
 
     //        double _lig;
     //        double _deleted_leaf_number;
