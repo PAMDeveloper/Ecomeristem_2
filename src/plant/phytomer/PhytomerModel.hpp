@@ -52,7 +52,7 @@ public:
         _ligulo(ligulo),
         _LL_BL(LL_BL),
         _is_on_mainstem(is_on_mainstem),
-        _internode_model(new InternodeModel(_index, _is_on_mainstem, _plasto, _ligulo)),
+        _internode_model(new InternodeModel(_index, _is_on_mainstem)),
         _leaf_model(new LeafModel(_index, _is_on_mainstem, _plasto, _ligulo, _LL_BL))
     {
         // submodels

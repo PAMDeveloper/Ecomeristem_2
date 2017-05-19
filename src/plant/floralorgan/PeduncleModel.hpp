@@ -37,14 +37,12 @@ public:
 
     enum internals { LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
                      LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND };
-    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD, DELTA_T };
+    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD, DELTA_T, PLASTO, LIGULO };
 
 
-    PeduncleModel(int index, bool is_on_mainstem, double plasto, double ligulo):
+    PeduncleModel(int index, bool is_on_mainstem):
         _index(index),
-        _is_on_mainstem(is_on_mainstem),
-        _plasto(plasto),
-        _ligulo(ligulo)
+        _is_on_mainstem(is_on_mainstem)
     {
         Internal(LENGTH_PREDIM, &PeduncleModel::_length_predim);
         Internal(DIAMETER_PREDIM, &PeduncleModel::_diameter_predim);
@@ -63,6 +61,9 @@ public:
         External(FTSW, &PeduncleModel::_ftsw);
         External(DD, &PeduncleModel::_dd);
         External(DELTA_T, &PeduncleModel::_delta_t);
+        External(PLASTO, &PeduncleModel::_plasto);
+        External(LIGULO, &PeduncleModel::_ligulo);
+
     }
 
     virtual ~PeduncleModel()
@@ -145,6 +146,8 @@ public:
         _exp_time = 0;
         _biomass = 0;
         _first_day = t;
+        _demand = 0;
+        _last_demand = 0;
     }
 private:
     ecomeristem::ModelParameters  _parameters;
@@ -153,8 +156,6 @@ private:
     int _index;
     bool _is_first_internode;
     bool _is_on_mainstem;
-    double _ligulo;
-    double _plasto;
 
     // parameters
     double _ratio_in_ped;
@@ -185,6 +186,8 @@ private:
     double _ftsw;
     double _dd;
     double _delta_t;
+    double _plasto;
+    double _ligulo;
 
 };
 

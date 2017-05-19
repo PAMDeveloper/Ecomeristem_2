@@ -328,7 +328,7 @@ public:
     void create_culm(double t, int n)
     {
         for (int i = 0; i < n; ++i) {
-            CulmModel* meristem = new CulmModel(_culm_models.size() + 1, _plasto, _ligulo, _LL_BL);
+            CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
             setsubmodel(CULMS, meristem);
             meristem->init(t, _parameters);
             _culm_models.push_back(meristem);
@@ -460,7 +460,7 @@ public:
         _LL_BL = _LL_BL_init;
 
         //local init
-        CulmModel* meristem = new CulmModel(1, _plasto, _ligulo, _LL_BL);
+        CulmModel* meristem = new CulmModel(1);
         setsubmodel(CULMS, meristem);
         meristem->init(t, parameters);
         _culm_models.push_back(meristem);

@@ -58,12 +58,9 @@ public:
                      PLASTO, LIGULO, LL_BL};
 
 
-    CulmModel(int index, double plasto, double ligulo, double plant_LL_BL):
+    CulmModel(int index):
         _index(index), _is_first_culm(index == 1),
-        _culm_stock_model(new CulmStockModel),
-        _plasto(plasto),
-        _ligulo(ligulo),
-        _LL_BL(plant_LL_BL)
+        _culm_stock_model(new CulmStockModel)
     {
         // submodels
         Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
@@ -180,7 +177,7 @@ public:
                         _started_PI = true;
                     }
                 } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
-                    _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm, _plasto, _ligulo));
+                    _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm));
                     setsubmodel(PEDUNCLE, _peduncle_model.get());
                     _peduncle_model->init(t, _parameters);
                     _culm_phase = culm::PRE_FLO;
@@ -242,7 +239,6 @@ public:
             //GetLastINnonVegetative
             get_nonvegetative_in(it, t);
 
-
             previous_it = it;
             ++it;
             ++i;
@@ -266,7 +262,16 @@ public:
             _peduncle_model->put(t, PeduncleModel::FTSW, _ftsw);
             _peduncle_model->put(t, PeduncleModel::DD, _dd);
             _peduncle_model->put (t, PeduncleModel::DELTA_T, _delta_t);
+            _peduncle_model->put (t, PeduncleModel::PLASTO, _plasto);
+            _peduncle_model->put (t, PeduncleModel::LIGULO, _ligulo);
             (*_peduncle_model)(t);
+        }
+
+        if(_peduncle_model.get()) {
+            _internode_last_demand_sum += _peduncle_model->get < double >(t, PeduncleModel::LAST_DEMAND);
+            _internode_demand_sum += _peduncle_model->get < double >(t, PeduncleModel::DEMAND);
+            _internode_biomass_sum += _peduncle_model->get < double >(t, PeduncleModel::BIOMASS);
+            _internode_len_sum += _peduncle_model->get < double >(t, PeduncleModel::LENGTH);
         }
 
         //StockModel
@@ -313,6 +318,8 @@ public:
         (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
         (*it)->internode()->put(t, InternodeModel::CULM_PHASE, _culm_phase);
+        (*it)->internode()->put(t, InternodeModel::PLASTO, _plasto);
+        (*it)->internode()->put(t, InternodeModel::LIGULO, _ligulo);
 
         if (_is_first_culm) {
             if (i == 0) {
