@@ -259,28 +259,28 @@ public:
             _panicle_weight = _panicle_model->get < double >(t, PanicleModel::WEIGHT);
         }
 
-        //        if(_peduncle_model.get()) {
-        //            _peduncle_model->put < plant::plant_phase >(t, PeduncleModel::PLANT_PHASE, _plant_phase);
-        //            _peduncle_model->put (t, PeduncleModel::INTER_PREDIM, _peduncle_inerlen_predim);
-        //            _peduncle_model->put (t, PeduncleModel::INTER_DIAM, _peduncle_inerdiam_predim);
-        //            _panicle_model->put(t, PeduncleModel::FTSW, _ftsw);
-        //            _panicle_model->put(t, PeduncleModel::DD, _dd);
-        //            _peduncle_model->put (t, PeduncleModel::DELTA_T, _delta_t);
-        //            (*_peduncle_model)(t);
-        //        }
+        if(_peduncle_model.get()) {
+            _peduncle_model->put < plant::plant_phase >(t, PeduncleModel::PLANT_PHASE, _plant_phase);
+            _peduncle_model->put (t, PeduncleModel::INTER_PREDIM, _peduncle_inerlen_predim);
+            _peduncle_model->put (t, PeduncleModel::INTER_DIAM, _peduncle_inerdiam_predim);
+            _peduncle_model->put(t, PeduncleModel::FTSW, _ftsw);
+            _peduncle_model->put(t, PeduncleModel::DD, _dd);
+            _peduncle_model->put (t, PeduncleModel::DELTA_T, _delta_t);
+            (*_peduncle_model)(t);
+        }
 
         //StockModel
         compute_stock(t);
     }
 
     void get_nonvegetative_in(std::deque < PhytomerModel* >::iterator it, double t) {
-//        if(_peduncle_model.get()) {
-//            _peduncle_iner_phase = (*it)->internode()->get(t, InternodeModel::INTERNODE_PHASE);
-//            if(_peduncle_iner_phase != InternodeModel::VEGETATIVE) {
-//                _peduncle_inerlen_predim = (*it)->internode()->get(t, InternodeModel::INTERNODE_PREDIM);
-//                _peduncle_inerdiam_predim = (*it)->internode()->get(t, InternodeModel::INTER_DIAMETER);
-//            }
-//        }
+        if(_peduncle_model.get()) {
+            _peduncle_iner_phase = (*it)->internode()->get <InternodeModel::internode_phase>(t, InternodeModel::INTERNODE_PHASE);
+            if(_peduncle_iner_phase != InternodeModel::VEGETATIVE) {
+                _peduncle_inerlen_predim = (*it)->internode()->get<double>(t, InternodeModel::INTERNODE_PREDIM);
+                _peduncle_inerdiam_predim = (*it)->internode()->get<double>(t, InternodeModel::INTER_DIAMETER);
+            }
+        }
     }
 
     void compute_stock(double t) {
