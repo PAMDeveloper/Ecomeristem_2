@@ -300,9 +300,13 @@ public:
         (*_root_model)(t);
 
         //        search_deleted_leaf(t); //on passe avant pour le realloc biomass
-
         // Stock
-        double demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
+        double demand_sum;
+        if(_plant_phase == plant::VEGETATIVE) {
+            demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
+        } else {
+            demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _root_model->get < double >(t, RootModel::LAST_ROOT_DEMAND);
+        }
         _stock_model->put < double >(t, PlantStockModel::DEMAND_SUM, demand_sum);
         _stock_model->put < double >(t, PlantStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
