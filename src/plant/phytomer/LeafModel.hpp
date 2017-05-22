@@ -196,7 +196,7 @@ public:
             _biomass = (1. / _G_L) * _blade_area / _sla;
             _realloc_biomass = 0;
             _sla_cste = _sla;
-            _old_biomass = _biomass;
+            _old_biomass = 0;
         } else {
             if (!(_plant_state & plant::NOGROWTH)) {
                 if (not _is_lig || _is_lig_t) {

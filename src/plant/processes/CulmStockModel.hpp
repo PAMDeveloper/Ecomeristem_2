@@ -8,14 +8,16 @@ namespace model {
 class CulmStockModel : public AtomicModel < CulmStockModel >
 {
 public:
-    enum internals { STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS, FIRST_DAY };
+    enum internals { STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS,
+                     FIRST_DAY, STOCK_LEAF_CULM, LEAF_STOCK, IN_STOCK, IN_DEFICIT };
 
     enum externals { ASSIM, LEAF_BIOMASS_SUM, PLANT_LEAF_BIOMASS_SUM,
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
                      PLANT_DEFICIT, INTERNODE_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
                      REALLOC_BIOMASS_SUM, PLANT_PHASE, PANICLE_DAY_DEMAND,
-                     PANICLE_WEIGHT };
+                     PANICLE_WEIGHT, LAST_LEAF_BIOMASS_SUM,
+                     LAST_PLANT_BIOMASS_SUM };
 
 
     CulmStockModel() {
@@ -26,6 +28,10 @@ public:
         Internal(SURPLUS, &CulmStockModel::_surplus);
         Internal(FIRST_DAY, &CulmStockModel::_first_day);
         Internal(INTERMEDIATE, &CulmStockModel::_intermediate);
+        Internal(STOCK_LEAF_CULM, &CulmStockModel::_stock_leaf_culm);
+        Internal(LEAF_STOCK, &CulmStockModel::_leaf_stock);
+        Internal(IN_STOCK, &CulmStockModel::_in_stock);
+        Internal(IN_DEFICIT, &CulmStockModel::_in_deficit);
 
         External(ASSIM, &CulmStockModel::_assim);
         External(LEAF_BIOMASS_SUM, &CulmStockModel::_leaf_biomass_sum);
@@ -44,6 +50,8 @@ public:
         External(PLANT_PHASE, &CulmStockModel::_plant_phase);
         External(PANICLE_DAY_DEMAND, &CulmStockModel::_panicle_day_demand);
         External(PANICLE_WEIGHT, &CulmStockModel::_panicle_weight);
+        External(LAST_LEAF_BIOMASS_SUM, &CulmStockModel::_last_leaf_biomass_sum);
+        External(LAST_PLANT_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
 
     }
 
@@ -57,20 +65,32 @@ public:
             return;
         }
 
+        //stockleafculm
+        //@TODO : erreur en delphi, ((_last)_plant_biomass_sum à corriger
+        _leaf_stock = _plant_stock * (_last_leaf_biomass_sum / _last_plant_biomass_sum);
+        _in_stock = _plant_stock * (_internode_biomass_sum / _last_plant_biomass_sum);
+        _in_deficit = _plant_deficit * (_internode_biomass_sum / _last_plant_biomass_sum);
+
+        _stock_leaf_culm = std::min(_leaf_stock_max * _leaf_biomass_sum,
+                                    _leaf_stock - _in_stock + _in_deficit -
+                                    (_leaf_demand_sum + _internode_demand_sum
+                                     + _leaf_last_demand_sum + _internode_last_demand_sum));
+
         //MaxReservoirDispo
-        _max_reservoir_dispo = _maximum_reserve_in_internode *
-                _internode_biomass_sum + _leaf_stock_max * _leaf_biomass_sum;
+        _max_reservoir_dispo = (_maximum_reserve_in_internode *
+                                _internode_biomass_sum) + (_leaf_stock_max * _leaf_biomass_sum - _stock_leaf_culm);
+
+        //Intermediate
+        double stock = _plant_stock *
+                (_leaf_biomass_sum + _internode_biomass_sum) /
+                _plant_biomass_sum;
+        double deficit = _plant_deficit *
+                (_leaf_biomass_sum + _internode_biomass_sum) /
+                _plant_biomass_sum;
 
         //CulmSupply
         _supply = _assim * _leaf_biomass_sum / _plant_leaf_biomass_sum;
 
-        //Intermediate
-        double stock = _plant_stock *
-                       (_leaf_biomass_sum + _internode_biomass_sum) /
-                       _plant_biomass_sum;
-        double deficit = _plant_deficit *
-                        (_leaf_biomass_sum + _internode_biomass_sum) /
-                        _plant_biomass_sum;
 
         _intermediate = stock + deficit + _supply - _internode_demand_sum -
                 _leaf_demand_sum - _leaf_last_demand_sum - _panicle_day_demand -
@@ -114,7 +134,11 @@ public:
         _intermediate = 0;
         _deficit = 0;
         _surplus = 0;
+        _stock_leaf_culm = 0;
         _first_day = t;
+        _leaf_stock = 0;
+        _in_stock = 0;
+        _in_deficit = 0;
     }
 
 private:
@@ -133,6 +157,10 @@ private:
     double _intermediate;
     double _deficit;
     double _surplus;
+    double _stock_leaf_culm;
+    double _leaf_stock;
+    double _in_stock;
+    double _in_deficit;
 
     //    externals
     plant::plant_phase _plant_phase;
@@ -150,6 +178,9 @@ private:
     double _realloc_biomass_sum;
     double _panicle_day_demand;
     double _panicle_weight;
+    double _last_leaf_biomass_sum;
+    double _last_plant_biomass_sum;
+
 };
 
 } // namespace model

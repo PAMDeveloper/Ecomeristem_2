@@ -55,7 +55,7 @@ public:
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
                      PLANT_DEFICIT, PLANT_LEAF_BIOMASS_SUM,
                      PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM, MGR,
-                     PLASTO, LIGULO, LL_BL};
+                     PLASTO, LIGULO, LL_BL, LAST_PLANT_BIOMASS_SUM};
 
 
     CulmModel(int index):
@@ -112,6 +112,9 @@ public:
         External(PLASTO, &CulmModel::_plasto);
         External(LIGULO, &CulmModel::_ligulo);
         External(LL_BL, &CulmModel::_LL_BL);
+        External(LAST_PLANT_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
+
+
     }
 
     virtual ~CulmModel()
@@ -296,7 +299,9 @@ public:
         _culm_stock_model->put(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _plant_leaf_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::ASSIM, _assim);
         _culm_stock_model->put(t, CulmStockModel::PLANT_BIOMASS_SUM, _plant_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModel::LAST_PLANT_BIOMASS_SUM, _last_plant_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
+        _culm_stock_model->put(t, CulmStockModel::LAST_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
@@ -364,7 +369,7 @@ public:
         _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
 
         if ((*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS) == 0) {
-            _last_leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
+            _last_leaf_biomass_sum += (*it)->leaf()->get < double >(t, LeafModel::BIOMASS);
         } else {
             _last_leaf_biomass_sum += (*it)->leaf()->get < double >(t, LeafModel::LAST_LEAF_BIOMASS);
         }
@@ -653,6 +658,7 @@ private:
     double _plant_leaf_biomass_sum;
     double _plant_blade_area_sum;
     double _assim;
+    double _last_plant_biomass_sum;
 };
 
 } // namespace model

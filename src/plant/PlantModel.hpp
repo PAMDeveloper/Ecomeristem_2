@@ -361,6 +361,7 @@ public:
             (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
             (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
             (*it)->put(t, CulmModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
+            (*it)->put(t, CulmModel::LAST_PLANT_BIOMASS_SUM, _last_leaf_biomass_sum);
             (*it)->put(t, CulmModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
             (*it)->put(t, CulmModel::PLANT_BLADE_AREA_SUM, _leaf_blade_area_sum);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
