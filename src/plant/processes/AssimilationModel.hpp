@@ -78,7 +78,7 @@ public:
                 std::pow(2., (_Ta - _Tresp) / 10.);
 
         //  assim
-        _assim = std::max(0., (_assim_pot - _resp_maint) / _density) - _resp_maint;
+        _assim = std::max(0., (_assim_pot) / _density) - _resp_maint;
 //        _assim_net_cor = _assim; // - _resp_maint;
     }
 

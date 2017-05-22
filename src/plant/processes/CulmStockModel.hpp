@@ -17,7 +17,7 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
                      REALLOC_BIOMASS_SUM, PLANT_PHASE, PANICLE_DAY_DEMAND,
                      PANICLE_WEIGHT, LAST_LEAF_BIOMASS_SUM,
-                     LAST_PLANT_BIOMASS_SUM };
+                     LAST_PLANT_BIOMASS_SUM, IS_FIRST_DAY_PI };
 
 
     CulmStockModel() {
@@ -52,6 +52,7 @@ public:
         External(PANICLE_WEIGHT, &CulmStockModel::_panicle_weight);
         External(LAST_LEAF_BIOMASS_SUM, &CulmStockModel::_last_leaf_biomass_sum);
         External(LAST_PLANT_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
+        External(IS_FIRST_DAY_PI, &CulmStockModel::_is_first_day_pi);
 
     }
 
@@ -67,9 +68,15 @@ public:
 
         //stockleafculm
         //@TODO : erreur en delphi, ((_last)_plant_biomass_sum à corriger
-        _leaf_stock = _plant_stock * (_last_leaf_biomass_sum / _last_plant_biomass_sum);
-        _in_stock = _plant_stock * (_internode_biomass_sum / _last_plant_biomass_sum);
-        _in_deficit = _plant_deficit * (_internode_biomass_sum / _last_plant_biomass_sum);
+        if(_is_first_day_pi) {
+            _leaf_stock = _plant_stock * (_last_leaf_biomass_sum / _last_plant_biomass_sum);
+            _in_stock = _plant_stock * (_internode_biomass_sum / _last_plant_biomass_sum);
+            _in_deficit = _plant_deficit * (_internode_biomass_sum / _last_plant_biomass_sum);
+        } else {
+            _leaf_stock = _plant_stock * (_leaf_biomass_sum / _plant_biomass_sum);
+            _in_stock = _plant_stock * (_internode_biomass_sum / _plant_biomass_sum);
+            _in_deficit = _plant_deficit * (_internode_biomass_sum / _plant_biomass_sum);
+        }
 
         _stock_leaf_culm = std::min(_leaf_stock_max * _leaf_biomass_sum,
                                     _leaf_stock - _in_stock + _in_deficit -
@@ -180,6 +187,7 @@ private:
     double _panicle_weight;
     double _last_leaf_biomass_sum;
     double _last_plant_biomass_sum;
+    bool _is_first_day_pi;
 
 };
 

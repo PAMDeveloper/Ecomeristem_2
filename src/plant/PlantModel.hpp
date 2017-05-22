@@ -141,18 +141,22 @@ public:
         case plant::VEGETATIVE: {
             if ( phenostage == _nb_leaf_stem_elong and phenostage < _nb_leaf_pi) {
                 _plant_phase = plant::ELONG;
+                _is_first_day_pi = true;
             } else if (phenostage == _nb_leaf_pi) {
                 _plant_phase = plant::PI;
+                _is_first_day_pi = true;
             }
             break;
         }
         case plant::ELONG: {
+            _is_first_day_pi = false;
             if (phenostage == _nb_leaf_pi) {
                 _plant_phase = plant::PI;
             }
             break;
         }
         case plant::PI: {
+            _is_first_day_pi = false;
             if (phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1) {
                 _plant_phase = plant::PRE_FLO;
             }
@@ -369,6 +373,7 @@ public:
             (*it)->put(t, CulmModel::PLASTO, _plasto);
             (*it)->put(t, CulmModel::LIGULO, _ligulo);
             (*it)->put(t, CulmModel::LL_BL, _LL_BL);
+            (*it)->put(t, CulmModel::IS_FIRST_DAY_PI, _is_first_day_pi);
             (**it)(t);
             ++it;
         }
@@ -512,6 +517,7 @@ public:
         _IH = 0;
         _leaf_biom_struct = 0;
         _last_leaf_biomass_sum = 0;
+        _is_first_day_pi = 0;
 
         //
         _last_time = 0;
@@ -583,6 +589,7 @@ private:
     double _IH;
     double _leaf_biom_struct;
     double _last_leaf_biomass_sum;
+    bool _is_first_day_pi;
 
     //internal states
     plant::plant_state _plant_state;
