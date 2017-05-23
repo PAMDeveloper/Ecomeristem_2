@@ -364,10 +364,6 @@ public:
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
             (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
             (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
-            (*it)->put(t, CulmModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
-            (*it)->put(t, CulmModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
-            (*it)->put(t, CulmModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
-            (*it)->put(t, CulmModel::PLANT_BLADE_AREA_SUM, _leaf_blade_area_sum);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
             (*it)->put(t, CulmModel::MGR, _MGR);
             (*it)->put(t, CulmModel::PLASTO, _plasto);
@@ -408,9 +404,18 @@ public:
             _leaf_blade_area_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_BLADE_AREA_SUM);
             _realloc_biomass_sum += (*it)->get < double, CulmModel>(t, CulmModel::REALLOC_BIOMASS_SUM);
             _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM);
-            _culm_stock_sum += (*it)->get < double, CulmStockModel >(t, CulmModel::STOCK);
-            _culm_deficit_sum += (*it)->get < double, CulmStockModel >(t, CulmModel::DEFICIT);
-            _culm_surplus_sum += (*it)->get < double, CulmStockModel >(t, CulmModel::SURPLUS);
+            ++it;
+        }
+
+        it = _culm_models.begin();
+        while (it != _culm_models.end()) {
+            (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
+            (*it)->stock_model()->put<double>(t, CulmStockModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
+            (*it)->stock_model()->put<double>(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
+            (*it)->compute_stock(t);
+            _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
+            _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
+            _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
             ++it;
         }
     }

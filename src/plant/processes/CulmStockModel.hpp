@@ -33,26 +33,25 @@ public:
         Internal(IN_STOCK, &CulmStockModel::_in_stock);
         Internal(IN_DEFICIT, &CulmStockModel::_in_deficit);
 
+        External(PLANT_BIOMASS_SUM, &CulmStockModel::_plant_biomass_sum);
+        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
+        External(PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_plant_leaf_biomass_sum);
+
+        External(LAST_LEAF_BIOMASS_SUM, &CulmStockModel::_last_leaf_biomass_sum);
         External(ASSIM, &CulmStockModel::_assim);
         External(LEAF_BIOMASS_SUM, &CulmStockModel::_leaf_biomass_sum);
-        External(PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_plant_leaf_biomass_sum);
-        External(INTERNODE_BIOMASS_SUM,
-                 &CulmStockModel::_internode_biomass_sum);
-        External(PLANT_BIOMASS_SUM, &CulmStockModel::_plant_biomass_sum);
+        External(INTERNODE_BIOMASS_SUM,&CulmStockModel::_internode_biomass_sum);
         External(PLANT_STOCK, &CulmStockModel::_plant_stock);
         External(PLANT_DEFICIT, &CulmStockModel::_plant_deficit);
         External(INTERNODE_DEMAND_SUM, &CulmStockModel::_internode_demand_sum);
         External(LEAF_DEMAND_SUM, &CulmStockModel::_leaf_demand_sum);
-        External(INTERNODE_LAST_DEMAND_SUM,
-                 &CulmStockModel::_internode_last_demand_sum);
+        External(INTERNODE_LAST_DEMAND_SUM,&CulmStockModel::_internode_last_demand_sum);
         External(LEAF_LAST_DEMAND_SUM, &CulmStockModel::_leaf_last_demand_sum);
         External(REALLOC_BIOMASS_SUM, &CulmStockModel::_realloc_biomass_sum);
         External(PLANT_PHASE, &CulmStockModel::_plant_phase);
         External(CULM_PHASE, &CulmStockModel::_culm_phase);
         External(PANICLE_DAY_DEMAND, &CulmStockModel::_panicle_day_demand);
         External(PANICLE_WEIGHT, &CulmStockModel::_panicle_weight);
-        External(LAST_LEAF_BIOMASS_SUM, &CulmStockModel::_last_leaf_biomass_sum);
-        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
         External(IS_FIRST_DAY_PI, &CulmStockModel::_is_first_day_pi);
 
     }

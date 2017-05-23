@@ -38,10 +38,10 @@ class CulmModel : public CoupledModel < CulmModel >
 {
 public:
 
-    enum submodels { CULM_STOCK, PHYTOMERS, PANICLE, PEDUNCLE };
+    enum submodels { PHYTOMERS, PANICLE, PEDUNCLE };
 
 
-    enum internals { STOCK, DEFICIT, SURPLUS, NB_LIG, STEM_LEAF_PREDIM,
+    enum internals { /*STOCK, DEFICIT, SURPLUS, */NB_LIG, STEM_LEAF_PREDIM,
                      LEAF_BIOMASS_SUM, LEAF_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, INTERNODE_LAST_DEMAND_SUM,
                      INTERNODE_BIOMASS_SUM, INTERNODE_LEN_SUM,
@@ -53,9 +53,9 @@ public:
     enum externals { BOOL_CROSSED_PLASTO, DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
-                     PLANT_DEFICIT, PLANT_LEAF_BIOMASS_SUM,
-                     PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM, MGR,
-                     PLASTO, LIGULO, LL_BL, LAST_PLANT_LEAF_BIOMASS_SUM,
+                     PLANT_DEFICIT, /*PLANT_LEAF_BIOMASS_SUM,
+                     PLANT_BIOMASS_SUM,*/ ASSIM, MGR,
+                     PLASTO, LIGULO, LL_BL,/* LAST_PLANT_LEAF_BIOMASS_SUM,*/
                      IS_FIRST_DAY_PI };
 
 
@@ -64,14 +64,15 @@ public:
         _culm_stock_model(new CulmStockModel)
     {
         // submodels
-        Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
+//        Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
+//        @TODO gérer le problème de sous-modèle non calculé pour culmstock
 
         //    internals
 
         //@TODO regarder pourquoi ca pointe dans le vide
-        InternalS(STOCK, _culm_stock_model.get(), CulmStockModel::STOCK);
-        InternalS(DEFICIT, _culm_stock_model.get(), CulmStockModel::DEFICIT);
-        InternalS(SURPLUS, _culm_stock_model.get(), CulmStockModel::SURPLUS);
+//        InternalS(STOCK, _culm_stock_model.get(), CulmStockModel::STOCK);
+//        InternalS(DEFICIT, _culm_stock_model.get(), CulmStockModel::DEFICIT);
+//        InternalS(SURPLUS, _culm_stock_model.get(), CulmStockModel::SURPLUS);
 
 
         Internal(NB_LIG, &CulmModel::_nb_lig);
@@ -105,15 +106,14 @@ public:
         External(TEST_IC, &CulmModel::_test_ic);
         External(PLANT_STOCK, &CulmModel::_plant_stock);
         External(PLANT_DEFICIT, &CulmModel::_plant_deficit);
-        External(PLANT_BIOMASS_SUM, &CulmModel::_plant_biomass_sum);
-        External(PLANT_LEAF_BIOMASS_SUM, &CulmModel::_plant_leaf_biomass_sum);
-        External(PLANT_BLADE_AREA_SUM, &CulmModel::_plant_blade_area_sum);
+//        External(PLANT_BIOMASS_SUM, &CulmModel::_plant_biomass_sum);
+//        External(PLANT_LEAF_BIOMASS_SUM, &CulmModel::_plant_leaf_biomass_sum);
+//        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
         External(ASSIM, &CulmModel::_assim);
         External(MGR, &CulmModel::_MGR);
         External(PLASTO, &CulmModel::_plasto);
         External(LIGULO, &CulmModel::_ligulo);
         External(LL_BL, &CulmModel::_LL_BL);
-        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
         External(IS_FIRST_DAY_PI, &CulmModel::_is_first_day_pi);
 
 
@@ -283,7 +283,7 @@ public:
         }
 
         //StockModel
-        compute_stock(t);
+//        compute_stock(t);
     }
 
     void get_nonvegetative_in(std::deque < PhytomerModel* >::iterator it, double t) {
@@ -301,12 +301,8 @@ public:
         _culm_stock_model->put(t, CulmStockModel::PLANT_STOCK, _plant_stock);
         _culm_stock_model->put(t, CulmStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_BIOMASS_SUM, _internode_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _plant_leaf_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::ASSIM, _assim);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_BIOMASS_SUM, _plant_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::LAST_PLANT_BIOMASS_SUM, _last_plant_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
-        //_culm_stock_model->put(t, CulmStockModel::LAST_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
@@ -436,6 +432,8 @@ public:
     int get_phytomer_number() const
     { return _phytomer_models.size(); }
 
+    CulmStockModel * stock_model() const
+    { return _culm_stock_model.get(); }
 
 
     // Proposition (florian) pour delete_leaf :
