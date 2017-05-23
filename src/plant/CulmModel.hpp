@@ -55,7 +55,7 @@ public:
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
                      PLANT_DEFICIT, PLANT_LEAF_BIOMASS_SUM,
                      PLANT_BIOMASS_SUM, PLANT_BLADE_AREA_SUM, ASSIM, MGR,
-                     PLASTO, LIGULO, LL_BL, LAST_PLANT_BIOMASS_SUM,
+                     PLASTO, LIGULO, LL_BL, LAST_PLANT_LEAF_BIOMASS_SUM,
                      IS_FIRST_DAY_PI };
 
 
@@ -113,7 +113,7 @@ public:
         External(PLASTO, &CulmModel::_plasto);
         External(LIGULO, &CulmModel::_ligulo);
         External(LL_BL, &CulmModel::_LL_BL);
-        External(LAST_PLANT_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
+        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
         External(IS_FIRST_DAY_PI, &CulmModel::_is_first_day_pi);
 
 
@@ -312,6 +312,7 @@ public:
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::PLANT_PHASE, _plant_phase);
+        _culm_stock_model->put(t, CulmStockModel::CULM_PHASE, _culm_phase);
         _culm_stock_model->put(t, CulmStockModel::PANICLE_DAY_DEMAND, _panicle_day_demand);
         _culm_stock_model->put(t, CulmStockModel::PANICLE_WEIGHT, _panicle_weight);
         _culm_stock_model->put(t, CulmStockModel::IS_FIRST_DAY_PI, _is_first_day_pi);

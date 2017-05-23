@@ -15,9 +15,9 @@ public:
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
                      PLANT_DEFICIT, INTERNODE_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
-                     REALLOC_BIOMASS_SUM, PLANT_PHASE, PANICLE_DAY_DEMAND,
-                     PANICLE_WEIGHT, LAST_LEAF_BIOMASS_SUM,
-                     LAST_PLANT_BIOMASS_SUM, IS_FIRST_DAY_PI };
+                     REALLOC_BIOMASS_SUM, PLANT_PHASE, CULM_PHASE,
+                     PANICLE_DAY_DEMAND, PANICLE_WEIGHT, LAST_LEAF_BIOMASS_SUM,
+                     LAST_PLANT_LEAF_BIOMASS_SUM, IS_FIRST_DAY_PI };
 
 
     CulmStockModel() {
@@ -48,10 +48,11 @@ public:
         External(LEAF_LAST_DEMAND_SUM, &CulmStockModel::_leaf_last_demand_sum);
         External(REALLOC_BIOMASS_SUM, &CulmStockModel::_realloc_biomass_sum);
         External(PLANT_PHASE, &CulmStockModel::_plant_phase);
+        External(CULM_PHASE, &CulmStockModel::_culm_phase);
         External(PANICLE_DAY_DEMAND, &CulmStockModel::_panicle_day_demand);
         External(PANICLE_WEIGHT, &CulmStockModel::_panicle_weight);
         External(LAST_LEAF_BIOMASS_SUM, &CulmStockModel::_last_leaf_biomass_sum);
-        External(LAST_PLANT_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
+        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
         External(IS_FIRST_DAY_PI, &CulmStockModel::_is_first_day_pi);
 
     }
@@ -85,7 +86,7 @@ public:
 
         //MaxReservoirDispo
         _max_reservoir_dispo = (_maximum_reserve_in_internode *
-                                _internode_biomass_sum) + (_leaf_stock_max * _leaf_biomass_sum - _stock_leaf_culm);
+                                _internode_biomass_sum) + (_leaf_stock_max * _leaf_biomass_sum);
 
         //Intermediate
         double stock = _plant_stock *
@@ -122,7 +123,13 @@ public:
 
 
         //CulmStock
-        _stock = std::max(0., std::min(_max_reservoir_dispo, _intermediate));
+        //@TODO : n'est fait qu'à partir de PI
+        //Avant Pi ("pre-pi" en delphi) stock = sum leaf_stock
+        if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
+            _stock = std::max(0., std::min(_max_reservoir_dispo, _intermediate));
+        } else {
+            _stock = _leaf_stock + _in_stock;
+        }
     }
 
 
@@ -171,6 +178,7 @@ private:
 
     //    externals
     plant::plant_phase _plant_phase;
+    culm::culm_phase _culm_phase;
     double _assim;
     double _leaf_biomass_sum;
     double _internode_biomass_sum;
