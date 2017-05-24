@@ -360,7 +360,7 @@ public:
                 ++_nb_lig;
             }
 
-            if (_index == 1 or (*it)->is_leaf_lig(t)) {
+            if (_index == 1 and i < _nb_leaf_param2 - 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
             if (_index == 1 and (*it)->is_leaf_lig(t)) {
@@ -557,6 +557,7 @@ public:
         _nb_leaf_max_after_pi = _parameters.get < double >("nb_leaf_max_after_PI");
         _phenostage_pre_flo_to_flo  = _parameters.get < double >("phenostage_PRE_FLO_to_FLO");
         _coeff_pi_lag = _parameters.get < double >("coeff_PI_lag");
+        _nb_leaf_param2 = parameters.get < double >("nb_leaf_param2");
 
         //    internals
         _nb_lig = 0;
@@ -607,6 +608,7 @@ private:
     double _nb_leaf_max_after_pi;
     double _phenostage_pre_flo_to_flo;
     double _coeff_pi_lag;
+    double _nb_leaf_param2;
 
     //    internals
     bool _started_PI;
