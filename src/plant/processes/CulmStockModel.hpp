@@ -9,7 +9,7 @@ class CulmStockModel : public AtomicModel < CulmStockModel >
 {
 public:
     enum internals { STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS,
-                     FIRST_DAY, STOCK_LEAF_CULM, LEAF_STOCK, IN_STOCK, IN_DEFICIT };
+                     FIRST_DAY, STOCK_LEAF_CULM, LEAF_STOCK, IN_STOCK, IN_DEFICIT, STOCK_CULM };
 
     enum externals { ASSIM, LEAF_BIOMASS_SUM, PLANT_LEAF_BIOMASS_SUM,
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
@@ -32,6 +32,7 @@ public:
         Internal(LEAF_STOCK, &CulmStockModel::_leaf_stock);
         Internal(IN_STOCK, &CulmStockModel::_in_stock);
         Internal(IN_DEFICIT, &CulmStockModel::_in_deficit);
+        Internal(STOCK_CULM, &CulmStockModel::_stock_culm);
 
         External(PLANT_BIOMASS_SUM, &CulmStockModel::_plant_biomass_sum);
         External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
@@ -83,6 +84,8 @@ public:
                                     (_leaf_demand_sum + _internode_demand_sum
                                      + _leaf_last_demand_sum + _internode_last_demand_sum));
 
+        _stock_culm = _plant_stock * (_leaf_biomass_sum + _internode_biomass_sum) / _plant_biomass_sum;
+
         //MaxReservoirDispo
         _max_reservoir_dispo = (_maximum_reserve_in_internode *
                                 _internode_biomass_sum) + (_leaf_stock_max * _leaf_biomass_sum);
@@ -127,7 +130,7 @@ public:
         if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
             _stock = std::max(0., std::min(_max_reservoir_dispo, _intermediate));
         } else {
-            _stock = _leaf_stock + _in_stock;
+            _stock = _stock_culm;
         }
     }
 
@@ -152,6 +155,7 @@ public:
         _leaf_stock = 0;
         _in_stock = 0;
         _in_deficit = 0;
+        _stock_culm = 0;
     }
 
 private:
@@ -174,6 +178,7 @@ private:
     double _leaf_stock;
     double _in_stock;
     double _in_deficit;
+    double _stock_culm;
 
     //    externals
     plant::plant_phase _plant_phase;

@@ -301,7 +301,6 @@ public:
         _culm_stock_model->put(t, CulmStockModel::PLANT_STOCK, _plant_stock);
         _culm_stock_model->put(t, CulmStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_BIOMASS_SUM, _internode_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::ASSIM, _assim);
         _culm_stock_model->put(t, CulmStockModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
         _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);

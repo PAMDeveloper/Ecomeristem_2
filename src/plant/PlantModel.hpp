@@ -292,6 +292,18 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
 
+        it = _culm_models.begin();
+        while (it != _culm_models.end()) {
+            (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
+            (*it)->stock_model()->put<double>(t, CulmStockModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
+            (*it)->stock_model()->put<double>(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
+            (*it)->stock_model()->put<double>(t, CulmStockModel::ASSIM, _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
+            (*it)->compute_stock(t);
+            _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
+            _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
+            _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
+            ++it;
+        }
 
         //Root
         _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
@@ -407,17 +419,17 @@ public:
             ++it;
         }
 
-        it = _culm_models.begin();
-        while (it != _culm_models.end()) {
-            (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
-            (*it)->stock_model()->put<double>(t, CulmStockModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
-            (*it)->stock_model()->put<double>(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
-            (*it)->compute_stock(t);
-            _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
-            _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
-            _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
-            ++it;
-        }
+//        it = _culm_models.begin();
+//        while (it != _culm_models.end()) {
+//            (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
+//            (*it)->stock_model()->put<double>(t, CulmStockModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
+//            (*it)->stock_model()->put<double>(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
+//            (*it)->compute_stock(t);
+//            _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
+//            _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
+//            _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
+//            ++it;
+//        }
     }
 
     void compute_height(double t)
