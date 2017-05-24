@@ -37,7 +37,7 @@ public:
 
     enum internals { LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
                      LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND };
-    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD, DELTA_T, PLASTO, LIGULO };
+    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, EDD, DELTA_T, PLASTO, LIGULO };
 
 
     PeduncleModel(int index, bool is_on_mainstem):
@@ -59,7 +59,7 @@ public:
         External(INTER_PREDIM, &PeduncleModel::_inter_predim); //FirstNonVegetativeInternode
         External(INTER_DIAM, &PeduncleModel::_inter_diam); //FirstNonVegetativeInternode
         External(FTSW, &PeduncleModel::_ftsw);
-        External(DD, &PeduncleModel::_dd);
+        External(EDD, &PeduncleModel::_edd);
         External(DELTA_T, &PeduncleModel::_delta_t);
         External(PLASTO, &PeduncleModel::_plasto);
         External(LIGULO, &PeduncleModel::_ligulo);
@@ -96,7 +96,7 @@ public:
 
             //Length and Exp time
             if (t == _first_day) {
-                _length = _iner * _dd;
+                _length = _iner * _edd;
                 _exp_time = (_length_predim - _length) / _iner;
             } else {
                 _exp_time = (_length_predim - _length) / _iner;
@@ -104,12 +104,12 @@ public:
             }
 
             //Volume
-            double radius = _inter_diam / 2;
+            double radius = _diameter_predim / 2;
             _volume = _length * M_PI * radius * radius;
 
             //Biomass and Demand
             if(t == _first_day) {
-                _biomass = _biomass = _volume * _density;
+                _biomass = _volume * _density;
                 _demand = _biomass;
             } else {
                 _demand = (_density * _volume) - _biomass;
@@ -184,7 +184,7 @@ private:
     double _inter_predim;
     double _inter_diam;
     double _ftsw;
-    double _dd;
+    double _edd;
     double _delta_t;
     double _plasto;
     double _ligulo;

@@ -104,7 +104,6 @@ public:
     {
         _p = _parameters.get(t).P;
 
-
         //LifeSpan
         if (t == _first_day) {
             _life_span = _coeffLifespan * std::exp(_mu * _index);

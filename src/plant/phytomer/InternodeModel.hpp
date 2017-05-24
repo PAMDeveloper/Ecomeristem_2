@@ -114,7 +114,7 @@ public:
                 _inter_len = _iner * _dd;
                 _exp_time = (_inter_predim - _inter_len) / _iner;
             } else {
-                if (!(_plant_state & plant::NOGROWTH)) {
+                if (!(_plant_state & plant::NOGROWTH) and (_plant_phase == plant::ELONG or _plant_phase == plant::PI or _plant_phase == plant::PRE_FLO)) {
                     _exp_time = (_inter_predim - _inter_len) / _iner;
                     _inter_len = std::min(_inter_predim, _inter_len + _iner * std::min(_delta_t, _exp_time));
                 }
@@ -163,7 +163,7 @@ public:
             _inter_phase = VEGETATIVE;
             break;
         case VEGETATIVE:
-            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI) and _lig == t) {
+            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _lig == t) {
                 _inter_phase = REALIZATION;
             }
             break;

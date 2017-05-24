@@ -52,7 +52,7 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT, REALLOC_BIOMASS_SUM };
+                     LEAF_BIOM_STRUCT, REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -87,6 +87,7 @@ public:
         Internal( IH, &PlantModel::_IH );
         Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
         Internal( REALLOC_BIOMASS_SUM, &PlantModel::_realloc_biomass_sum );
+        Internal( PEDUNCLE_BIOMASS_SUM, &PlantModel::_peduncle_biomass_sum );
 
     }
 
@@ -370,6 +371,7 @@ public:
         while (it != _culm_models.end()) {
             (*it)->put(t, CulmModel::BOOL_CROSSED_PLASTO, _thermal_time_model->get < double >(t, ThermalTimeModel::BOOL_CROSSED_PLASTO));
             (*it)->put(t, CulmModel::DD, _thermal_time_model->get < double >(t, ThermalTimeModel::DD));
+            (*it)->put(t, CulmModel::EDD, _thermal_time_model->get < double >(t, ThermalTimeModel::EDD));
             (*it)->put(t, CulmModel::DELTA_T, _thermal_time_model->get < double >(t, ThermalTimeModel::DELTA_T));
             (*it)->put(t, CulmModel::FTSW, _water_balance_model->get < double >(t, WaterBalanceModel::FTSW));
             (*it)->put(t, CulmModel::FCSTR, _water_balance_model->get < double >(t, WaterBalanceModel::FCSTR));
@@ -402,6 +404,7 @@ public:
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
         _panicle_demand_sum = 0;
+        _peduncle_biomass_sum = 0;
 
         it = _culm_models.begin();
         _predim_leaf_on_mainstem = (*it)->get <double, CulmModel> (t, CulmModel::STEM_LEAF_PREDIM);
@@ -415,6 +418,7 @@ public:
             _internode_last_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LAST_DEMAND_SUM);
             _internode_demand_sum += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_DEMAND_SUM);
             _internode_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
+            _peduncle_biomass_sum += (*it)->get < double, CulmModel >(t, CulmModel::PEDUNCLE_BIOMASS);
             _leaf_blade_area_sum += (*it)->get < double, CulmModel>(t, CulmModel::LEAF_BLADE_AREA_SUM);
             _realloc_biomass_sum += (*it)->get < double, CulmModel>(t, CulmModel::REALLOC_BIOMASS_SUM);
             _senesc_dw_sum += (*it)->get < double, CulmModel>(t, CulmModel::SENESC_DW_SUM);
@@ -538,6 +542,7 @@ public:
         _last_leaf_biomass_sum = 0;
         _is_first_day_pi = 0;
         _internode_stock_sum = 0;
+        _peduncle_biomass_sum = 0;
 
         //
         _last_time = 0;
@@ -611,6 +616,7 @@ private:
     double _last_leaf_biomass_sum;
     bool _is_first_day_pi;
     double _internode_stock_sum;
+    double _peduncle_biomass_sum;
 
     //internal states
     plant::plant_state _plant_state;
