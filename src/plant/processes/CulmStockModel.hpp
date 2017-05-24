@@ -9,7 +9,7 @@ class CulmStockModel : public AtomicModel < CulmStockModel >
 {
 public:
     enum internals { STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS,
-                     FIRST_DAY, STOCK_LEAF_CULM, LEAF_STOCK, IN_STOCK, IN_DEFICIT, STOCK_CULM,
+                     FIRST_DAY, LEAF_STOCK, STOCK_CULM, STOCK_INTERNODE,
                      CULM_BIOMASS };
 
     enum externals { ASSIM, LEAF_BIOMASS_SUM, PLANT_LEAF_BIOMASS_SUM,
@@ -29,12 +29,10 @@ public:
         Internal(SURPLUS, &CulmStockModel::_surplus);
         Internal(FIRST_DAY, &CulmStockModel::_first_day);
         Internal(INTERMEDIATE, &CulmStockModel::_intermediate);
-        Internal(STOCK_LEAF_CULM, &CulmStockModel::_stock_leaf_culm);
         Internal(LEAF_STOCK, &CulmStockModel::_leaf_stock);
-        Internal(IN_STOCK, &CulmStockModel::_in_stock);
-        Internal(IN_DEFICIT, &CulmStockModel::_in_deficit);
         Internal(STOCK_CULM, &CulmStockModel::_stock_culm);
         Internal(CULM_BIOMASS, &CulmStockModel::_culm_biomass);
+        Internal(STOCK_INTERNODE, &CulmStockModel::_stock_internode);
 
         External(PLANT_BIOMASS_SUM, &CulmStockModel::_plant_biomass_sum);
         External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
@@ -69,24 +67,9 @@ public:
             return;
         }
 
-        //stockleafculm
-        //@TODO : erreur en delphi, ((_last)_plant_biomass_sum à corriger
-        if(_is_first_day_pi) {
-            _leaf_stock = _plant_stock * (_last_leaf_biomass_sum / _last_plant_biomass_sum);
-            _in_stock = _plant_stock * (_internode_biomass_sum / _last_plant_biomass_sum);
-            _in_deficit = _plant_deficit * (_internode_biomass_sum / _last_plant_biomass_sum);
-        } else {
-            _leaf_stock = _plant_stock * (_leaf_biomass_sum / _plant_biomass_sum);
-            _in_stock = _plant_stock * (_internode_biomass_sum / _plant_biomass_sum);
-            _in_deficit = _plant_deficit * (_internode_biomass_sum / _plant_biomass_sum);
-        }
-
-        _stock_leaf_culm = std::min(_leaf_stock_max * _leaf_biomass_sum,
-                                    _leaf_stock - _in_stock + _in_deficit -
-                                    (_leaf_demand_sum + _internode_demand_sum
-                                     + _leaf_last_demand_sum + _internode_last_demand_sum));
-
         _stock_culm = _plant_stock * (_leaf_biomass_sum + _internode_biomass_sum) / _plant_biomass_sum;
+
+        _stock_internode = _maximum_reserve_in_internode * _internode_biomass_sum;
 
         _culm_biomass = _leaf_biomass_sum + _internode_biomass_sum;
 
@@ -120,17 +103,17 @@ public:
                                 _internode_last_demand_sum + _supply -
                                 _max_reservoir_dispo + _realloc_biomass_sum);
         } else {
-            _surplus = std::max(0., _stock - _internode_demand_sum -
-                                _leaf_demand_sum - _leaf_last_demand_sum -
-                                _internode_last_demand_sum - _panicle_day_demand
-                                + _supply - _max_reservoir_dispo +
-                                _realloc_biomass_sum);
+            if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
+                _surplus = std::max(0., _stock_culm - _internode_demand_sum -
+                                    _leaf_demand_sum - _leaf_last_demand_sum -
+                                    _internode_last_demand_sum - _panicle_day_demand
+                                    + _supply - _max_reservoir_dispo +
+                                    _realloc_biomass_sum);
+            }
         }
 
 
         //CulmStock
-        //@TODO : n'est fait qu'à partir de PI
-        //Avant Pi ("pre-pi" en delphi) stock = sum leaf_stock
         if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
             _stock = std::max(0., std::min(_max_reservoir_dispo, _intermediate));
         } else {
@@ -154,13 +137,11 @@ public:
         _intermediate = 0;
         _deficit = 0;
         _surplus = 0;
-        _stock_leaf_culm = 0;
         _first_day = t;
         _leaf_stock = 0;
-        _in_stock = 0;
-        _in_deficit = 0;
         _stock_culm = 0;
         _culm_biomass = 0;
+        _stock_internode = 0;
     }
 
 private:
@@ -179,12 +160,10 @@ private:
     double _intermediate;
     double _deficit;
     double _surplus;
-    double _stock_leaf_culm;
     double _leaf_stock;
-    double _in_stock;
-    double _in_deficit;
     double _stock_culm;
     double _culm_biomass;
+    double _stock_internode;
 
     //    externals
     plant::plant_phase _plant_phase;

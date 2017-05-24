@@ -292,6 +292,11 @@ public:
         _assimilation_model->put < double >(t, AssimilationModel::INTERNODEBIOMASS, _internode_biomass_sum);
         (*_assimilation_model)(t);
 
+        //CulmStockModel
+        _culm_stock_sum = 0;
+        _culm_deficit_sum = 0;
+        _culm_surplus_sum = 0;
+        _internode_stock_sum = 0;
         it = _culm_models.begin();
         while (it != _culm_models.end()) {
             (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
@@ -302,6 +307,7 @@ public:
             _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
             _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
             _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
+            _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModel::STOCK_INTERNODE);
             ++it;
         }
 
@@ -334,13 +340,12 @@ public:
                                      _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
         _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, _culm_stock_sum);
         _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, _culm_deficit_sum);
-        _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
+        _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _root_model->get< double > (t, RootModel::SURPLUS));
         _stock_model->put < plant::plant_phase >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
         (*_stock_model)(t);
 
         //@TODO: Variable de visu, à retirer
-        _leaf_biom_struct = _leaf_biomass_sum + (_leaf_biomass_sum * _leaf_stock_max);
-//        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get < double >(t,PlantStockModel::STOCK);
+        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
 
         compute_height(t);
     }
@@ -396,9 +401,6 @@ public:
         _leaf_blade_area_sum = 0;
         _realloc_biomass_sum = 0;
         _senesc_dw_sum = 0;
-        _culm_stock_sum = 0;
-        _culm_deficit_sum = 0;
-        _culm_surplus_sum = 0;
         _panicle_demand_sum = 0;
 
         it = _culm_models.begin();
@@ -535,6 +537,7 @@ public:
         _leaf_biom_struct = 0;
         _last_leaf_biomass_sum = 0;
         _is_first_day_pi = 0;
+        _internode_stock_sum = 0;
 
         //
         _last_time = 0;
@@ -607,6 +610,7 @@ private:
     double _leaf_biom_struct;
     double _last_leaf_biomass_sum;
     bool _is_first_day_pi;
+    double _internode_stock_sum;
 
     //internal states
     plant::plant_state _plant_state;
