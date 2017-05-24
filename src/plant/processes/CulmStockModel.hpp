@@ -9,7 +9,8 @@ class CulmStockModel : public AtomicModel < CulmStockModel >
 {
 public:
     enum internals { STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS,
-                     FIRST_DAY, STOCK_LEAF_CULM, LEAF_STOCK, IN_STOCK, IN_DEFICIT, STOCK_CULM };
+                     FIRST_DAY, STOCK_LEAF_CULM, LEAF_STOCK, IN_STOCK, IN_DEFICIT, STOCK_CULM,
+                     CULM_BIOMASS };
 
     enum externals { ASSIM, LEAF_BIOMASS_SUM, PLANT_LEAF_BIOMASS_SUM,
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
@@ -33,6 +34,7 @@ public:
         Internal(IN_STOCK, &CulmStockModel::_in_stock);
         Internal(IN_DEFICIT, &CulmStockModel::_in_deficit);
         Internal(STOCK_CULM, &CulmStockModel::_stock_culm);
+        Internal(CULM_BIOMASS, &CulmStockModel::_culm_biomass);
 
         External(PLANT_BIOMASS_SUM, &CulmStockModel::_plant_biomass_sum);
         External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
@@ -85,6 +87,8 @@ public:
                                      + _leaf_last_demand_sum + _internode_last_demand_sum));
 
         _stock_culm = _plant_stock * (_leaf_biomass_sum + _internode_biomass_sum) / _plant_biomass_sum;
+
+        _culm_biomass = _leaf_biomass_sum + _internode_biomass_sum;
 
         //MaxReservoirDispo
         _max_reservoir_dispo = (_maximum_reserve_in_internode *
@@ -156,6 +160,7 @@ public:
         _in_stock = 0;
         _in_deficit = 0;
         _stock_culm = 0;
+        _culm_biomass = 0;
     }
 
 private:
@@ -179,6 +184,7 @@ private:
     double _in_stock;
     double _in_deficit;
     double _stock_culm;
+    double _culm_biomass;
 
     //    externals
     plant::plant_phase _plant_phase;

@@ -183,7 +183,7 @@ public:
                 _last_blade_area = _blade_area;
             }
         } else {
-            _blade_area = _last_blade_area * (1 - _TT_Lig / _life_span);
+            _blade_area = std::max(0.,_last_blade_area * (1 - _TT_Lig / _life_span));
         }
 
         if(t >= _parameters.beginDate + 35){
@@ -208,7 +208,7 @@ public:
                     }
                 } else {
                     _old_biomass = _biomass;
-                    _biomass = _last_leaf_biomass * (1. - _TT_Lig / _life_span);
+                    _biomass = std::max(0.,_last_leaf_biomass * (1. - _TT_Lig / _life_span));
                     double delta_biomass = _old_biomass - _biomass;
                     _realloc_biomass = delta_biomass * _realocationCoeff;
                     _senesc_dw = delta_biomass * (1 - _realocationCoeff);
