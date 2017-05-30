@@ -39,7 +39,8 @@ public:
     enum externals { DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, PLANT_PHASE, LEAF_BIOMASS_SUM,
                      DELETED_LEAF_BIOMASS, REALLOC_BIOMASS_SUM, ASSIM,
-                     PLANT_STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM };
+                     PLANT_STATE, CULM_STOCK, CULM_DEFICIT, CULM_SURPLUS_SUM,
+                     PEDUNCLE_LAST_DEMAND_SUM};
 
 
     PlantStockModel() {
@@ -68,6 +69,7 @@ public:
         External(CULM_STOCK, &PlantStockModel::_culm_stock);
         External(CULM_DEFICIT, &PlantStockModel::_culm_deficit);
         External(CULM_SURPLUS_SUM, &PlantStockModel::_culm_surplus_sum);
+        External(PEDUNCLE_LAST_DEMAND_SUM, &PlantStockModel::_peduncle_last_demand_sum);
     }
 
     virtual ~PlantStockModel()
@@ -161,7 +163,7 @@ public:
             if (_demand_sum == 0) {
                 _day_demand = _leaf_last_demand_sum + _internode_last_demand_sum;
             } else {
-                _day_demand = _demand_sum +  _leaf_last_demand_sum + _internode_last_demand_sum;;
+                _day_demand = _demand_sum +  _leaf_last_demand_sum + _internode_last_demand_sum + _peduncle_last_demand_sum;
             }
         }
         _day_demand_[2] = _day_demand_[1];
@@ -191,11 +193,11 @@ public:
 
 
         //  reservoir_dispo
-         if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
-             _reservoir_dispo = 0;
-         } else  {
-             _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
-         }
+        if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
+            _reservoir_dispo = 0;
+        } else  {
+            _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
+        }
 
         //  stock
         if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
@@ -315,6 +317,7 @@ private:
     double _culm_deficit;
     double _culm_surplus_sum;
     double _assim;
+    double _peduncle_last_demand_sum;
 
 };
 

@@ -49,7 +49,7 @@ public:
                      REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
-                     PEDUNCLE_DAY_DEMAND };
+                     PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND };
 
     enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -91,6 +91,7 @@ public:
         Internal(PANICLE_DAY_DEMAND, &CulmModel::_panicle_day_demand);
         Internal(PEDUNCLE_BIOMASS, &CulmModel::_peduncle_biomass);
         Internal(PEDUNCLE_DAY_DEMAND, &CulmModel::_peduncle_day_demand);
+        Internal(PEDUNCLE_LAST_DEMAND, &CulmModel::_peduncle_last_demand);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -197,13 +198,14 @@ public:
                 setsubmodel(PEDUNCLE, _peduncle_model.get());
                 _peduncle_model->init(t, _parameters);
                 _culm_phase = culm::PRE_FLO;
+                _culm_phenostage_at_pre_flo = _culm_phenostage;
             }
             break;
         }
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
-            if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
-                //            PeduncleTransitionToFLO( );
+            if(_culm_phenostage == _culm_phenostage_at_pre_flo + _phenostage_pre_flo_to_flo ) {
+                std::cout << "passage à flo pour index " << _index << " ce jour ! " << std::endl;
                 _culm_phase = culm::FLO;
             }
             break;
