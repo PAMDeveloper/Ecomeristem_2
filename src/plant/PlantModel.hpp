@@ -53,7 +53,7 @@ public:
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
                      LEAF_BIOM_STRUCT, REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM,
-                     PEDUNCLE_LAST_DEMAND_SUM };
+                     PEDUNCLE_LAST_DEMAND_SUM, CULM_SURPLUS_SUM };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -90,6 +90,7 @@ public:
         Internal( REALLOC_BIOMASS_SUM, &PlantModel::_realloc_biomass_sum );
         Internal( PEDUNCLE_BIOMASS_SUM, &PlantModel::_peduncle_biomass_sum );
         Internal( PEDUNCLE_LAST_DEMAND_SUM, &PlantModel::_peduncle_last_demand_sum );
+        Internal( CULM_SURPLUS_SUM, &PlantModel::_culm_surplus_sum );
     }
 
     virtual ~PlantModel()
@@ -345,7 +346,13 @@ public:
                                      _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
         _stock_model->put < double >(t, PlantStockModel::CULM_STOCK, _culm_stock_sum);
         _stock_model->put < double >(t, PlantStockModel::CULM_DEFICIT, _culm_deficit_sum);
-        _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _root_model->get< double > (t, RootModel::SURPLUS));
+        if (_plant_phase == plant::PI or _plant_phase == plant::ELONG) {
+            _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _root_model->get< double > (t, RootModel::SURPLUS));
+        } else if(_plant_phase == plant::PRE_FLO or _plant_phase == plant::FLO or _plant_phase == plant::END_FILLING or _plant_phase == plant::MATURITY) {
+            _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, _culm_surplus_sum);
+        } else {
+            _stock_model->put < double >(t, PlantStockModel::CULM_SURPLUS_SUM, 0);
+        }
         _stock_model->put < plant::plant_phase >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
         (*_stock_model)(t);
 

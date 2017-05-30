@@ -205,7 +205,6 @@ public:
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
             if(_culm_phenostage == _culm_phenostage_at_pre_flo + _phenostage_pre_flo_to_flo ) {
-                std::cout << "passage à flo pour index " << _index << " ce jour ! " << std::endl;
                 _culm_phase = culm::FLO;
             }
             break;
