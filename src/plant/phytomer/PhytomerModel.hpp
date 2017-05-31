@@ -173,6 +173,7 @@ public:
                 _leaf_model->get < bool > (t, LeafModel::IS_LIG);
     }
 
+
 private:
     //  attribute
     int _index;
