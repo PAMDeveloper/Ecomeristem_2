@@ -49,7 +49,8 @@ public:
                      REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
-                     PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND };
+                     PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
+                     FIRST_LEAF_LEN};
 
     enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -92,6 +93,7 @@ public:
         Internal(PEDUNCLE_BIOMASS, &CulmModel::_peduncle_biomass);
         Internal(PEDUNCLE_DAY_DEMAND, &CulmModel::_peduncle_day_demand);
         Internal(PEDUNCLE_LAST_DEMAND, &CulmModel::_peduncle_last_demand);
+        Internal(FIRST_LEAF_LEN, &CulmModel::_first_leaf_len);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -243,10 +245,6 @@ public:
         _last_ligulated_leaf_len = 0;
         _realloc_biomass_sum = 0;
 
-        // Modifs PHT, à vérifier
-        //_first_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
-        //auto it = _phytomer_models.begin();
-
 
         while (it != _phytomer_models.end()) {
             //Phytomers
@@ -257,6 +255,15 @@ public:
 
             //GetLastINnonVegetative
             get_nonvegetative_in(it, t);
+
+            if(i == 0) {
+                // Modifs PHT, à vérifier
+                _first_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+                if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
+                    _last_ligulated_leaf = i;
+                    _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+                }
+            }
 
             previous_it = it;
             ++it;
@@ -378,7 +385,7 @@ public:
             if (_index == 1 and i < _nb_leaf_param2 - 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
-            if (_index == 1 and (*it)->is_leaf_lig(t)) {
+            if (_index == 1 and (*it)->is_leaf_lig(t) and t != (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                 _last_ligulated_leaf = i;
                 _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
             }
@@ -598,6 +605,7 @@ public:
         _peduncle_last_demand = 0;
         _peduncle_day_demand = 0;
         _peduncle_len = 0;
+        _first_leaf_len = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -662,6 +670,7 @@ private:
     double _peduncle_len;
     double _culm_phenostage_at_pi;
     double _culm_phenostage_at_pre_flo;
+    double _first_leaf_len;
 
     //        double _lig;
     //        double _deleted_leaf_number;
