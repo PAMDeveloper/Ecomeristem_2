@@ -25,6 +25,7 @@ public:
 };
 
 #include <QSortFilterProxyModel>
+#include <QDate>
 
 class VisibleTraceModel : public QSortFilterProxyModel {
 public:
@@ -34,7 +35,7 @@ public:
     bool filterAcceptsRow(int sourceRow,const QModelIndex &sourceParent) const;
     void setFilters(QString date, QString model, QString var, QString phase) {
         this->date = date; this->model = model; this->var = var; this->phase = phase.isEmpty() ? -1 :phase.toInt();
-        date_i = KernelInfo::term(date.toStdString());
+        date_i = QDate::fromString(date, "yyyy-MM-dd").toJulianDay();
         model_i = KernelInfo::term(model.toStdString());
         var_i = KernelInfo::term(var.toStdString());
         invalidateFilter();
