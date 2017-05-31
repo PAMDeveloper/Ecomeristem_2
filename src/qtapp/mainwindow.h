@@ -46,7 +46,15 @@ public:
      void on_lineEdit_3_textChanged(const QString &arg1);
      void on_lineEdit_4_textChanged(const QString &arg1);
 
- private:
+     void on_lineEdit_returnPressed();
+
+     void on_lineEdit_2_returnPressed();
+
+     void on_lineEdit_3_returnPressed();
+
+     void on_lineEdit_4_returnPressed();
+
+private:
      Ui::MainWindow *ui;
      QString _date;
      QString _model_name;

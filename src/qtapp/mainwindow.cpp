@@ -50,6 +50,8 @@ MainWindow::~MainWindow()
 #include <ctime>
 void MainWindow::show_trace()
 {
+    if(_date.isEmpty() && _model_name.isEmpty() && _var_name.isEmpty() && ui->lineEdit_4->text().isEmpty())
+        return;
     std::chrono::time_point<std::chrono::system_clock> startC, endC;
     double elapsed_seconds;
     startC = std::chrono::system_clock::now();
@@ -79,25 +81,21 @@ void MainWindow::show_trace()
 void MainWindow::on_lineEdit_textChanged(const QString &arg1)
 {
     _date = arg1;
-    show_trace();
 }
 
 void MainWindow::on_lineEdit_2_textChanged(const QString &arg1)
 {
     _model_name = arg1;
-    show_trace();
 }
 
 void MainWindow::on_lineEdit_3_textChanged(const QString &arg1)
 {
     _var_name = arg1;
-    show_trace();
 }
 
 void MainWindow::on_lineEdit_4_textChanged(const QString &arg1)
 {
     _type = arg1.toInt();
-    show_trace();
 }
 
 
@@ -288,3 +286,23 @@ void MainWindow::displayData(observer::PlantView * view,
 
 
 
+
+void MainWindow::on_lineEdit_returnPressed()
+{
+    show_trace();
+}
+
+void MainWindow::on_lineEdit_2_returnPressed()
+{
+    show_trace();
+}
+
+void MainWindow::on_lineEdit_3_returnPressed()
+{
+    show_trace();
+}
+
+void MainWindow::on_lineEdit_4_returnPressed()
+{
+    show_trace();
+}

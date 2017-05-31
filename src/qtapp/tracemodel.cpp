@@ -15,13 +15,13 @@ void TraceModel::setElements(const TraceElements<DoubleTime> & elements) {
 
 QVariant TraceModel::data(const QModelIndex &index, int role) const {
     if(role == Qt::DisplayRole) {
-        QString result;
-        for (int i = 0; i < 10; ++i) {
-            if(index.row()*10 + i < elements.size()) {
-                result += QString::fromStdString(elements[index.row()*10 + i].to_string(artis::utils::DATE_FORMAT_YMD));
-                result += "\n";
-            }
-        }
+        QString result = QString::fromStdString(elements[index.row()].to_string(artis::utils::DATE_FORMAT_YMD));
+//        for (int i = 0; i < 10; ++i) {
+//            if(index.row()*10 + i < elements.size()) {
+//                result += QString::fromStdString(elements[index.row()*10 + i].to_string(artis::utils::DATE_FORMAT_YMD));
+//                result += "\n";
+//            }
+//        }
         return result;
 
     }
@@ -29,5 +29,5 @@ QVariant TraceModel::data(const QModelIndex &index, int role) const {
 }
 
 int TraceModel::rowCount(const QModelIndex &parent) const {
-    return (int)(elements.size() / 10);
+    return elements.size();
 }
