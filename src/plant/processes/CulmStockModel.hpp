@@ -18,7 +18,8 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
                      REALLOC_BIOMASS_SUM, PLANT_PHASE, CULM_PHASE,
                      PANICLE_DAY_DEMAND, PANICLE_WEIGHT, LAST_LEAF_BIOMASS_SUM,
-                     LAST_PLANT_LEAF_BIOMASS_SUM, IS_FIRST_DAY_PI };
+                     LAST_PLANT_LEAF_BIOMASS_SUM, IS_FIRST_DAY_PI,
+                     PEDUNCLE_LAST_DEMAND, PEDUNCLE_DAY_DEMAND};
 
 
     CulmStockModel() {
@@ -54,6 +55,8 @@ public:
         External(PANICLE_DAY_DEMAND, &CulmStockModel::_panicle_day_demand);
         External(PANICLE_WEIGHT, &CulmStockModel::_panicle_weight);
         External(IS_FIRST_DAY_PI, &CulmStockModel::_is_first_day_pi);
+        External(PEDUNCLE_DAY_DEMAND, &CulmStockModel::_peduncle_day_demand);
+        External(PEDUNCLE_LAST_DEMAND, &CulmStockModel::_peduncle_last_demand);
 
     }
 
@@ -91,7 +94,8 @@ public:
 
         _intermediate = stock + deficit + _supply - _internode_demand_sum -
                 _leaf_demand_sum - _leaf_last_demand_sum - _panicle_day_demand -
-                _internode_last_demand_sum + _realloc_biomass_sum;
+                _internode_last_demand_sum - _peduncle_day_demand - _peduncle_last_demand
+                + _realloc_biomass_sum;
 
         //Deficit
         _deficit = std::min(0., _intermediate);
@@ -107,6 +111,7 @@ public:
                 _surplus = std::max(0., _stock_culm - _internode_demand_sum -
                                     _leaf_demand_sum - _leaf_last_demand_sum -
                                     _internode_last_demand_sum - _panicle_day_demand
+                                    - _peduncle_day_demand - _peduncle_last_demand
                                     + _supply - _max_reservoir_dispo +
                                     _realloc_biomass_sum);
             }
@@ -185,6 +190,8 @@ private:
     double _last_leaf_biomass_sum;
     double _last_plant_biomass_sum;
     bool _is_first_day_pi;
+    double _peduncle_day_demand;
+    double _peduncle_last_demand;
 
 };
 

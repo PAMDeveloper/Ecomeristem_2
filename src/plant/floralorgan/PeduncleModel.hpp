@@ -37,7 +37,8 @@ public:
 
     enum internals { LENGTH_PREDIM, DIAMETER_PREDIM, REDUCTION_INER, INER,
                      LENGTH, VOLUME, EXP_TIME, BIOMASS, DEMAND, LAST_DEMAND };
-    enum externals { PLANT_PHASE, INTER_PREDIM, INTER_DIAM, FTSW, DD, DELTA_T, PLASTO, LIGULO };
+    enum externals { PLANT_PHASE, CULM_PHASE, INTER_PREDIM, INTER_DIAM, FTSW,
+                     EDD, DELTA_T, PLASTO, LIGULO };
 
 
     PeduncleModel(int index, bool is_on_mainstem):
@@ -56,10 +57,11 @@ public:
         Internal(LAST_DEMAND, &PeduncleModel::_last_demand);
 
         External(PLANT_PHASE, &PeduncleModel::_plant_phase);
+        External(CULM_PHASE, &PeduncleModel::_culm_phase);
         External(INTER_PREDIM, &PeduncleModel::_inter_predim); //FirstNonVegetativeInternode
         External(INTER_DIAM, &PeduncleModel::_inter_diam); //FirstNonVegetativeInternode
         External(FTSW, &PeduncleModel::_ftsw);
-        External(DD, &PeduncleModel::_dd);
+        External(EDD, &PeduncleModel::_edd);
         External(DELTA_T, &PeduncleModel::_delta_t);
         External(PLASTO, &PeduncleModel::_plasto);
         External(LIGULO, &PeduncleModel::_ligulo);
@@ -81,7 +83,7 @@ public:
             _diameter_predim = _peduncle_diam * _inter_diam;
         }
 
-        if(!_is_mature and _plant_phase != plant::MATURITY) {
+        if(!_is_mature and _plant_phase != plant::MATURITY and _culm_phase != culm::FLO) {
 
             //Reduction INER
             if (_ftsw < _thresINER) {
@@ -91,25 +93,25 @@ public:
                 _reduction_iner = 1. + _p * _respINER;
             }
 
-            //INER //@TODO: quel index ? quel plasto ? quel ligulo ?
+            //INER //@TODO: quel index ? à corriger pour les simu ou ligulo =/= plasto
             _iner = _length_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
 
             //Length and Exp time
             if (t == _first_day) {
-                _length = _iner * _dd;
+                _length = _iner * _edd;
                 _exp_time = (_length_predim - _length) / _iner;
             } else {
                 _exp_time = (_length_predim - _length) / _iner;
-                _length = _length + (_iner * std::min(_delta_t, _exp_time));
+                _length = std::min(_length_predim, _length + (_iner * std::min(_delta_t, _exp_time)));
             }
 
             //Volume
-            double radius = _inter_diam / 2;
+            double radius = _diameter_predim / 2;
             _volume = _length * M_PI * radius * radius;
 
             //Biomass and Demand
             if(t == _first_day) {
-                _biomass = _biomass = _volume * _density;
+                _biomass = _volume * _density;
                 _demand = _biomass;
             } else {
                 _demand = (_density * _volume) - _biomass;
@@ -181,10 +183,11 @@ private:
 
     // externals
     plant::plant_phase _plant_phase;
+    culm::culm_phase _culm_phase;
     double _inter_predim;
     double _inter_diam;
     double _ftsw;
-    double _dd;
+    double _edd;
     double _delta_t;
     double _plasto;
     double _ligulo;

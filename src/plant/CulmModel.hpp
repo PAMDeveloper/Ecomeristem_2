@@ -41,22 +41,20 @@ public:
     enum submodels { PHYTOMERS, PANICLE, PEDUNCLE };
 
 
-    enum internals { /*STOCK, DEFICIT, SURPLUS, */NB_LIG, STEM_LEAF_PREDIM,
+    enum internals { NB_LIG, STEM_LEAF_PREDIM,
                      LEAF_BIOMASS_SUM, LEAF_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, INTERNODE_LAST_DEMAND_SUM,
                      INTERNODE_BIOMASS_SUM, INTERNODE_LEN_SUM,
                      LEAF_BLADE_AREA_SUM,
                      REALLOC_BIOMASS_SUM, SENESC_DW_SUM,
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
-                     LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND };
+                     LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
+                     PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND };
 
-    enum externals { BOOL_CROSSED_PLASTO, DD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
+    enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
                      PLANT_STATE, TEST_IC, PLANT_STOCK,
-                     PLANT_DEFICIT, /*PLANT_LEAF_BIOMASS_SUM,
-                     PLANT_BIOMASS_SUM,*/ ASSIM, MGR,
-                     PLASTO, LIGULO, LL_BL,/* LAST_PLANT_LEAF_BIOMASS_SUM,*/
-                     IS_FIRST_DAY_PI };
+                     PLANT_DEFICIT, ASSIM, MGR, PLASTO, LIGULO, LL_BL,IS_FIRST_DAY_PI };
 
 
     CulmModel(int index):
@@ -64,15 +62,15 @@ public:
         _culm_stock_model(new CulmStockModel)
     {
         // submodels
-//        Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
-//        @TODO gérer le problème de sous-modèle non calculé pour culmstock
+        //        Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
+        //        @TODO gérer le problème de sous-modèle non calculé pour culmstock
 
         //    internals
 
         //@TODO regarder pourquoi ca pointe dans le vide
-//        InternalS(STOCK, _culm_stock_model.get(), CulmStockModel::STOCK);
-//        InternalS(DEFICIT, _culm_stock_model.get(), CulmStockModel::DEFICIT);
-//        InternalS(SURPLUS, _culm_stock_model.get(), CulmStockModel::SURPLUS);
+        //        InternalS(STOCK, _culm_stock_model.get(), CulmStockModel::STOCK);
+        //        InternalS(DEFICIT, _culm_stock_model.get(), CulmStockModel::DEFICIT);
+        //        InternalS(SURPLUS, _culm_stock_model.get(), CulmStockModel::SURPLUS);
 
 
         Internal(NB_LIG, &CulmModel::_nb_lig);
@@ -91,10 +89,14 @@ public:
         Internal(LAST_LIGULATED_LEAF_LEN, &CulmModel::_last_ligulated_leaf_len);
         Internal(LAST_LEAF_BIOMASS_SUM, &CulmModel::_last_leaf_biomass_sum);
         Internal(PANICLE_DAY_DEMAND, &CulmModel::_panicle_day_demand);
+        Internal(PEDUNCLE_BIOMASS, &CulmModel::_peduncle_biomass);
+        Internal(PEDUNCLE_DAY_DEMAND, &CulmModel::_peduncle_day_demand);
+        Internal(PEDUNCLE_LAST_DEMAND, &CulmModel::_peduncle_last_demand);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
         External(DD, &CulmModel::_dd);
+        External(EDD, &CulmModel::_edd);
         External(DELTA_T, &CulmModel::_delta_t);
         External(FTSW, &CulmModel::_ftsw);
         External(FCSTR, &CulmModel::_fcstr);
@@ -106,9 +108,9 @@ public:
         External(TEST_IC, &CulmModel::_test_ic);
         External(PLANT_STOCK, &CulmModel::_plant_stock);
         External(PLANT_DEFICIT, &CulmModel::_plant_deficit);
-//        External(PLANT_BIOMASS_SUM, &CulmModel::_plant_biomass_sum);
-//        External(PLANT_LEAF_BIOMASS_SUM, &CulmModel::_plant_leaf_biomass_sum);
-//        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
+        //        External(PLANT_BIOMASS_SUM, &CulmModel::_plant_biomass_sum);
+        //        External(PLANT_LEAF_BIOMASS_SUM, &CulmModel::_plant_leaf_biomass_sum);
+        //        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
         External(ASSIM, &CulmModel::_assim);
         External(MGR, &CulmModel::_MGR);
         External(PLASTO, &CulmModel::_plasto);
@@ -141,18 +143,26 @@ public:
 
         if(_plant_phase == plant::PI && _lag == false) {
             _lag = true;
-            _culm_phenostage_at_lag = _culm_phenostage;
+            if(_culm_phenostage_at_lag == 0) {
+                _culm_phenostage_at_lag = _culm_phenostage;
+            }
         }
 
         if(_lag) {
             if(_culm_phenostage == _culm_phenostage_at_lag + _coeff_pi_lag && get_phytomer_number() >= 3) {
                 _culm_phase = culm::PI;
+                if(_culm_phenostage_at_pi == 0) {
+                    _culm_phenostage_at_pi = _culm_phenostage;
+                }
                 _lag = false;
             }
         }
 
         if( _plant_phase == plant::PI && _is_first_culm) {
             _culm_phase = culm::PI;
+            if(_culm_phenostage_at_pi == 0) {
+                _culm_phenostage_at_pi = _culm_phenostage;
+            }
         }
 
         switch( _culm_phase  ) {
@@ -171,7 +181,7 @@ public:
         case culm::ELONG: {
             break;
         }
-        case culm::PI: {
+        case culm::PI: {        
             _last_phase = _culm_phase ;
             if( _plant_state & plant::NEW_PHYTOMER_AVAILABLE) {
                 if( _plant_phase == plant::PI) {
@@ -181,19 +191,20 @@ public:
                         _panicle_model->init(t, _parameters);
                         _started_PI = true;
                     }
-                } else if (_culm_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 ) {
-                    _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm));
-                    setsubmodel(PEDUNCLE, _peduncle_model.get());
-                    _peduncle_model->init(t, _parameters);
-                    _culm_phase = culm::PRE_FLO;
                 }
+            }
+            if (_culm_phenostage == _culm_phenostage_at_pi + _nb_leaf_max_after_pi + 1) {
+                _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm));
+                setsubmodel(PEDUNCLE, _peduncle_model.get());
+                _peduncle_model->init(t, _parameters);
+                _culm_phase = culm::PRE_FLO;
+                _culm_phenostage_at_pre_flo = _culm_phenostage;
             }
             break;
         }
         case culm::PRE_FLO: {
             _last_phase = _culm_phase ;
-            if( _plant_phenostage == _nb_leaf_pi + _nb_leaf_max_after_pi + 1 + _phenostage_pre_flo_to_flo ) {
-                //            PeduncleTransitionToFLO( );
+            if(_culm_phenostage == _culm_phenostage_at_pre_flo + _phenostage_pre_flo_to_flo ) {
                 _culm_phase = culm::FLO;
             }
             break;
@@ -265,10 +276,11 @@ public:
 
         if(_peduncle_model.get()) {
             _peduncle_model->put < plant::plant_phase >(t, PeduncleModel::PLANT_PHASE, _plant_phase);
+            _peduncle_model->put < culm::culm_phase >(t, PeduncleModel::CULM_PHASE, _culm_phase);
             _peduncle_model->put (t, PeduncleModel::INTER_PREDIM, _peduncle_inerlen_predim);
             _peduncle_model->put (t, PeduncleModel::INTER_DIAM, _peduncle_inerdiam_predim);
             _peduncle_model->put(t, PeduncleModel::FTSW, _ftsw);
-            _peduncle_model->put(t, PeduncleModel::DD, _dd);
+            _peduncle_model->put(t, PeduncleModel::EDD, _edd);
             _peduncle_model->put (t, PeduncleModel::DELTA_T, _delta_t);
             _peduncle_model->put (t, PeduncleModel::PLASTO, _plasto);
             _peduncle_model->put (t, PeduncleModel::LIGULO, _ligulo);
@@ -276,20 +288,21 @@ public:
         }
 
         if(_peduncle_model.get()) {
-            _internode_last_demand_sum += _peduncle_model->get < double >(t, PeduncleModel::LAST_DEMAND);
-            _internode_demand_sum += _peduncle_model->get < double >(t, PeduncleModel::DEMAND);
-            _internode_biomass_sum += _peduncle_model->get < double >(t, PeduncleModel::BIOMASS);
-            _internode_len_sum += _peduncle_model->get < double >(t, PeduncleModel::LENGTH);
+            _peduncle_last_demand = _peduncle_model->get < double >(t, PeduncleModel::LAST_DEMAND);
+            _peduncle_day_demand = _peduncle_model->get < double >(t, PeduncleModel::DEMAND);
+            //_internode_biomass_sum += _peduncle_model->get < double >(t, PeduncleModel::BIOMASS);
+            _peduncle_len = _peduncle_model->get < double >(t, PeduncleModel::LENGTH);
+            _peduncle_biomass = _peduncle_model->get < double >(t, PeduncleModel::BIOMASS);
         }
 
         //StockModel
-//        compute_stock(t);
+        //        compute_stock(t);
     }
 
     void get_nonvegetative_in(std::deque < PhytomerModel* >::iterator it, double t) {
         if(_peduncle_model.get()) {
-            _peduncle_iner_phase = (*it)->internode()->get <InternodeModel::internode_phase>(t, InternodeModel::INTERNODE_PHASE);
-            if(_peduncle_iner_phase != InternodeModel::VEGETATIVE) {
+            //@TODO : à modifier pour prendre la phase de l'entrenoeud
+            if(((*it)->internode()->get < double >(t, InternodeModel::INTERNODE_LEN)) > 0) {
                 _peduncle_inerlen_predim = (*it)->internode()->get<double>(t, InternodeModel::INTERNODE_PREDIM);
                 _peduncle_inerdiam_predim = (*it)->internode()->get<double>(t, InternodeModel::INTER_DIAMETER);
             }
@@ -311,6 +324,8 @@ public:
         _culm_stock_model->put(t, CulmStockModel::PANICLE_DAY_DEMAND, _panicle_day_demand);
         _culm_stock_model->put(t, CulmStockModel::PANICLE_WEIGHT, _panicle_weight);
         _culm_stock_model->put(t, CulmStockModel::IS_FIRST_DAY_PI, _is_first_day_pi);
+        _culm_stock_model->put(t, CulmStockModel::PEDUNCLE_LAST_DEMAND, _peduncle_last_demand);
+        _culm_stock_model->put(t, CulmStockModel::PEDUNCLE_DAY_DEMAND, _peduncle_day_demand);
 
         (*_culm_stock_model)(t);
     }
@@ -579,14 +594,19 @@ public:
         _panicle_weight = 0;
         _peduncle_inerlen_predim = 0;
         _peduncle_inerdiam_predim = 0;
+        _peduncle_biomass = 0;
+        _peduncle_last_demand = 0;
+        _peduncle_day_demand = 0;
+        _peduncle_len = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
         _last_phase = _culm_phase;
         _culm_phenostage = 1;
         _culm_phenostage_at_lag = 0;
+        _culm_phenostage_at_pi = 0;
+        _culm_phenostage_at_pre_flo = 0;
         _lag = false;
-        _peduncle_iner_phase = InternodeModel::VEGETATIVE;
     }
 
 private:
@@ -636,7 +656,12 @@ private:
     double _panicle_weight;
     double _peduncle_inerlen_predim;
     double _peduncle_inerdiam_predim;
-    InternodeModel::internode_phase _peduncle_iner_phase;
+    double _peduncle_biomass;
+    double _peduncle_last_demand;
+    double _peduncle_day_demand;
+    double _peduncle_len;
+    double _culm_phenostage_at_pi;
+    double _culm_phenostage_at_pre_flo;
 
     //        double _lig;
     //        double _deleted_leaf_number;
@@ -653,6 +678,7 @@ private:
     double _ligulo;
     double _bool_crossed_plasto;
     double _dd;
+    double _edd;
     double _delta_t;
     double _ftsw;
     double _fcstr;

@@ -63,7 +63,6 @@ public:
         Internal(REDUCTION_LER, &LeafModel::_reduction_ler);
         Internal(LER, &LeafModel::_ler);
         Internal(EXP_TIME, &LeafModel::_exp_time);
-        Internal(LEAF_LEN, &LeafModel::_len);
         Internal(PLASTO_DELAY, &LeafModel::_plasto_delay);
         Internal(WIDTH, &LeafModel::_width);
         Internal(TT_LIG, &LeafModel::_TT_Lig);
@@ -103,7 +102,6 @@ public:
     void compute(double t, bool /* update */)
     {
         _p = _parameters.get(t).P;
-
 
         //LifeSpan
         if (t == _first_day) {
