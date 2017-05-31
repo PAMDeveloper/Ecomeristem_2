@@ -41,8 +41,6 @@
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
-  MainWindow w;
-  w.show();
 
   GlobalParameters globalParameters;
 //    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
@@ -55,7 +53,7 @@ int main(int argc, char *argv[]) {
 
   QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
                                   "dd/MM/yyyy");
-//  parameters.set <std::string>("EndDate", "24/03/2014");
+//  parameters.set <std::string>("EndDate", "24/01/2014");
   QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
                                 "dd/MM/yyyy");
   parameters.beginDate = start.toJulianDay();
@@ -69,10 +67,12 @@ int main(int argc, char *argv[]) {
   simulator.init(start.toJulianDay(), parameters);
   simulator.run(context);
 
-    std::ofstream out("Trace.txt");
-    out << std::fixed << ::Trace::trace().elements().to_string();
-    out.close();
+//    std::ofstream out("Trace.txt");
+//    out << std::fixed << ::Trace::trace().elements().to_string();
+//    out.close();
 
+    MainWindow w;
+    w.show();
 //    w.show_trace();
   w.displayData(view, QString::fromStdString(dirName), &parameters,
                 QString::fromStdString(parameters.get < std::string >("BeginDate")),
