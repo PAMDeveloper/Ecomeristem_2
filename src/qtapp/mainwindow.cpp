@@ -20,6 +20,7 @@
 #include <qtapp/meteodatamodel.h>
 #include <qtapp/parametersdatamodel.h>
 
+
 #include <defines.hpp>
 
 using namespace artis::kernel;
@@ -33,6 +34,11 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->splitter->setStretchFactor(0,0);
     ui->splitter->setStretchFactor(1,1);
+    trace_model = new TraceModel();
+    ui->tableView->setModel(trace_model);
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView->horizontalHeader()->hide();
+//    ui->tableView->verticalHeader()->hide();
 }
 
 MainWindow::~MainWindow()
@@ -40,9 +46,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+#include <chrono>
+#include <ctime>
 void MainWindow::show_trace()
 {
-    ui->textEdit->clear();
+    std::chrono::time_point<std::chrono::system_clock> startC, endC;
+    double elapsed_seconds;
+    startC = std::chrono::system_clock::now();
     auto elements = ::Trace::trace().elements();//.filter_type(artis::utils::AFTER_COMPUTE);
     if(!_date.isEmpty())
         elements = elements.filter_time(artis::utils::DateTime::toJulianDayNumber(_date.toStdString()));
@@ -52,7 +62,17 @@ void MainWindow::show_trace()
         elements = elements.filter_variable(_var_name.toStdString());
     if(!ui->lineEdit_4->text().isEmpty())
         elements = elements.filter_type(static_cast<artis::utils::TraceType>(_type));
-    ui->textEdit->setText(QString::fromStdString(elements.to_string(artis::utils::DATE_FORMAT_YMD)));
+    endC = std::chrono::system_clock::now();
+    elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(endC-startC).count();
+    qDebug() << "Query: " << _date << _model_name << _var_name << _type << elapsed_seconds << "ms";
+    qDebug() << elements.size() << "elements" ;
+    startC = std::chrono::system_clock::now();
+    trace_model->setElements(elements);
+    endC = std::chrono::system_clock::now();
+    elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(endC-startC).count();
+    qDebug() << "elapsed time: " << elapsed_seconds << "ms";
+//    ui->textEdit->setText(QString::fromStdString(elements.to_string(artis::utils::DATE_FORMAT_YMD)));
+
 }
 
 

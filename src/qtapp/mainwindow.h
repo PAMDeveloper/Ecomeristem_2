@@ -11,6 +11,8 @@
 #include <utils/ParametersReader.hpp>
 #include <artis/utils/DateTime.hpp>
 
+#include <qtapp/tracemodel.h>
+
 #include <QMouseEvent>
 #include <QDate>
 
@@ -50,6 +52,8 @@ public:
      QString _model_name;
      QString _var_name;
      int _type;
+
+     TraceModel * trace_model;
 
 private:
     ecomeristem::ModelParameters parameters;

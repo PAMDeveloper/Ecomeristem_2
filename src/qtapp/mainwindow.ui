@@ -131,7 +131,7 @@
            </layout>
           </item>
           <item>
-           <widget class="QTextEdit" name="textEdit"/>
+           <widget class="QTableView" name="tableView"/>
           </item>
          </layout>
         </item>
