@@ -49,8 +49,8 @@ public:
         //PlantModel
         selector("BIOMLEAF", artis::kernel::DOUBLE, {
                      PlantModel::LEAF_BIOM_STRUCT });
-        selector("BIOMINTERNODE", artis::kernel::DOUBLE, {
-                     PlantModel::INTERNODE_BIOMASS_SUM });
+        selector("BIOMIN", artis::kernel::DOUBLE, {
+                     PlantModel::INTERNODE_BIOM_STRUCT });
         selector("SENESC_DW", artis::kernel::DOUBLE, {
                      PlantModel::SENESC_DW_SUM });
         selector("PHT", artis::kernel::DOUBLE, {

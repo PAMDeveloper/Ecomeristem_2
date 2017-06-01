@@ -29,7 +29,7 @@ namespace model {
 class LeafModel : public AtomicModel < LeafModel >
 {
 public:
-    enum leaf_phase   { INITIAL, VEGETATIVE, LIG };
+    enum leaf_phase   { INITIAL, VEGETATIVE, LIG, DEAD };
 
     enum internals { LEAF_PHASE, LIFE_SPAN, REDUCTION_LER, LEAF_LEN, LER,
                      EXP_TIME, PLASTO_DELAY, LEAF_PREDIM, WIDTH,
@@ -41,7 +41,7 @@ public:
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
-                     SLA, PLANT_STATE, TEST_IC, MGR };
+                     SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF };
 
 
     virtual ~LeafModel()
@@ -95,12 +95,17 @@ public:
         External(DELTA_T, &LeafModel::_delta_t);
         External(SLA, &LeafModel::_sla);
         External(MGR, &LeafModel::_MGR);
+        External(KILL_LEAF, &LeafModel::_kill_leaf);
     }
 
 
 
     void compute(double t, bool /* update */)
     {
+        if(_kill_leaf or _leaf_phase == LeafModel::DEAD) {
+            _leaf_phase == LeafModel::DEAD;
+            return;
+        }
         _p = _parameters.get(t).P;
 
         //LifeSpan
@@ -366,6 +371,7 @@ private:
     double _dd;
     double _delta_t;
     double _sla;
+    bool _kill_leaf;
 
 };
 
