@@ -26,6 +26,7 @@
 #ifndef SAMPLE_ATOMIC_MODEL_HPP
 #define SAMPLE_ATOMIC_MODEL_HPP
 
+#include <QDebug>
 #include <defines.hpp>
 #include <plant/processes/CulmStockModel.hpp>
 #include <plant/phytomer/PhytomerModel.hpp>
@@ -430,6 +431,9 @@ public:
     int get_phytomer_number() const
     { return _phytomer_models.size(); }
 
+    int get_alive_phytomer_number() const
+    { return _phytomer_models.size() - _deleted_leaf_number; }
+
     CulmStockModel * stock_model() const
     { return _culm_stock_model.get(); }
 
@@ -441,6 +445,8 @@ public:
 
         //        delete _phytomer_models[index]; //@TODO : phytomer à détruire si feuille morte ? Intrenoeud mort aussi ?
         //        _phytomer_models.erase(_phytomer_models.begin() + index);
+
+        qDebug() << "Feuille " << index << "détruire sur : " << _index;
 
         _phytomer_models[index]->kill_leaf(t);
         ++_deleted_leaf_number;

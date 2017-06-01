@@ -162,7 +162,7 @@ public:
     { return _index; }
 
     bool is_leaf_dead() const
-    { return _leaf_model.get() == nullptr; }
+    { return _kill_leaf; }
 
     bool is_leaf_lig(double t) const {
         return !is_leaf_dead() &&

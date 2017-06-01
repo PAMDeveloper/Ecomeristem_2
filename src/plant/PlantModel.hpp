@@ -488,11 +488,29 @@ public:
         if (_stock_model->get < double >(t, PlantStockModel::STOCK) == 0) {
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
             int i = 0;
-            while (it != _culm_models.end() and (*it)->get_phytomer_number() == 0) {
-                ++it;
-                ++i;
-            }
-            if (it != _culm_models.end()) {
+            if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+                while (it != _culm_models.end() and (*it)->get_alive_phytomer_number() == 0) {
+                    ++it;
+                    ++i;
+                }
+                if (it != _culm_models.end()) {
+                    _culm_index = i;
+                    _leaf_index = (*it)->get_first_ligulated_leaf_index(t);
+                    if (_leaf_index != -1) {
+                        _deleted_leaf_biomass =
+                                _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
+                        _deleted_leaf_blade_area =
+                                _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
+                    }
+                }
+            } else {
+                while (it != _culm_models.end() and (*it)->get_phytomer_number() > _nb_leaf_enabling_tillering ) {
+                    ++it;
+                    ++i;
+                }
+                if((*it)->get_phytomer_number() < _nb_leaf_enabling_tillering) {
+                    --it;
+                }
                 _culm_index = i;
                 _leaf_index = (*it)->get_first_ligulated_leaf_index(t);
                 if (_leaf_index != -1) {
@@ -515,6 +533,7 @@ public:
         _slope_LL_BL_at_PI = parameters.get < double >("slope_LL_BL_at_PI");
         _nb_leaf_pi = parameters.get < double >("nbleaf_pi");
         _nb_leaf_max_after_pi = parameters.get < double >("nb_leaf_max_after_PI");
+        _nb_leaf_enabling_tillering = parameters.get < double >("nb_leaf_enabling_tillering");
         _coef_ligulo = parameters.get < double >("coef_ligulo1");
         _coeff_Plasto_PI = parameters.get < double >("coef_plasto_PI");
         _coeff_Ligulo_PI = parameters.get < double >("coef_ligulo_PI");
@@ -627,6 +646,7 @@ private:
     double _Ict;
     double _resp_Ict;
     double _leaf_stock_max;
+    double _nb_leaf_enabling_tillering;
 
     // vars
     double _predim_leaf_on_mainstem;

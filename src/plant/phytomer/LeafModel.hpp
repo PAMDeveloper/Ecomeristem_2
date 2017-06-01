@@ -104,6 +104,25 @@ public:
     {
         if(_kill_leaf or _leaf_phase == LeafModel::DEAD) {
             _leaf_phase == LeafModel::DEAD;
+            _realloc_biomass = 0;
+            _life_span = 0;
+            _reduction_ler = 0;
+            _ler = 0;
+            _exp_time = 0;
+            _len = 0;
+            _plasto_delay = 0;
+            _width = 0;
+            _TT_Lig = 0;
+            _blade_area = 0;
+            _biomass = 0;
+            _old_biomass = 0;
+            _senesc_dw = 0;
+            _senesc_dw_sum = 0;
+            _demand = 0;
+            _last_demand = 0;
+            _time_from_app = 0;
+            _last_blade_area = 0;
+            _last_leaf_biomass = 0;
             return;
         }
         _p = _parameters.get(t).P;
