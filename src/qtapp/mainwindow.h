@@ -41,11 +41,6 @@ public:
      void show_trace();
 
  private slots:
-     void on_lineEdit_textChanged(const QString &arg1);
-     void on_lineEdit_2_textChanged(const QString &arg1);
-     void on_lineEdit_3_textChanged(const QString &arg1);
-     void on_lineEdit_4_textChanged(const QString &arg1);
-
      void on_lineEdit_returnPressed();
 
      void on_lineEdit_2_returnPressed();
@@ -56,10 +51,6 @@ public:
 
 private:
      Ui::MainWindow *ui;
-     QString _date;
-     QString _model_name;
-     QString _var_name;
-     int _type;
 
      VisibleTraceModel * trace_model;
 

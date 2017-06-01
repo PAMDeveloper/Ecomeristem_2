@@ -35,9 +35,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->splitter->setStretchFactor(0,0);
     ui->splitter->setStretchFactor(1,1);
     trace_model = new VisibleTraceModel(::Trace::trace().elements());
-    ui->tableView->setModel(trace_model);
-    ui->tableView->horizontalHeader()->setStretchLastSection(true);
-    ui->tableView->horizontalHeader()->hide();
+//    ui->tableView->setModel(trace_model);
+//    ui->tableView->horizontalHeader()->setStretchLastSection(true);
+//    ui->tableView->horizontalHeader()->hide();
 //    ui->tableView->verticalHeader()->hide();
 }
 
@@ -50,55 +50,11 @@ MainWindow::~MainWindow()
 #include <ctime>
 void MainWindow::show_trace()
 {
-    trace_model->setFilters(_date, _model_name, _var_name, ui->lineEdit_4->text());
-//    if(_date.isEmpty() && _model_name.isEmpty() && _var_name.isEmpty() && ui->lineEdit_4->text().isEmpty())
-//        return;
-//    std::chrono::time_point<std::chrono::system_clock> startC, endC;
-//    double elapsed_seconds;
-//    startC = std::chrono::system_clock::now();
-//    auto elements = ;//.filter_type(artis::utils::AFTER_COMPUTE);
-//    if(!_date.isEmpty())
-//        elements = elements.filter_time(artis::utils::DateTime::toJulianDayNumber(_date.toStdString()));
-//    if(!_model_name.isEmpty())
-//        elements = elements.filter_model_name(_model_name.toStdString());
-//    if(!_var_name.isEmpty())
-//        elements = elements.filter_variable(_var_name.toStdString());
-//    if(!ui->lineEdit_4->text().isEmpty())
-//        elements = elements.filter_type(static_cast<artis::utils::TraceType>(_type));
-//    endC = std::chrono::system_clock::now();
-//    elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(endC-startC).count();
-//    qDebug() << "Query: " << _date << _model_name << _var_name << _type << elapsed_seconds << "ms";
-//    qDebug() << elements.size() << "elements" ;
-//    startC = std::chrono::system_clock::now();
-//    trace_model->setElements(elements);
-//    endC = std::chrono::system_clock::now();
-//    elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(endC-startC).count();
-//    qDebug() << "elapsed time: " << elapsed_seconds << "ms";
-////    ui->textEdit->setText(QString::fromStdString(elements.to_string(artis::utils::DATE_FORMAT_YMD)));
-
+    ui->tableView->setModel(NULL);
+    ui->tableView->reset();
+    trace_model->setFilters(ui->lineEdit->text(), ui->lineEdit_2->text(), ui->lineEdit_3->text(), ui->lineEdit_4->text());
+    ui->tableView->setModel(trace_model);
 }
-
-
-void MainWindow::on_lineEdit_textChanged(const QString &arg1)
-{
-    _date = arg1;
-}
-
-void MainWindow::on_lineEdit_2_textChanged(const QString &arg1)
-{
-    _model_name = arg1;
-}
-
-void MainWindow::on_lineEdit_3_textChanged(const QString &arg1)
-{
-    _var_name = arg1;
-}
-
-void MainWindow::on_lineEdit_4_textChanged(const QString &arg1)
-{
-    _type = arg1.toInt();
-}
-
 
 void MainWindow::addChart(int row, int col,
                           QLineSeries *series, QLineSeries *refSeries,
