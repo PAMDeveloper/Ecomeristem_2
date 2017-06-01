@@ -61,7 +61,7 @@ private:
      QString _var_name;
      int _type;
 
-     TraceModel * trace_model;
+     VisibleTraceModel * trace_model;
 
 private:
     ecomeristem::ModelParameters parameters;
