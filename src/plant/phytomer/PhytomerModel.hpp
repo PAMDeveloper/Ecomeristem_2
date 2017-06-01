@@ -39,7 +39,7 @@ public:
                      INTERNODE_LEN, LEAF_LAST_DEMAND, PLASTO_DELAY,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      LEAF_CORRECTED_BIOMASS, LEAF_CORRECTED_BLADE_AREA,
-                     LEAF_LEN };
+                     LEAF_LEN, KILL_LEAF };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR, PREDIM_LEAF_ON_MAINSTEM,
                      PREDIM_PREVIOUS_LEAF, SLA, PLANT_PHASE, TEST_IC,
@@ -75,7 +75,7 @@ public:
         InternalS(INTERNODE_BIOMASS, _internode_model.get(), InternodeModel::BIOMASS);
         InternalS(INTERNODE_LEN, _internode_model.get(), InternodeModel::INTERNODE_LEN);
 
-
+        Internal(KILL_LEAF, &PhytomerModel::_kill_leaf);
         // externals
         External(PLANT_STATE, &PhytomerModel::_plant_state);
         External(PLANT_PHASE, &PhytomerModel::_plant_phase);
@@ -91,8 +91,8 @@ public:
 
     virtual ~PhytomerModel()
     {
-//        if (internode_model) delete internode_model;
-//        if (leaf_model) delete leaf_model;
+//        if (_internode_model) delete _internode_model;
+//        if (_leaf_model) delete _leaf_model;
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters)
@@ -100,12 +100,15 @@ public:
         // submodels
         _internode_model->init(t, parameters);
         _leaf_model->init(t, parameters);
+
+        _kill_leaf = false;
     }
 
     void compute(double t, bool /* update */)
     {
-        if (_leaf_model) {       
+        if (_leaf_model) {
             _leaf_model->put(t, LeafModel::DD, _dd);
+            _leaf_model->put(t, LeafModel::KILL_LEAF, _kill_leaf);
             _leaf_model->put(t, LeafModel::DELTA_T, _delta_t);
             _leaf_model->put(t, LeafModel::FTSW, _ftsw);
             _leaf_model->put(t, LeafModel::FCSTR, _fcstr);
@@ -128,17 +131,10 @@ public:
         (*_internode_model)(t);
     }
 
-    void delete_leaf(double t)
+    void kill_leaf(double t)
     {
-
-//#ifdef WITH_TRACE
-//        utils::Trace::trace()
-//            << utils::TraceElement("CULM", t, artis::utils::COMPUTE)
-//            << "ADD LIG ; DELETE index = " << _index;
-//        utils::Trace::trace().flush();
-//#endif
-
-        _leaf_model.release();
+        _kill_leaf = true;
+//        _leaf_model.release();
 //        change_internal(LEAF_BIOMASS, &PhytomerModel::_null);
 //        change_internal(LEAF_BLADE_AREA, &PhytomerModel::_null);
 //        change_internal(LEAF_DEMAND, &PhytomerModel::_null);
@@ -186,6 +182,9 @@ private:
     // submodels
     std::unique_ptr < InternodeModel > _internode_model;
     std::unique_ptr < LeafModel > _leaf_model;
+
+    // internal
+    bool _kill_leaf;
 
     // external variables
     double _ftsw;

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
                                   "dd/MM/yyyy");
-//  parameters.set <std::string>("EndDate", "24/03/2014");
+  parameters.set <std::string>("EndDate", "22/02/2014");
   QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
                                 "dd/MM/yyyy");
   parameters.beginDate = start.toJulianDay();
