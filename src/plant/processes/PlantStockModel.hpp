@@ -27,6 +27,7 @@
 #define STOCK_MODEL_HPP
 
 #include <defines.hpp>
+#include <QDebug>
 
 namespace model {
 
@@ -184,6 +185,7 @@ public:
         }
 
         //  stock, surplus and seedres
+        _deficit_1 = _deficit;
         if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
             _stock = _culm_stock;
             _deficit = _culm_deficit;
@@ -216,12 +218,12 @@ public:
         }
 
 
-        // Realloc biomass
-        if (_deleted_leaf_biomass > 0) {
-            double qty = _deleted_leaf_biomass * _realocationCoeff;
-            _stock = std::max(0., qty + _deficit);
-            _deficit = std::min(0., qty + _deficit);
-        }
+//        // Realloc biomass à mettre dans plantstock ?
+//        if (_deleted_leaf_biomass > 0) {
+//            double qty = _deleted_leaf_biomass * _realocationCoeff;
+//            _stock = std::max(0., qty + _deficit);
+//            _deficit = std::min(0., qty + _deficit);
+//        }
 
         _seed_res_[2] = _seed_res_[1];
         _seed_res_[1] = _seed_res_[0];
@@ -252,6 +254,7 @@ public:
         _deficit = 0;
         _supply = 0;
         _surplus = 0;
+        _deficit_1 = 0;
         for (int i = 0; i < 3; ++i) {
             _ic_[i] = _seed_res_[i] = _supply_[i] = _day_demand_[i] = 0;
         }
@@ -284,6 +287,7 @@ private:
     double _stock;
     double _deficit;
     double _surplus;
+    double _deficit_1;
 
     //    externals
     double _demand_sum;

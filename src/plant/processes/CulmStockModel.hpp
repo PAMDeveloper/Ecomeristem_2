@@ -118,8 +118,8 @@ public:
         }
 
 
-        //CulmStock
-        if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
+        //CulmStock @TODO : correction erreur delphi "(_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)" à retirer
+        if((_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) or (_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)) {
             _stock = std::max(0., std::min(_max_reservoir_dispo, _intermediate));
         } else {
             _stock = _stock_culm;

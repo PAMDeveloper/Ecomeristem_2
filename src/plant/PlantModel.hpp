@@ -194,8 +194,15 @@ public:
     void compute(double t, bool /* update */) {
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
 
+        qDebug() << QString::fromStdString(date) << " - Deleted_leaf_biomass before delete : " << _deleted_leaf_biomass;
         //Delete leaf
         delete_leaf(t);
+        // Realloc biomass @TODO : vérifier position de ce calcul
+        if (_deleted_leaf_biomass > 0) {
+            double qty = _deleted_leaf_biomass * _realocationCoeff;
+            _stock = std::max(0., qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            _deficit = std::min(0., qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+        }
 
         //Compute IC
         _stock_model->compute_IC(t);
@@ -328,6 +335,7 @@ public:
         (*_root_model)(t);
 
         // Stock
+        qDebug() << QString::fromStdString(date) << " Deleted_leaf_biomass before put : " << _deleted_leaf_biomass;
         double demand_sum;
         if(_plant_phase == plant::VEGETATIVE) {
             demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _peduncle_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);
@@ -342,7 +350,7 @@ public:
         _stock_model->put < double >(t, PlantStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
         _stock_model->put < plant::plant_state >(t, PlantStockModel::PLANT_STATE, _plant_state);
         _stock_model->put < double >(t, PlantStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
-        _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, 0);
+        _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, _deleted_leaf_biomass);
         _stock_model->put < double >(t, PlantStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
         _stock_model->put < double >(t, PlantStockModel::ASSIM,
                                      _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
@@ -396,8 +404,13 @@ public:
             (*it)->put < plant::plant_state >(t, CulmModel::PLANT_STATE, _plant_state);
             (*it)->put < plant::plant_phase >(t, CulmModel::PLANT_PHASE, _plant_phase);
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
-            (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
-            (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            if(_deleted_leaf_biomass > 0) {
+                (*it)->put(t, CulmModel::PLANT_STOCK, _stock);
+                (*it)->put(t, CulmModel::PLANT_DEFICIT, _deficit);
+            } else {
+                (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
+                (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            }
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
             (*it)->put(t, CulmModel::MGR, _MGR);
             (*it)->put(t, CulmModel::PLASTO, _plasto);
@@ -474,7 +487,6 @@ public:
             //                (*it)->realloc_biomass(t, _deleted_leaf_biomass);
             //                ++it;
             //            }
-            _stock_model->put < double >(t, PlantStockModel::DELETED_LEAF_BIOMASS, _deleted_leaf_biomass);
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
         }
     }
@@ -518,6 +530,7 @@ public:
                             _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
                     _deleted_leaf_blade_area =
                             _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
+
                 }
             }
         }
@@ -545,8 +558,7 @@ public:
         _Ict = _parameters.get < double >("Ict");
         _resp_Ict = _parameters.get < double >("resp_Ict");
         _leaf_stock_max = parameters.get < double >("leaf_stock_max");
-
-
+        _realocationCoeff = _parameters.get < double >("realocationCoeff");
 
         //Attributes for culmmodel
         _plasto = parameters.get < double >("plasto_init");
@@ -607,6 +619,8 @@ public:
         _deleted_leaf_blade_area = 0;
         _culm_index = -1;
         _leaf_index = -1;
+        _stock = 0;
+        _deficit = 0;
 
         _last_time = 0;
     }
@@ -647,6 +661,7 @@ private:
     double _resp_Ict;
     double _leaf_stock_max;
     double _nb_leaf_enabling_tillering;
+    double _realocationCoeff;
 
     // vars
     double _predim_leaf_on_mainstem;
@@ -687,6 +702,8 @@ private:
     double _deleted_leaf_blade_area;
     int _culm_index;
     int _leaf_index;
+    double _stock;
+    double _deficit;
 
     //internal states
     plant::plant_state _plant_state;

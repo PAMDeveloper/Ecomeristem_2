@@ -176,7 +176,7 @@ public:
         }
         case culm::VEGETATIVE: {
             if(_plant_phase == plant::ELONG) {
-                if( _nb_lig > 0) {
+                if(_nb_lig > 0) {
                     _culm_phase  = culm::ELONG;
                 }
             }
@@ -442,11 +442,8 @@ public:
     void delete_leaf(double t, int index, double biomass)
     {
         _deleted_senesc_dw = (1 - _realocationCoeff) * biomass;
-
-        //        delete _phytomer_models[index]; //@TODO : phytomer à détruire si feuille morte ? Intrenoeud mort aussi ?
-        //        _phytomer_models.erase(_phytomer_models.begin() + index);
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-        qDebug() << "Le" << QString::fromStdString(date) << "Feuille " << index << "détruire sur : " << _index;
+        qDebug() << "Le" << QString::fromStdString(date) << "Feuille " << index + 1 << "détruire sur : " << _index - 1;
 
         _phytomer_models[index]->kill_leaf(t);
         ++_deleted_leaf_number;
