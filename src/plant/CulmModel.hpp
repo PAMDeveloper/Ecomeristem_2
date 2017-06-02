@@ -445,8 +445,8 @@ public:
 
         //        delete _phytomer_models[index]; //@TODO : phytomer à détruire si feuille morte ? Intrenoeud mort aussi ?
         //        _phytomer_models.erase(_phytomer_models.begin() + index);
-
-        qDebug() << "Feuille " << index << "détruire sur : " << _index;
+        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+        qDebug() << "Le" << QString::fromStdString(date) << "Feuille " << index << "détruire sur : " << _index;
 
         _phytomer_models[index]->kill_leaf(t);
         ++_deleted_leaf_number;

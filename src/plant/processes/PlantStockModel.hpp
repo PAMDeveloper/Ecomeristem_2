@@ -55,7 +55,6 @@ public:
         Internal(SURPLUS, &PlantStockModel::_surplus);
         Internal(DEFICIT, &PlantStockModel::_deficit);
 
-
         //    external variables
         External(DEMAND_SUM, &PlantStockModel::_demand_sum);
         External(LEAF_LAST_DEMAND_SUM, &PlantStockModel::_leaf_last_demand_sum);
@@ -170,21 +169,6 @@ public:
         _day_demand_[1] = _day_demand_[0];
         _day_demand_[0] = _day_demand;
 
-
-        //  seed_res
-        if (t == _parameters.beginDate) {
-            _seed_res = _gdw - _day_demand;
-        } else {
-            if (_seed_res > _day_demand) {
-                _seed_res = _seed_res - _day_demand;
-            } else {
-                _seed_res = 0;
-            }
-        }
-        _seed_res_[2] = _seed_res_[1];
-        _seed_res_[1] = _seed_res_[0];
-        _seed_res_[0] = _seed_res;
-
         //  supply
         _supply = _assim;
         _supply_[2] = _supply_[1];
@@ -199,46 +183,38 @@ public:
             _reservoir_dispo = _leaf_stock_max * _leaf_biomass_sum - _stock;
         }
 
-        //  stock
+        //  stock, surplus and seedres
         if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
             _stock = _culm_stock;
             _deficit = _culm_deficit;
+            _surplus = _culm_surplus_sum;
         } else {
             double stock = 0;
-
             if (_seed_res > 0) {
                 if (_seed_res > _day_demand) {
+                    _seed_res = _seed_res - _day_demand;
                     stock = _stock + std::min(_reservoir_dispo, _supply + _realloc_biomass_sum);
+                    _surplus = std::max(0., _supply - _reservoir_dispo + _realloc_biomass_sum);
                 } else {
                     stock = _stock +
                             std::min(_reservoir_dispo, _supply - (_day_demand - _seed_res) +
                                      _realloc_biomass_sum);
+                    _surplus = std::max(0., _supply - (_day_demand - _seed_res) -
+                                        _reservoir_dispo + _realloc_biomass_sum);
+                    _seed_res = 0;
+
                 }
             } else {
                 stock = _stock + std::min(_reservoir_dispo, _supply - _day_demand +
                                           _realloc_biomass_sum);
+                _surplus = std::max(0., _supply - _reservoir_dispo - _day_demand +
+                                    _realloc_biomass_sum);
             }
 
             _stock = std::max(0., _deficit + stock);
             _deficit = std::min(0., _deficit + stock);
         }
 
-        //  surplus
-        if (_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
-            _surplus = _culm_surplus_sum;
-        } else {
-            if (_seed_res > 0) {
-                if (_seed_res > _day_demand) {
-                    _surplus = std::max(0., _supply - _reservoir_dispo + _realloc_biomass_sum);
-                } else {
-                    _surplus = std::max(0., _supply - (_day_demand - _seed_res) -
-                                        _reservoir_dispo + _realloc_biomass_sum);
-                }
-            } else {
-                _surplus = std::max(0., _supply - _reservoir_dispo - _day_demand +
-                                    _realloc_biomass_sum);
-            }
-        }
 
         // Realloc biomass
         if (_deleted_leaf_biomass > 0) {
@@ -246,6 +222,11 @@ public:
             _stock = std::max(0., qty + _deficit);
             _deficit = std::min(0., qty + _deficit);
         }
+
+        _seed_res_[2] = _seed_res_[1];
+        _seed_res_[1] = _seed_res_[0];
+        _seed_res_[0] = _seed_res;
+
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
@@ -266,7 +247,7 @@ public:
         _ic_1 = 0; //@TODO check initialization value
         _test_ic = 0; //@TODO check initialization value
         _reservoir_dispo = 0;
-        _seed_res = 0;
+        _seed_res = _gdw;
         _stock = 1e-10; //@TODO check initialization value
         _deficit = 0;
         _supply = 0;
