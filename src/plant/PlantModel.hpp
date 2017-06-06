@@ -194,7 +194,6 @@ public:
     void compute(double t, bool /* update */) {
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
 
-        qDebug() << QString::fromStdString(date) << " - Deleted_leaf_biomass before delete : " << _deleted_leaf_biomass;
         //Delete leaf
         delete_leaf(t);
         // Realloc biomass @TODO : vérifier position de ce calcul
@@ -335,7 +334,6 @@ public:
         (*_root_model)(t);
 
         // Stock
-        qDebug() << QString::fromStdString(date) << " Deleted_leaf_biomass before put : " << _deleted_leaf_biomass;
         double demand_sum;
         if(_plant_phase == plant::VEGETATIVE) {
             demand_sum = _leaf_demand_sum + _internode_demand_sum + _panicle_demand_sum + _peduncle_demand_sum + _root_model->get < double >(t, RootModel::ROOT_DEMAND);

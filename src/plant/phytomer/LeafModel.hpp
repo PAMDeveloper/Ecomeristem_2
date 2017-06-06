@@ -103,7 +103,7 @@ public:
     void compute(double t, bool /* update */)
     {
         if(_kill_leaf or _leaf_phase == LeafModel::DEAD) {
-            _leaf_phase == LeafModel::DEAD;
+            _leaf_phase = LeafModel::DEAD;
             _realloc_biomass = 0;
             _life_span = 0;
             _reduction_ler = 0;
@@ -208,28 +208,21 @@ public:
             _blade_area = std::max(0.,_last_blade_area * (1 - _TT_Lig / _life_span));
         }
 
-        if(t >= _parameters.beginDate + 35){
-
-        }
-
         //Biomass
-        _old_biomass = 0;
+        _old_biomass = _biomass;
         if (_first_day == t) {
             _biomass = (1. / _G_L) * _blade_area / _sla;
             _realloc_biomass = 0;
             _sla_cste = _sla;
-            _old_biomass = 0;
         } else {
-            if (!(_plant_state & plant::NOGROWTH)) {
+            if (!(_plant_state & plant::NOGROWTH) or (_is_lig and !(_is_lig_t))) {
                 if (not _is_lig || _is_lig_t) {
-                    _old_biomass = _biomass;
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _realloc_biomass = 0;
                     if (_is_lig_t) {
                         _last_leaf_biomass = _biomass;
                     }
                 } else {
-                    _old_biomass = _biomass;
                     _biomass = std::max(0.,_last_leaf_biomass * (1. - _TT_Lig / _life_span));
                     double delta_biomass = _old_biomass - _biomass;
                     _realloc_biomass = delta_biomass * _realocationCoeff;

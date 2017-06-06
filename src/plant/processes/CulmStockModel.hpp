@@ -10,7 +10,7 @@ class CulmStockModel : public AtomicModel < CulmStockModel >
 public:
     enum internals { STOCK, SUPPLY, MAX_RESERVOIR_DISPO, INTERMEDIATE, DEFICIT, SURPLUS,
                      FIRST_DAY, LEAF_STOCK, STOCK_CULM, STOCK_INTERNODE,
-                     CULM_BIOMASS };
+                     CULM_BIOMASS, DEFICIT_CULM };
 
     enum externals { ASSIM, LEAF_BIOMASS_SUM, PLANT_LEAF_BIOMASS_SUM,
                      INTERNODE_BIOMASS_SUM, PLANT_BIOMASS_SUM, PLANT_STOCK,
@@ -34,11 +34,11 @@ public:
         Internal(STOCK_CULM, &CulmStockModel::_stock_culm);
         Internal(CULM_BIOMASS, &CulmStockModel::_culm_biomass);
         Internal(STOCK_INTERNODE, &CulmStockModel::_stock_internode);
+        Internal(DEFICIT_CULM, &CulmStockModel::_deficit_culm);
 
         External(PLANT_BIOMASS_SUM, &CulmStockModel::_plant_biomass_sum);
         External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_last_plant_biomass_sum);
         External(PLANT_LEAF_BIOMASS_SUM, &CulmStockModel::_plant_leaf_biomass_sum);
-
         External(LAST_LEAF_BIOMASS_SUM, &CulmStockModel::_last_leaf_biomass_sum);
         External(ASSIM, &CulmStockModel::_assim);
         External(LEAF_BIOMASS_SUM, &CulmStockModel::_leaf_biomass_sum);
@@ -71,6 +71,8 @@ public:
         }
 
         _stock_culm = _plant_stock * (_leaf_biomass_sum + _internode_biomass_sum) / _plant_biomass_sum;
+
+        _deficit_culm =  _plant_deficit * (_leaf_biomass_sum + _internode_biomass_sum) / _plant_biomass_sum;
 
         _stock_internode = _maximum_reserve_in_internode * _internode_biomass_sum;
 
@@ -147,6 +149,7 @@ public:
         _stock_culm = 0;
         _culm_biomass = 0;
         _stock_internode = 0;
+        _deficit_culm = 0;
     }
 
 private:
@@ -169,6 +172,7 @@ private:
     double _stock_culm;
     double _culm_biomass;
     double _stock_internode;
+    double _deficit_culm;
 
     //    externals
     plant::plant_phase _plant_phase;
