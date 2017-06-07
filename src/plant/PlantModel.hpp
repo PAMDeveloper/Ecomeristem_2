@@ -41,12 +41,6 @@ public:
     enum submodels { THERMAL_TIME, WATER_BALANCE, STOCK, ASSIMILATION,
                      ROOT, CULMS};
 
-    /* LAI, DELTA_T, DD, EDD, IH, LIGULO_VISU, PHENO_STAGE,
-                     PLASTO_VISU, TT, TT_LIG, BOOL_CROSSED_PLASTO,
-                     ASSIM, CSTR, ROOT_DEMAND_COEF, ROOT_DEMAND,
-                     ROOT_BIOMASS, GROW, SUPPLY, DEFICIT, IC,
-                     SURPLUS, TEST_IC, DAY_DEMAND, RESERVOIR_DISPO,
-                     SEED_RES, */
     enum internals { LIG, LEAF_BIOMASS_SUM, INTERNODE_BIOMASS_SUM,
                      SENESC_DW_SUM, LEAF_LAST_DEMAND_SUM,
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
@@ -278,7 +272,7 @@ public:
         //CulmModel
         compute_culms(t);
 
-        //Lig update @TODO : vérifier placement équations TT_lig et IH
+        //Lig update
         _lig_1 = _lig;
         mainstem = _culm_models.begin();
         _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG_TOT);
@@ -488,14 +482,6 @@ public:
         if (_culm_index != -1 and _leaf_index != -1) {
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass);
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-
-            //@TODO pondérer _deleted_leaf_biomass pour chaque axe
-            //@TODO conditionner à ELONG ou PI
-
-            //            while (it != _culm_models.end()) {
-            //                (*it)->realloc_biomass(t, _deleted_leaf_biomass);
-            //                ++it;
-            //            }
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
         }
     }

@@ -114,9 +114,6 @@ public:
         External(TEST_IC, &CulmModel::_test_ic);
         External(PLANT_STOCK, &CulmModel::_plant_stock);
         External(PLANT_DEFICIT, &CulmModel::_plant_deficit);
-        //        External(PLANT_BIOMASS_SUM, &CulmModel::_plant_biomass_sum);
-        //        External(PLANT_LEAF_BIOMASS_SUM, &CulmModel::_plant_leaf_biomass_sum);
-        //        External(LAST_PLANT_LEAF_BIOMASS_SUM, &CulmModel::_last_plant_biomass_sum);
         External(ASSIM, &CulmModel::_assim);
         External(MGR, &CulmModel::_MGR);
         External(PLASTO, &CulmModel::_plasto);
@@ -257,6 +254,7 @@ public:
             compute_vars(it, previous_it, i, t);
             //GetLastINnonVegetative
             get_nonvegetative_in(it, t);
+
             if(i == 0 and (*it)->leaf()) {
                 _first_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
                 if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
@@ -304,7 +302,7 @@ public:
 
     void get_nonvegetative_in(std::deque < PhytomerModel* >::iterator it, double t) {
         if(_peduncle_model.get()) {
-            //@TODO : à modifier pour prendre la phase de l'entrenoeud
+            //@TODO : à modifier pour prendre la phase de l'entrenoeud ?
             if(((*it)->internode()->get < double >(t, InternodeModel::INTERNODE_LEN)) > 0) {
                 _peduncle_inerlen_predim = (*it)->internode()->get<double>(t, InternodeModel::INTERNODE_PREDIM);
                 _peduncle_inerdiam_predim = (*it)->internode()->get<double>(t, InternodeModel::INTER_DIAMETER);
@@ -444,31 +442,12 @@ public:
     CulmStockModel * stock_model() const
     { return _culm_stock_model.get(); }
 
-
-    // Proposition (florian) pour delete_leaf :
     void delete_leaf(double t, int index, double biomass)
     {
         _deleted_senesc_dw += (1 - _realocationCoeff) * biomass;
         _phytomer_models[index]->kill_leaf(t);
         ++_deleted_leaf_number;
     }
-
-    // Code c++ de base :
-    //    void CulmModel::delete_leaf(double t, int index)
-    //    {
-    //        _deleted_senesc_dw =
-    //                (1 - _parameters->get < double > ("realocationCoeff")) *
-    //                get_leaf_biomass(t - 1, index);
-    //        _deleted_senesc_dw_computed = true;
-
-    //        //    delete phytomer_models[index];
-    //        //    phytomer_models.erase(phytomer_models.begin() + index);
-
-    //        phytomer_models[index]->delete_leaf(t);
-
-    //        ++_deleted_leaf_number;
-
-    //    }
 
     double CulmModel::get_leaf_biomass(double t, int index) const
     {
@@ -481,12 +460,6 @@ public:
         double blade_area = _phytomer_models[index]->leaf()->get < double >(t, LeafModel::BLADE_AREA);
         return blade_area;
     }
-
-    //    double CulmModel::get_leaf_len(double t, int index) const
-    //    {
-    //        return phytomer_models[index]->get < double, leaf::LeafLen >(
-    //                    t, PhytomerModel::LEAF_LEN);
-    //    }
 
     int CulmModel::get_first_ligulated_leaf_index(double t) const
     {

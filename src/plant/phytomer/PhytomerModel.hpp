@@ -149,9 +149,6 @@ public:
 //        change_internal(LEAF_LEN, &PhytomerModel::_null);
     }
 
-//    double get_blade_area() const
-//    { return leaf_model->get_blade_area(); }
-
     LeafModel * leaf() const
     { return _leaf_model.get(); }
 

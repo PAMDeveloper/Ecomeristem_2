@@ -73,13 +73,12 @@ public:
         //  assimPot
         _assim_pot = std::pow(_cstr, _power_for_cstr) * _interc * _epsib * _radiation * _kpar;
 
-        //  respMaint (== à _resp_maint ?)
+        //  respMaint
         _resp_maint = (_Kresp_leaf * _LeafBiomass + _Kresp_internode * _InternodeBiomass) *
                 std::pow(2., (_Ta - _Tresp) / 10.);
 
         //  assim
         _assim = std::max(0., (_assim_pot) / _density) - _resp_maint;
-//        _assim_net_cor = _assim; // - _resp_maint;
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {

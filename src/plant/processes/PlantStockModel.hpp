@@ -121,41 +121,9 @@ public:
                 _test_ic = std::min(1., std::sqrt(tmp));
             }
         }
-
-        //Algo florian pour le calcul de l'IC
-        //        if (t != _parameters.beginDate) {
-        //            double mean;
-        //            unsigned int n = 2;
-        //            if (_day_demand != 0) {
-        //                _ic_[0] = std::max(0., _seed_res + _supply / _day_demand); //@TODO vérifier pourquoi négatif
-        //            } else {
-        //                _ic_[0] = _ic;
-        //            }
-
-        //            mean = 2. * _ic_[0];
-
-        //            for (unsigned int i = 1; i < 3; i++) {
-        //                if (_ic_[i] != 0) {
-        //                    mean = mean + _ic_[i];
-        //                    n = n + 1;
-        //                }
-        //            }
-        //            mean = mean / n;
-
-        //            if (mean == 0) {
-        //                _ic = 0.001;
-        //                _test_ic = 0.001;
-        //            } else {
-        //                _ic = std::min(5.,mean);
-        //                _test_ic = std::min(1., std::sqrt(_ic));
-        //            }
-        //        }
     }
 
     void compute(double t, bool /* update */) {
-        //  indice de competition - Proposition
-        // compute_IC(t);
-
         //  day_demand
         if (_plant_state & plant::NOGROWTH) {
             _day_demand = 0;
@@ -216,14 +184,6 @@ public:
             _stock = std::max(0., _deficit + stock);
             _deficit = std::min(0., _deficit + stock);
         }
-
-
-//        // Realloc biomass à mettre dans plantstock ?
-//        if (_deleted_leaf_biomass > 0) {
-//            double qty = _deleted_leaf_biomass * _realocationCoeff;
-//            _stock = std::max(0., qty + _deficit);
-//            _deficit = std::min(0., qty + _deficit);
-//        }
 
         _seed_res_[2] = _seed_res_[1];
         _seed_res_[1] = _seed_res_[0];

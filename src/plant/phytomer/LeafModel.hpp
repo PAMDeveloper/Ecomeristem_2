@@ -196,7 +196,7 @@ public:
                 }
             }
         } else {
-            _TT_Lig += _delta_t; //@TODO vérifier si c'est calculé qu'une seule fois
+            _TT_Lig += _delta_t;
         }
 
         //BladeArea
@@ -244,7 +244,7 @@ public:
             }
         }
 
-        // LeafLastDemand @TODO calcul doit être placé avant la mise à jour de _is_lig, solution par _is_lig_t
+        // LeafLastDemand
         if (_is_lig_t) {
             _last_demand = _biomass - _old_biomass;
         } else {
