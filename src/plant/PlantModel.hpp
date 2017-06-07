@@ -46,8 +46,9 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM, REALLOC_BIOMASS_SUM,
-                     PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM, CULM_SURPLUS_SUM, QTY, LL_BL };
+                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM,
+                     REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
+                     CULM_SURPLUS_SUM, QTY, LL_BL };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -198,6 +199,10 @@ public:
             _qty = _qty + (_deleted_leaf_biomass * _realocationCoeff);
             _stock = std::max(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
             _deficit = std::min(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+        }
+
+        if(_plant_phase == plant::DEAD) {
+            qDebug() << "La plante est morte";
         }
 
         //Compute IC
@@ -480,7 +485,7 @@ public:
     void PlantModel::delete_leaf(double t)
     {
         if (_culm_index != -1 and _leaf_index != -1) {
-            _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass);
+            _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
         }
@@ -491,6 +496,7 @@ public:
         _culm_index = -1;
         _leaf_index = -1;
         _deleted_leaf_biomass = 0;
+        _deleted_internode_biomass = 0;
         _deleted_leaf_blade_area = 0;
         if (_stock_model->get < double >(t, PlantStockModel::STOCK) == 0) {
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
@@ -510,10 +516,14 @@ public:
                 }
 
                 if (_leaf_index != -1) {
-                    _deleted_leaf_biomass =
-                            _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
-                    _deleted_leaf_blade_area =
-                            _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
+                    _deleted_leaf_biomass = _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
+                    _deleted_leaf_blade_area = _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
+                    if (_culm_models[_culm_index]->get_alive_phytomer_number() == 1) {
+                        _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
+                        if(_culm_index == 0) {
+                            _plant_phase = plant::DEAD;
+                        }
+                    }
                 }
             } else {
                 while (it != _culm_models.end()) {
@@ -545,6 +555,12 @@ public:
                             _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
                     _deleted_leaf_blade_area =
                             _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
+                    if (_culm_models[_culm_index]->get_alive_phytomer_number() == 2) {
+                        _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
+                        if(_culm_index == 0) {
+                            _plant_phase = plant::DEAD;
+                        }
+                    }
 
                 }
             }
@@ -637,6 +653,7 @@ public:
         _stock = 0;
         _deficit = 0;
         _qty = 0;
+        _deleted_internode_biomass = 0;
 
         _last_time = 0;
     }
@@ -721,6 +738,7 @@ private:
     double _stock;
     double _deficit;
     double _qty;
+    double _deleted_internode_biomass;
 
     //internal states
     plant::plant_state _plant_state;

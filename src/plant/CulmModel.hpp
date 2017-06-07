@@ -216,6 +216,24 @@ public:
     }
 
     void compute(double t, bool /* update */) {
+        if(_kill_culm) {
+            _nb_lig = 0;
+            _nb_lig_tot = 0;
+            _leaf_biomass_sum = 0;
+            _last_leaf_biomass_sum = 0;
+            _leaf_last_demand_sum = 0;
+            _leaf_demand_sum = 0;
+            _internode_last_demand_sum = 0;
+            _internode_demand_sum = 0;
+            _internode_biomass_sum = 0;
+            _internode_len_sum = 0;
+            _leaf_blade_area_sum = 0;
+            _last_ligulated_leaf = -1;
+            _last_ligulated_leaf_len = 0;
+            _realloc_biomass_sum = 0;
+            _culm_phase = culm::DEAD;
+            return;
+        }
         if(_bool_crossed_plasto >= 0) {
             _culm_phenostage = _culm_phenostage +1;
         }
@@ -442,11 +460,16 @@ public:
     CulmStockModel * stock_model() const
     { return _culm_stock_model.get(); }
 
-    void delete_leaf(double t, int index, double biomass)
+    void delete_leaf(double t, int index, double leaf_biomass, double internode_biomass)
     {
-        _deleted_senesc_dw += (1 - _realocationCoeff) * biomass;
+        _deleted_senesc_dw += (1 - _realocationCoeff) * leaf_biomass;
         _phytomer_models[index]->kill_leaf(t);
         ++_deleted_leaf_number;
+        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+        if (get_alive_phytomer_number() == 0) {
+            _kill_culm = true;
+            _deleted_senesc_dw += (1 - _realocationCoeff) * internode_biomass;
+        }
     }
 
     double CulmModel::get_leaf_biomass(double t, int index) const
@@ -479,37 +502,37 @@ public:
         }
     }
 
-        int CulmModel::get_first_alive_leaf_index(double t) const
-        {
-            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
-            int i = 0;
-            int index = -1;
+    int CulmModel::get_first_alive_leaf_index(double t) const
+    {
+        std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+        int i = 0;
+        int index = -1;
 
-            while (it != _phytomer_models.end()) {
-                if (not (*it)->is_leaf_dead()) {
-                    index = i;
-                    break;
-                }
-                ++it;
-                ++i;
+        while (it != _phytomer_models.end()) {
+            if (not (*it)->is_leaf_dead()) {
+                index = i;
+                break;
             }
-            return index;
+            ++it;
+            ++i;
         }
+        return index;
+    }
 
-        int CulmModel::get_first_alive_leaf_creation_date(double t) const
-        {
-            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
-            double creation_date = -1;
+    int CulmModel::get_first_alive_leaf_creation_date(double t) const
+    {
+        std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+        double creation_date = -1;
 
-            while (it != _phytomer_models.end()) {
-                if (not (*it)->is_leaf_dead()) {
-                    creation_date = (*it)->leaf()->get < double >(t, LeafModel::FIRST_DAY);
-                    break;
-                }
-                ++it;
+        while (it != _phytomer_models.end()) {
+            if (not (*it)->is_leaf_dead()) {
+                creation_date = (*it)->leaf()->get < double >(t, LeafModel::FIRST_DAY);
+                break;
             }
-            return creation_date;
+            ++it;
         }
+        return creation_date;
+    }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
         PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _ligulo, _LL_BL);
@@ -556,6 +579,7 @@ public:
         _deleted_leaf_number = 0;
         _deleted_senesc_dw = 0;
         _nb_lig_tot = 0;
+        _kill_culm = false;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -625,9 +649,7 @@ private:
     double _deleted_leaf_number;
     double _deleted_senesc_dw;
     double _nb_lig_tot;
-
-    //        double _lig;
-    //        bool _deleted_senesc_dw_computed;
+    double _kill_culm;
 
     //    externals
     int _plant_phenostage;
