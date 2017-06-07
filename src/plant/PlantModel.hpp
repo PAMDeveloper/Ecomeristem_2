@@ -53,7 +53,7 @@ public:
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
                      LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM, REALLOC_BIOMASS_SUM,
-                     PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM, CULM_SURPLUS_SUM, QTY };
+                     PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM, CULM_SURPLUS_SUM, QTY, LL_BL };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -94,6 +94,7 @@ public:
         Internal( PEDUNCLE_LAST_DEMAND_SUM, &PlantModel::_peduncle_last_demand_sum );
         Internal( CULM_SURPLUS_SUM, &PlantModel::_culm_surplus_sum );
         Internal( QTY, &PlantModel::_qty );
+        Internal( LL_BL, &PlantModel::_LL_BL );
     }
 
     virtual ~PlantModel()
@@ -200,11 +201,9 @@ public:
         delete_leaf(t);
         // Realloc biomass @TODO : vérifier position de ce calcul + corriger le _qty += en _qty = (erreur en delphi), faire pareil dans search_deleted_leaf
         if (_deleted_leaf_biomass > 0) {
-            qDebug() << "deficit avant : " << _stock_model->get < double >(t-1, PlantStockModel::DEFICIT);
             _qty = _qty + (_deleted_leaf_biomass * _realocationCoeff);
             _stock = std::max(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
             _deficit = std::min(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
-            qDebug() << "deficit après : " << _deficit;
         }
 
         //Compute IC
@@ -242,7 +241,7 @@ public:
             _ligulo = _ligulo * _coeff_Ligulo_PI;
             _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (nb_leaves + 2 - _nb_leaf_param2);
             _MGR = _MGR * _coeff_MGR_PI;
-        } else if ( nb_leaves >= _nb_leaf_param2 - 1 and
+        } else if ( nb_leaves > _nb_leaf_param2 - 1 and
                     _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
                     nb_leaves < _nb_leaf_pi + _nb_leaf_max_after_pi + 1)
         {
@@ -369,9 +368,11 @@ public:
         _stock_model->put < plant::plant_phase >(t, PlantStockModel::PLANT_PHASE, _plant_phase);
         (*_stock_model)(t);
 
-        //@TODO: Variable de visu, à retirer
-        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
-        _internode_biom_struct = _internode_biomass_sum + _internode_stock_sum;
+        //@TODO: Variable de visu
+        if (!(_plant_state & plant::NOGROWTH)) {
+            _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
+            _internode_biom_struct = _internode_biomass_sum + _internode_stock_sum;
+        }
 
         search_deleted_leaf(t);
         compute_height(t);
@@ -473,7 +474,12 @@ public:
         if ((*it)->get_phytomer_number() == 1) {
             _height += (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
         } else {
-            _height += (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_LEN);
+            double tmp = (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_LEN);
+            if (tmp > (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN)) {
+                _height += tmp;
+            } else {
+                _height += (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN);
+            }
         }
     }
 

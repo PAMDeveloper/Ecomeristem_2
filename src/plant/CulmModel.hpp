@@ -51,7 +51,7 @@ public:
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
                      PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
-                     FIRST_LEAF_LEN, DELETED_SENESC_DW };
+                     FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN };
 
     enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -97,6 +97,7 @@ public:
         Internal(FIRST_LEAF_LEN, &CulmModel::_first_leaf_len);
         Internal(DELETED_SENESC_DW, &CulmModel::_deleted_senesc_dw);
         Internal(NB_LIG_TOT, &CulmModel::_nb_lig_tot);
+        Internal(PEDUNCLE_LEN, &CulmModel::_peduncle_len);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -448,9 +449,6 @@ public:
     void delete_leaf(double t, int index, double biomass)
     {
         _deleted_senesc_dw += (1 - _realocationCoeff) * biomass;
-        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-        qDebug() << "Le" << QString::fromStdString(date) << "Feuille " << index + 1 << "détruire sur : " << _index - 1;
-
         _phytomer_models[index]->kill_leaf(t);
         ++_deleted_leaf_number;
     }
