@@ -102,14 +102,16 @@ public:
         //Deficit
         _deficit = std::min(0., _intermediate);
 
+        //@TODO : vérifier d'où vient ce calcul
         //CulmSurplus
-        if (_first_day == t) {
-            _surplus = std::max(0., _plant_stock - _internode_demand_sum -
-                                _leaf_demand_sum - _leaf_last_demand_sum -
-                                _internode_last_demand_sum + _supply -
-                                _max_reservoir_dispo + _realloc_biomass_sum);
-        } else {
-            if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
+//        if (_first_day == t) {
+//            _surplus = std::max(0., _plant_stock - _internode_demand_sum -
+//                                _leaf_demand_sum - _leaf_last_demand_sum -
+//                                _internode_last_demand_sum + _supply -
+//                                _max_reservoir_dispo + _realloc_biomass_sum);
+//        } else {
+            //@TODO:  @TODO : correction erreur delphi "(_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)" à retirer
+            if((_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) or (_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)) {
                 _surplus = std::max(0., _stock_culm - _internode_demand_sum -
                                     _leaf_demand_sum - _leaf_last_demand_sum -
                                     _internode_last_demand_sum - _panicle_day_demand
@@ -117,7 +119,7 @@ public:
                                     + _supply - _max_reservoir_dispo +
                                     _realloc_biomass_sum);
             }
-        }
+//        }
 
 
         //CulmStock @TODO : correction erreur delphi "(_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)" à retirer
@@ -126,8 +128,9 @@ public:
         } else {
             _stock = _stock_culm;
         }
-    }
 
+        _stock_internode = std::min(_stock, _maximum_reserve_in_internode * _internode_biomass_sum);
+    }   
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;

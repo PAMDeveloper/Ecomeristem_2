@@ -39,8 +39,9 @@ public:
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
                      VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
+
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
-                     DD, DELTA_T, PLASTO, LIGULO};
+                     DD, DELTA_T, PLASTO, LIGULO, NB_LIG };
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
     //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
@@ -75,6 +76,7 @@ public:
         External(DELTA_T, &InternodeModel::_delta_t);
         External(PLASTO, &InternodeModel::_plasto);
         External(LIGULO, &InternodeModel::_ligulo);
+        External(NB_LIG, &InternodeModel::_nb_lig);
     }
 
     virtual ~InternodeModel()
@@ -163,7 +165,8 @@ public:
             _inter_phase = VEGETATIVE;
             break;
         case VEGETATIVE:
-            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _lig == t and _plant_phase != plant::FLO) {
+            //@TODO : virer la condition nb_lig, erreur dans delphi
+            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _lig == t and _plant_phase != plant::FLO and _nb_lig > 0) {
                 _inter_phase = REALIZATION;
             }
             break;
@@ -263,7 +266,7 @@ private:
     double _delta_t;
     double _ligulo;
     double _plasto;
-
+    double _nb_lig;
 
     //// external variables
     //    double _dd;

@@ -42,7 +42,7 @@ public:
     enum submodels { PHYTOMERS, PANICLE, PEDUNCLE };
 
 
-    enum internals { NB_LIG, STEM_LEAF_PREDIM,
+    enum internals { NB_LIG, NB_LIG_TOT, STEM_LEAF_PREDIM,
                      LEAF_BIOMASS_SUM, LEAF_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, INTERNODE_LAST_DEMAND_SUM,
                      INTERNODE_BIOMASS_SUM, INTERNODE_LEN_SUM,
@@ -96,6 +96,7 @@ public:
         Internal(PEDUNCLE_LAST_DEMAND, &CulmModel::_peduncle_last_demand);
         Internal(FIRST_LEAF_LEN, &CulmModel::_first_leaf_len);
         Internal(DELETED_SENESC_DW, &CulmModel::_deleted_senesc_dw);
+        Internal(NB_LIG_TOT, &CulmModel::_nb_lig_tot);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -216,7 +217,6 @@ public:
         }
     }
 
-    //@TODO gérer le deleteLeaf et le reallocBiomassSum var
     void compute(double t, bool /* update */) {
         if(_bool_crossed_plasto >= 0) {
             _culm_phenostage = _culm_phenostage +1;
@@ -234,6 +234,7 @@ public:
         std::deque < PhytomerModel* >::iterator previous_it;
         int i = 0;
         _nb_lig = 0;
+        _nb_lig_tot = 0;
         _leaf_biomass_sum = 0;
         _last_leaf_biomass_sum = 0;
         _leaf_last_demand_sum = 0;
@@ -344,6 +345,7 @@ public:
         (*it)->internode()->put(t, InternodeModel::CULM_PHASE, _culm_phase);
         (*it)->internode()->put(t, InternodeModel::PLASTO, _plasto);
         (*it)->internode()->put(t, InternodeModel::LIGULO, _ligulo);
+        (*it)->internode()->put(t, InternodeModel::NB_LIG, _nb_lig);
         if (_is_first_culm) {
             if (i == 0) {
                 (*it)->put(t, PhytomerModel::PREDIM_LEAF_ON_MAINSTEM, 0.);
@@ -371,6 +373,7 @@ public:
         if (not (*it)->is_leaf_dead()) {
             if((*it)->is_leaf_lig(t)) {
                 ++_nb_lig;
+                ++ _nb_lig_tot;
             }
             if (_index == 1 and i < _nb_leaf_param2 - 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
@@ -379,6 +382,9 @@ public:
                 _last_ligulated_leaf = i;
                 _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
             }
+        } else {
+            //@TODO : vérifier que la feuille était bien ligulée quand on a l'a tué
+            ++_nb_lig_tot;
         }
         _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
 
@@ -441,7 +447,7 @@ public:
     // Proposition (florian) pour delete_leaf :
     void delete_leaf(double t, int index, double biomass)
     {
-        _deleted_senesc_dw = (1 - _realocationCoeff) * biomass;
+        _deleted_senesc_dw += (1 - _realocationCoeff) * biomass;
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
         qDebug() << "Le" << QString::fromStdString(date) << "Feuille " << index + 1 << "détruire sur : " << _index - 1;
 
@@ -502,23 +508,37 @@ public:
         }
     }
 
-    //    int CulmModel::get_first_alive_leaf_index(double /* t */) const
-    //    {
-    //        std::deque < PhytomerModel* >::const_iterator it =
-    //                phytomer_models.begin();
-    //        int i = 0;
-    //        int index = -1;
+        int CulmModel::get_first_alive_leaf_index(double t) const
+        {
+            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+            int i = 0;
+            int index = -1;
 
-    //        while (it != phytomer_models.end()) {
-    //            if (not (*it)->is_leaf_dead()) {
-    //                index = i;
-    //                break;
-    //            }
-    //            ++it;
-    //            ++i;
-    //        }
-    //        return index;
-    //    }
+            while (it != _phytomer_models.end()) {
+                if (not (*it)->is_leaf_dead()) {
+                    index = i;
+                    break;
+                }
+                ++it;
+                ++i;
+            }
+            return index;
+        }
+
+        int CulmModel::get_first_alive_leaf_creation_date(double t) const
+        {
+            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+            double creation_date = -1;
+
+            while (it != _phytomer_models.end()) {
+                if (not (*it)->is_leaf_dead()) {
+                    creation_date = (*it)->leaf()->get < double >(t, LeafModel::FIRST_DAY);
+                    break;
+                }
+                ++it;
+            }
+            return creation_date;
+        }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
         PhytomerModel* first_phytomer = new PhytomerModel(1, _is_first_culm, _plasto, _ligulo, _LL_BL);
@@ -564,6 +584,7 @@ public:
         _first_leaf_len = 0;
         _deleted_leaf_number = 0;
         _deleted_senesc_dw = 0;
+        _nb_lig_tot = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -632,6 +653,7 @@ private:
     double _first_leaf_len;
     double _deleted_leaf_number;
     double _deleted_senesc_dw;
+    double _nb_lig_tot;
 
     //        double _lig;
     //        bool _deleted_senesc_dw_computed;

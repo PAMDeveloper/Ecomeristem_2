@@ -36,7 +36,7 @@ public:
                      TT_LIG, BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
-                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO
+                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO, FIRST_DAY
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
@@ -83,6 +83,7 @@ public:
         Internal(LL_BL, &LeafModel::_LL_BL);
         Internal(PLASTO, &LeafModel::_plasto);
         Internal(LIGULO, &LeafModel::_ligulo);
+        Internal(FIRST_DAY, &LeafModel::_first_day);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);

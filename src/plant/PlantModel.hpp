@@ -52,8 +52,8 @@ public:
                      INTERNODE_LAST_DEMAND_SUM, LEAF_DEMAND_SUM,
                      INTERNODE_DEMAND_SUM, PANICLE_DEMAND_SUM,
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
-                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, REALLOC_BIOMASS_SUM,
-                     PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM, CULM_SURPLUS_SUM };
+                     LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM, REALLOC_BIOMASS_SUM,
+                     PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM, CULM_SURPLUS_SUM, QTY };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -88,10 +88,12 @@ public:
         Internal( IH, &PlantModel::_IH );
         Internal( LEAF_BIOM_STRUCT, &PlantModel::_leaf_biom_struct );
         Internal( INTERNODE_BIOM_STRUCT, &PlantModel::_internode_biom_struct );
+        Internal( INTERNODE_STOCK_SUM, &PlantModel::_internode_stock_sum );
         Internal( REALLOC_BIOMASS_SUM, &PlantModel::_realloc_biomass_sum );
         Internal( PEDUNCLE_BIOMASS_SUM, &PlantModel::_peduncle_biomass_sum );
         Internal( PEDUNCLE_LAST_DEMAND_SUM, &PlantModel::_peduncle_last_demand_sum );
         Internal( CULM_SURPLUS_SUM, &PlantModel::_culm_surplus_sum );
+        Internal( QTY, &PlantModel::_qty );
     }
 
     virtual ~PlantModel()
@@ -196,11 +198,13 @@ public:
 
         //Delete leaf
         delete_leaf(t);
-        // Realloc biomass @TODO : vérifier position de ce calcul
+        // Realloc biomass @TODO : vérifier position de ce calcul + corriger le _qty += en _qty = (erreur en delphi), faire pareil dans search_deleted_leaf
         if (_deleted_leaf_biomass > 0) {
-            double qty = _deleted_leaf_biomass * _realocationCoeff;
-            _stock = std::max(0., qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
-            _deficit = std::min(0., qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            qDebug() << "deficit avant : " << _stock_model->get < double >(t-1, PlantStockModel::DEFICIT);
+            _qty = _qty + (_deleted_leaf_biomass * _realocationCoeff);
+            _stock = std::max(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            _deficit = std::min(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            qDebug() << "deficit après : " << _deficit;
         }
 
         //Compute IC
@@ -210,6 +214,7 @@ public:
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
         _thermal_time_model->put < plant::plant_state >(t, ThermalTimeModel::PLANT_STATE, _plant_state);
+        _thermal_time_model->put < double >(t, ThermalTimeModel::STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
         (*_thermal_time_model)(t);
 
         //Water balance
@@ -277,7 +282,7 @@ public:
         //Lig update @TODO : vérifier placement équations TT_lig et IH
         _lig_1 = _lig;
         mainstem = _culm_models.begin();
-        _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG);
+        _lig = (*mainstem)->get <double, CulmModel>(t, CulmModel::NB_LIG_TOT);
 
         //TT_Lig
         if (t != _parameters.beginDate) {
@@ -499,30 +504,50 @@ public:
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
             int i = 0;
             if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
-                while (it != _culm_models.end() and (*it)->get_alive_phytomer_number() == 0) {
+                _qty = 0;
+                double tmp_date = t;
+                while (it != _culm_models.end()) {
+                    double creation_date = (*it)->get_first_alive_leaf_creation_date(t);
+                    if(creation_date < tmp_date) {
+                        _culm_index = i;
+                        _leaf_index = (*it)->get_first_alive_leaf_index(t);
+                        tmp_date = creation_date;
+                    }
                     ++it;
                     ++i;
                 }
-                if (it != _culm_models.end()) {
-                    _culm_index = i;
-                    _leaf_index = (*it)->get_first_ligulated_leaf_index(t);
-                    if (_leaf_index != -1) {
-                        _deleted_leaf_biomass =
-                                _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
-                        _deleted_leaf_blade_area =
-                                _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
-                    }
+
+                if (_leaf_index != -1) {
+                    _deleted_leaf_biomass =
+                            _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
+                    _deleted_leaf_blade_area =
+                            _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
                 }
             } else {
-                while (it != _culm_models.end() and (*it)->get_phytomer_number() > _nb_leaf_enabling_tillering ) {
+                while (it != _culm_models.end()) {
+                    if((*it)->get_phytomer_number() <= _nb_leaf_enabling_tillering) {
+                        _leaf_index = (*it)->get_first_alive_leaf_index(t);
+                        _culm_index = i;
+                    }
                     ++it;
                     ++i;
                 }
-                if((*it)->get_phytomer_number() < _nb_leaf_enabling_tillering) {
-                    --it;
+                if(_leaf_index == -1) {
+                    _qty = 0;
+                    double tmp_date = t;
+                    std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
+                    int i = 0;
+                    while (it != _culm_models.end()) {
+                        double creation_date = (*it)->get_first_alive_leaf_creation_date(t);
+                        if(creation_date < tmp_date) {
+                            _culm_index = i;
+                            _leaf_index = (*it)->get_first_alive_leaf_index(t);
+                            tmp_date = creation_date;
+                        }
+                        ++it;
+                        ++i;
+                    }
                 }
-                _culm_index = i;
-                _leaf_index = (*it)->get_first_ligulated_leaf_index(t);
                 if (_leaf_index != -1) {
                     _deleted_leaf_biomass =
                             _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
@@ -619,6 +644,7 @@ public:
         _leaf_index = -1;
         _stock = 0;
         _deficit = 0;
+        _qty = 0;
 
         _last_time = 0;
     }
@@ -702,6 +728,7 @@ private:
     int _leaf_index;
     double _stock;
     double _deficit;
+    double _qty;
 
     //internal states
     plant::plant_state _plant_state;
