@@ -85,6 +85,11 @@ public:
     void compute(double t, bool /* update */){
         _p = _parameters.get(t).P;
 
+        if ((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _lig == t and _plant_phase != plant::FLO and _nb_lig > 0 ){
+            _cste_ligulo = _ligulo;
+            _cste_plasto = _plasto;
+        }
+
         //InternodePredim
         if(_index < _nb_leaf_param2) {
             _LL_BL = _LL_BL_init;
@@ -102,8 +107,11 @@ public:
         }
 
         //INER
-        _iner = _inter_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
-
+        if (_inter_phase == REALIZATION) {
+            _iner = _inter_predim * _reduction_iner / (_cste_plasto + _index * (_cste_ligulo - _cste_plasto));
+        } else {
+            _iner = _inter_predim * _reduction_iner / (_cste_plasto + _index * (_ligulo - _plasto));
+        }
         //InternodeManager
         step_state(t);
 
@@ -123,7 +131,6 @@ public:
             }
         }
 
-
         //DiameterPredim
         _inter_diameter = _IN_length_to_IN_diam * _inter_predim + _coef_lin_IN_diam;
 
@@ -137,7 +144,7 @@ public:
 
         //InternodeDemand & InternodeLastDemand
         _last_demand = 0;
-        if (_inter_phase == MATURITY) {
+        if (_inter_len >= _inter_predim) {
             _demand = 0;
             if (! _is_mature) {
                 _last_demand = _biomass - biomass_1;
@@ -212,6 +219,8 @@ public:
         _time_from_app = 0;
         _inter_predim = 0;
         _is_mature = false;
+        _cste_ligulo = 0;
+        _cste_plasto = 0;
     }
 
 private:
@@ -252,6 +261,8 @@ private:
     double _time_from_app;
     double _first_day; //@TODO unused
     bool _is_mature;
+    double _cste_ligulo;
+    double _cste_plasto;
 
     // externals
     plant::plant_state _plant_state;

@@ -205,6 +205,8 @@ public:
             qDebug() << "Stock et Deficit AF: " << _stock << _deficit << QString::fromStdString(date);
         } else {
             _stock = _stock_model->get < double >(t-1, PlantStockModel::STOCK);
+            _deficit = _stock_model->get < double >(t-1, PlantStockModel::DEFICIT);
+            qDebug() << "Stock et Deficit : " << _stock << _deficit << QString::fromStdString(date);
         }
 
         if(_plant_phase == plant::DEAD) {
@@ -218,7 +220,7 @@ public:
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO, _plasto);
         _thermal_time_model->put < double >(t, ThermalTimeModel::PLASTO_DELAY, 0); //@TODO voir le plasto delay
         _thermal_time_model->put < plant::plant_state >(t, ThermalTimeModel::PLANT_STATE, _plant_state);
-        _thermal_time_model->put < double >(t, ThermalTimeModel::STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
+        _thermal_time_model->put < double >(t, ThermalTimeModel::STOCK, _stock);
         (*_thermal_time_model)(t);
 
         //Water balance
@@ -240,7 +242,7 @@ public:
 
         if ( nb_leaves == _nb_leaf_param2 - 1 and
              _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
-             _stock_model->get <double> (t-1, PlantStockModel::STOCK) > 0)
+             _stock > 0)
         {
 
             _plasto = _plasto * _coeff_Plasto_PI;
@@ -321,15 +323,17 @@ public:
         _internode_stock_sum = 0;
         it = _culm_models.begin();
         while (it != _culm_models.end()) {
-            (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
-            (*it)->stock_model()->put<double>(t, CulmStockModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
-            (*it)->stock_model()->put<double>(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
-            (*it)->stock_model()->put<double>(t, CulmStockModel::ASSIM, _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
-            (*it)->compute_stock(t);
-            _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
-            _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
-            _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
-            _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModel::STOCK_INTERNODE);
+            if(!((*it)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
+                (*it)->stock_model()->put <double>(t, CulmStockModel::PLANT_BIOMASS_SUM, _leaf_biomass_sum + _internode_biomass_sum);
+                (*it)->stock_model()->put<double>(t, CulmStockModel::LAST_PLANT_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
+                (*it)->stock_model()->put<double>(t, CulmStockModel::PLANT_LEAF_BIOMASS_SUM, _leaf_biomass_sum);
+                (*it)->stock_model()->put<double>(t, CulmStockModel::ASSIM, _assimilation_model->get < double >(t, AssimilationModel::ASSIM));
+                (*it)->compute_stock(t);
+                _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
+                _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
+                _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
+                _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModel::STOCK_INTERNODE);
+            }
             ++it;
         }
 
@@ -414,13 +418,8 @@ public:
             (*it)->put < plant::plant_state >(t, CulmModel::PLANT_STATE, _plant_state);
             (*it)->put < plant::plant_phase >(t, CulmModel::PLANT_PHASE, _plant_phase);
             (*it)->put(t, CulmModel::TEST_IC, _stock_model->get < double >(t-1, PlantStockModel::TEST_IC));
-            if(_deleted_leaf_biomass > 0) {
-                (*it)->put(t, CulmModel::PLANT_STOCK, _stock);
-                (*it)->put(t, CulmModel::PLANT_DEFICIT, _deficit);
-            } else {
-                (*it)->put(t, CulmModel::PLANT_STOCK, _stock_model->get < double >(t-1, PlantStockModel::STOCK));
-                (*it)->put(t, CulmModel::PLANT_DEFICIT, _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
-            }
+            (*it)->put(t, CulmModel::PLANT_STOCK, _stock);
+            (*it)->put(t, CulmModel::PLANT_DEFICIT, _deficit);
             (*it)->put(t, CulmModel::ASSIM, _assimilation_model->get < double >(t-1, AssimilationModel::ASSIM));
             (*it)->put(t, CulmModel::MGR, _MGR);
             (*it)->put(t, CulmModel::PLASTO, _plasto);
@@ -553,6 +552,8 @@ public:
                             _culm_index = i;
                             _leaf_index = (*it)->get_first_alive_leaf_index(t);
                             tmp_date = creation_date;
+                            qDebug() << "Fin de recherce *******";
+                            qDebug() << "On tue culm - leaf :" << _culm_index << _leaf_index;
                         }
                         ++it;
                         ++i;
@@ -563,8 +564,11 @@ public:
                             _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
                     _deleted_leaf_blade_area =
                             _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
-                    if (_culm_models[_culm_index]->get_alive_phytomer_number() == 2) {
-                        _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
+                    if (_culm_models[_culm_index]->get_alive_phytomer_number() <= 2) {
+                        if(_culm_models[_culm_index]->get_alive_phytomer_number() == 1) {
+                            qDebug() << "On tue la talle : " << _culm_index << "!!!";
+                            _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
+                        }
                         if(_culm_index == 0) {
                             _plant_phase = plant::DEAD;
                         }

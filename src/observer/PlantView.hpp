@@ -59,8 +59,6 @@ public:
                      PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {
                      PlantModel::TT_LIG });
-        selector("PLANT_STOCK", artis::kernel::DOUBLE, {
-                     PlantModel::PLANT_STOCK });
 
         //ThermalTimeModel
         selector("TT", artis::kernel::DOUBLE, {
