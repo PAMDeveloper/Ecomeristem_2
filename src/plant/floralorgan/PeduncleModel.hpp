@@ -71,7 +71,6 @@ public:
     virtual ~PeduncleModel()
     { }
 
-
     void compute(double t, bool /* update */)
     {
         _p = _parameters.get(t).P;

@@ -145,8 +145,9 @@ public:
 
     void step_state(double t) {
 
-        if(_plant_phase == plant::PI && _lag == false) {
+        if(_plant_phase == plant::PI && _lag == false && _is_lagged == false) {
             _lag = true;
+            _is_lagged = true;
             if(_culm_phenostage_at_lag == 0) {
                 _culm_phenostage_at_lag = _culm_phenostage;
             }
@@ -198,6 +199,9 @@ public:
                 }
             }
             if (_culm_phenostage == _culm_phenostage_at_pi + _nb_leaf_max_after_pi + 1) {
+                if(_is_first_culm and _plant_phase == plant::PI) {
+                    return;
+                }
                 _peduncle_model = std::unique_ptr<PeduncleModel>(new PeduncleModel(_index, _is_first_culm));
                 setsubmodel(PEDUNCLE, _peduncle_model.get());
                 _peduncle_model->init(t, _parameters);
@@ -527,7 +531,6 @@ public:
         int i = 1;
         while (it != _phytomer_models.end()) {
             if (not (*it)->is_leaf_dead() and ((*it)->leaf()->get < double >(t, LeafModel::BIOMASS) > 0)) {
-                qDebug() << "Feuille " << i << " du culm " << _index << "a une biomass de : " << (*it)->leaf()->get < double >(t, LeafModel::BIOMASS);
                 creation_date = (*it)->leaf()->get < double >(t, LeafModel::FIRST_DAY);
                 break;
             }
@@ -592,6 +595,7 @@ public:
         _culm_phenostage_at_pi = 0;
         _culm_phenostage_at_pre_flo = 0;
         _lag = false;
+        _is_lagged = false;
     }
 
 private:
@@ -623,6 +627,7 @@ private:
     culm::culm_phase _culm_phase;
     culm::culm_phase _last_phase;
     bool _lag;
+    bool _is_lagged;
     double _nb_lig;
     double _stem_leaf_predim;
     double _leaf_biomass_sum;

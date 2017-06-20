@@ -197,16 +197,12 @@ public:
         delete_leaf(t);
         // Realloc biomass @TODO : vérifier position de ce calcul + corriger le _qty += en _qty = (erreur en delphi), faire pareil dans search_deleted_leaf
         if (_deleted_leaf_biomass > 0) {
-            qDebug() << "Stock et Deficit BF: " << _stock_model->get < double >(t-1, PlantStockModel::STOCK) << _stock_model->get < double >(t-1, PlantStockModel::DEFICIT) << QString::fromStdString(date);
             _qty = _qty + (_deleted_leaf_biomass * _realocationCoeff);
-            qDebug() << "On récupère : " << _qty;
             _stock = std::max(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
             _deficit = std::min(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
-            qDebug() << "Stock et Deficit AF: " << _stock << _deficit << QString::fromStdString(date);
         } else {
             _stock = _stock_model->get < double >(t-1, PlantStockModel::STOCK);
             _deficit = _stock_model->get < double >(t-1, PlantStockModel::DEFICIT);
-            qDebug() << "Stock et Deficit : " << _stock << _deficit << QString::fromStdString(date);
         }
 
         if(_plant_phase == plant::DEAD) {
@@ -494,7 +490,6 @@ public:
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
             std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-            qDebug() << QString::fromStdString(date) << " on tue feuille " << _leaf_index + 1 << " de la talle " << _culm_index;
         }
     }
 
@@ -552,8 +547,6 @@ public:
                             _culm_index = i;
                             _leaf_index = (*it)->get_first_alive_leaf_index(t);
                             tmp_date = creation_date;
-                            qDebug() << "Fin de recherce *******";
-                            qDebug() << "On tue culm - leaf :" << _culm_index << _leaf_index;
                         }
                         ++it;
                         ++i;
@@ -566,7 +559,6 @@ public:
                             _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
                     if (_culm_models[_culm_index]->get_alive_phytomer_number() <= 2) {
                         if(_culm_models[_culm_index]->get_alive_phytomer_number() == 1) {
-                            qDebug() << "On tue la talle : " << _culm_index << "!!!";
                             _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
                         }
                         if(_culm_index == 0) {
