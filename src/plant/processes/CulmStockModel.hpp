@@ -82,6 +82,9 @@ public:
         _max_reservoir_dispo = (_maximum_reserve_in_internode *
                                 _internode_biomass_sum) + (_leaf_stock_max * _leaf_biomass_sum);
 
+        //CulmSupply
+        _supply = _assim * _leaf_biomass_sum / _plant_leaf_biomass_sum;
+
         //Intermediate
         double stock = _plant_stock *
                 (_leaf_biomass_sum + _internode_biomass_sum) /
@@ -89,10 +92,6 @@ public:
         double deficit = _plant_deficit *
                 (_leaf_biomass_sum + _internode_biomass_sum) /
                 _plant_biomass_sum;
-
-        //CulmSupply
-        _supply = _assim * _leaf_biomass_sum / _plant_leaf_biomass_sum;
-
 
         _intermediate = stock + deficit + _supply - _internode_demand_sum -
                 _leaf_demand_sum - _leaf_last_demand_sum - _panicle_day_demand -
