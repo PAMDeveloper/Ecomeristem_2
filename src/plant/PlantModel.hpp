@@ -48,7 +48,7 @@ public:
                      PLANT_PHASE, PLANT_STATE, PAI, HEIGHT, PLASTO, TT_LIG, IH,
                      LEAF_BIOM_STRUCT, INTERNODE_BIOM_STRUCT, INTERNODE_STOCK_SUM,
                      REALLOC_BIOMASS_SUM, PEDUNCLE_BIOMASS_SUM, PEDUNCLE_LAST_DEMAND_SUM,
-                     CULM_SURPLUS_SUM, QTY, LL_BL };
+                     CULM_SURPLUS_SUM, QTY, LL_BL, PLANT_STOCK };
 
     PlantModel():
         _thermal_time_model(new ThermalTimeModel),
@@ -90,6 +90,8 @@ public:
         Internal( CULM_SURPLUS_SUM, &PlantModel::_culm_surplus_sum );
         Internal( QTY, &PlantModel::_qty );
         Internal( LL_BL, &PlantModel::_LL_BL );
+        Internal( PLANT_STOCK, &PlantModel::_stock );
+
     }
 
     virtual ~PlantModel()
@@ -113,8 +115,7 @@ public:
     }
 
     void step_state(double t) {
-
-        double stock = _stock_model->get <double> (t-1, PlantStockModel::STOCK);
+        double stock = _stock; //_model->get < double >(t-1, PlantStockModel::STOCK);
         double ic = _stock_model->get <double> (t-1, PlantStockModel::IC);
         double phenostage = _thermal_time_model->get<int> (t, ThermalTimeModel::PHENO_STAGE);
         double bool_crossed_plasto = _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO);
@@ -196,9 +197,14 @@ public:
         delete_leaf(t);
         // Realloc biomass @TODO : vérifier position de ce calcul + corriger le _qty += en _qty = (erreur en delphi), faire pareil dans search_deleted_leaf
         if (_deleted_leaf_biomass > 0) {
+            qDebug() << "Stock et Deficit BF: " << _stock_model->get < double >(t-1, PlantStockModel::STOCK) << _stock_model->get < double >(t-1, PlantStockModel::DEFICIT) << QString::fromStdString(date);
             _qty = _qty + (_deleted_leaf_biomass * _realocationCoeff);
+            qDebug() << "On récupère : " << _qty;
             _stock = std::max(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
             _deficit = std::min(0., _qty + _stock_model->get < double >(t-1, PlantStockModel::DEFICIT));
+            qDebug() << "Stock et Deficit AF: " << _stock << _deficit << QString::fromStdString(date);
+        } else {
+            _stock = _stock_model->get < double >(t-1, PlantStockModel::STOCK);
         }
 
         if(_plant_phase == plant::DEAD) {
@@ -231,6 +237,7 @@ public:
 
         int nb_leaves = (*mainstem)->get_phytomer_number();
 
+
         if ( nb_leaves == _nb_leaf_param2 - 1 and
              _thermal_time_model->get<double> (t, ThermalTimeModel::BOOL_CROSSED_PLASTO) > 0 and
              _stock_model->get <double> (t-1, PlantStockModel::STOCK) > 0)
@@ -246,7 +253,6 @@ public:
         {
             _LL_BL = _LL_BL_init + _slope_LL_BL_at_PI * (std::min(nb_leaves, (int)(_nb_leaf_pi + _nb_leaf_max_after_pi - 1)) + 2 - _nb_leaf_param2);
         }
-
 
         /****************************************************/
 
@@ -292,6 +298,7 @@ public:
                 _TT_lig = 0;
             }
         }
+
         //IH
         if (!(_plant_state & plant::NOGROWTH)) {
             _IH = _lig + std::min(1., _TT_lig / _thermal_time_model->get < double >(t, ThermalTimeModel::LIGULO_VISU));
@@ -486,8 +493,9 @@ public:
     {
         if (_culm_index != -1 and _leaf_index != -1) {
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
-            std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
+            std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+            qDebug() << QString::fromStdString(date) << " on tue feuille " << _leaf_index + 1 << " de la talle " << _culm_index;
         }
     }
 
