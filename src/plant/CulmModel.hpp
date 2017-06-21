@@ -278,11 +278,11 @@ public:
             //GetLastINnonVegetative
             get_nonvegetative_in(it, t);
 
-            if(i == 0 and (*it)->leaf()) {
-                _first_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+            if(i == 0 and not (*it)->is_leaf_dead()) {
+                _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
                 if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                     _last_ligulated_leaf = i;
-                    _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+                    _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
                 }
             }
 
@@ -398,7 +398,7 @@ public:
                 ++ _nb_lig_tot;
             }
             //@TODO : condition sur nb_leaf_param2 à retirer erreur en delphi, sur première simu nb_leaf_param2 - 1
-            if (_index == 1 and i < _nb_leaf_param2) {
+            if (_index == 1 and i < _nb_leaf_pi - 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
             if (_index == 1 and (*it)->is_leaf_lig(t) and t != (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {

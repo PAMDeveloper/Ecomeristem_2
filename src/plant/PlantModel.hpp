@@ -375,12 +375,13 @@ public:
         (*_stock_model)(t);
 
         //@TODO: Variable de visu
-        if (!(_plant_state & plant::NOGROWTH)) {
-            _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
-            _internode_biom_struct = _internode_biomass_sum + _internode_stock_sum;
-        }
+        _leaf_biom_struct = _leaf_biomass_sum + _stock_model->get< double > (t, PlantStockModel::STOCK) - _internode_stock_sum;
+        _internode_biom_struct = _internode_biomass_sum + _internode_stock_sum;
 
+        // Search leaf to kill
         search_deleted_leaf(t);
+
+        // PHT
         compute_height(t);
     }
 

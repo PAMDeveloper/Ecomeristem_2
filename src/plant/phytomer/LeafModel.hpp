@@ -36,7 +36,8 @@ public:
                      TT_LIG, BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
-                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO, FIRST_DAY
+                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO, FIRST_DAY,
+                     BLADE_LEN
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
@@ -84,6 +85,7 @@ public:
         Internal(PLASTO, &LeafModel::_plasto);
         Internal(LIGULO, &LeafModel::_ligulo);
         Internal(FIRST_DAY, &LeafModel::_first_day);
+        Internal(BLADE_LEN, &LeafModel::_blade_len);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -259,6 +261,8 @@ public:
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
+
+        _blade_len = (1 - (1 / _LL_BL)) * _len;
     }
 
     //@TODO modifier LIG en flag pour signifier le bool _lig
@@ -318,6 +322,7 @@ public:
         _last_blade_area = 0;
         _last_leaf_biomass = 0;
         _sla_cste = 0;
+        _blade_len = 0;
     }
 
     //    double get_blade_area() const
@@ -371,6 +376,7 @@ private:
     double _lig_t;
     double _last_blade_area;
     double _last_leaf_biomass;
+    double _blade_len;
 
     // external variables
     double _MGR;
