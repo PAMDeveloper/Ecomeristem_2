@@ -474,7 +474,7 @@ public:
         auto it = _culm_models.begin();
         _height += (*it)->get < double, CulmModel >(t, CulmModel::INTERNODE_LEN_SUM);
         if ((*it)->get_phytomer_number() == 1) {
-            _height += (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
+            _height += (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
         } else {
             double tmp = (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_LEN);
             if (tmp > (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN)) {

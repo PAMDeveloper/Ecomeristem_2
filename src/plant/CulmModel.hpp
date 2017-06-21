@@ -279,10 +279,10 @@ public:
             get_nonvegetative_in(it, t);
 
             if(i == 0 and not (*it)->is_leaf_dead()) {
-                _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
+                _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
                 if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                     _last_ligulated_leaf = i;
-                    _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
+                    _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
                 }
             }
 
