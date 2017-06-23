@@ -51,7 +51,8 @@ public:
                      LAST_LIGULATED_LEAF, LAST_LIGULATED_LEAF_LEN,
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
                      PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
-                     FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM };
+                     FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM,
+                     LAST_LIGULATED_LEAF_BLADE_LEN };
 
     enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -99,6 +100,7 @@ public:
         Internal(NB_LIG_TOT, &CulmModel::_nb_lig_tot);
         Internal(PEDUNCLE_LEN, &CulmModel::_peduncle_len);
         Internal(KILL_CULM, &CulmModel::_kill_culm);
+        Internal(LAST_LIGULATED_LEAF_BLADE_LEN, &CulmModel::_last_ligulated_leaf_blade_len);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -282,7 +284,8 @@ public:
                 _first_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
                 if ((*it)->is_leaf_lig(t) and t == (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                     _last_ligulated_leaf = i;
-                    _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
+                    _last_ligulated_leaf_len = (*it)->leaf()->get < double >(t, LeafModel::LEAF_LEN);
+                    _last_ligulated_leaf_blade_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
                 }
             }
 
@@ -404,6 +407,7 @@ public:
             if (_index == 1 and (*it)->is_leaf_lig(t) and t != (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
                 _last_ligulated_leaf = i;
                 _last_ligulated_leaf_len = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_LEN);
+                _last_ligulated_leaf_blade_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
             }
         } else {
             //@TODO : vérifier que la feuille était bien ligulée quand on a l'a tué
@@ -586,6 +590,7 @@ public:
         _deleted_senesc_dw = 0;
         _nb_lig_tot = 0;
         _kill_culm = false;
+        _last_ligulated_leaf_blade_len = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -658,6 +663,7 @@ private:
     double _deleted_senesc_dw;
     double _nb_lig_tot;
     bool _kill_culm;
+    double _last_ligulated_leaf_blade_len;
 
     //    externals
     int _plant_phenostage;

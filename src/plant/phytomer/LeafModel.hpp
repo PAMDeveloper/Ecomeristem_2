@@ -263,6 +263,10 @@ public:
         }
 
         _blade_len = (1 - (1 / _LL_BL)) * _len;
+
+        if(_biomass == 0) {
+            _leaf_phase == LeafModel::DEAD;
+        }
     }
 
     //@TODO modifier LIG en flag pour signifier le bool _lig

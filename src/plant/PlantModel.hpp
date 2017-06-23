@@ -328,7 +328,9 @@ public:
                 _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::STOCK);
                 _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::DEFICIT);
                 _culm_surplus_sum += (*it)->stock_model()->get < double >(t, CulmStockModel::SURPLUS);
-                _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModel::STOCK_INTERNODE);
+                if(!(_plant_state & plant::NOGROWTH)) {
+                    _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModel::STOCK_INTERNODE);
+                }
             }
             ++it;
         }
@@ -476,7 +478,7 @@ public:
         if ((*it)->get_phytomer_number() == 1) {
             _height += (*it)->get < double, CulmModel >(t, CulmModel::FIRST_LEAF_LEN);
         } else {
-            double tmp = (1 - 1 / _LL_BL) * (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_LEN);
+            double tmp = (*it)->get < double, CulmModel >(t, CulmModel::LAST_LIGULATED_LEAF_BLADE_LEN);
             if (tmp > (*it)->get< double, CulmModel >(t, CulmModel::PEDUNCLE_LEN)) {
                 _height += tmp;
             } else {
@@ -491,6 +493,7 @@ public:
             _culm_models[_culm_index]->delete_leaf(t, _leaf_index, _deleted_leaf_biomass, _deleted_internode_biomass);
             _leaf_blade_area_sum -= _deleted_leaf_blade_area;
             std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
+            qDebug() << "Le : " << QString::fromStdString(date) << "on tue la feuille : " << _leaf_index + 1 << " de la talle : " << _culm_index << "et on récupère : " << _deleted_leaf_biomass;
         }
     }
 
