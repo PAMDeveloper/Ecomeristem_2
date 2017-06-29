@@ -29,6 +29,7 @@
 #include <QDebug>
 #include <defines.hpp>
 #include <plant/processes/CulmStockModel.hpp>
+#include <plant/processes/CulmStockModelNG.hpp>
 #include <plant/phytomer/PhytomerModel.hpp>
 #include <plant/floralorgan/PanicleModel.hpp>
 #include <plant/floralorgan/PeduncleModel.hpp>
@@ -62,7 +63,7 @@ public:
 
     CulmModel(int index):
         _index(index), _is_first_culm(index == 1),
-        _culm_stock_model(new CulmStockModel)
+        _culm_stock_model(new CulmStockModelNG)
     {
         // submodels
         //        Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
@@ -251,7 +252,7 @@ public:
 
         step_state(t);
 
-        _culm_stock_model->put(t, CulmStockModel::LAST_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
+        //_culm_stock_model->put(t, CulmStockModel::LAST_LEAF_BIOMASS_SUM, _last_leaf_biomass_sum);
 
         auto it = _phytomer_models.begin();
         std::deque < PhytomerModel* >::iterator previous_it;
@@ -337,23 +338,17 @@ public:
     }
 
     void compute_stock(double t) {
-        _culm_stock_model->put(t, CulmStockModel::PLANT_DEFICIT, _plant_deficit);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_STOCK, _plant_stock);
-        _culm_stock_model->put(t, CulmStockModel::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::INTERNODE_BIOMASS_SUM, _internode_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
-        _culm_stock_model->put(t, CulmStockModel::INTERNODE_DEMAND_SUM, _internode_demand_sum);
-        _culm_stock_model->put(t, CulmStockModel::LEAF_LAST_DEMAND_SUM, _leaf_last_demand_sum);
-        _culm_stock_model->put(t, CulmStockModel::INTERNODE_LAST_DEMAND_SUM, _internode_last_demand_sum);
-        _culm_stock_model->put(t, CulmStockModel::REALLOC_BIOMASS_SUM, _realloc_biomass_sum);
-        _culm_stock_model->put(t, CulmStockModel::PLANT_PHASE, _plant_phase);
-        _culm_stock_model->put(t, CulmStockModel::CULM_PHASE, _culm_phase);
-        _culm_stock_model->put(t, CulmStockModel::PANICLE_DAY_DEMAND, _panicle_day_demand);
-        _culm_stock_model->put(t, CulmStockModel::PANICLE_WEIGHT, _panicle_weight);
-        _culm_stock_model->put(t, CulmStockModel::IS_FIRST_DAY_PI, _is_first_day_pi);
-        _culm_stock_model->put(t, CulmStockModel::PEDUNCLE_LAST_DEMAND, _peduncle_last_demand);
-        _culm_stock_model->put(t, CulmStockModel::PEDUNCLE_DAY_DEMAND, _peduncle_day_demand);
-
+        _culm_stock_model->put(t, CulmStockModelNG::PLANT_STOCK, _plant_stock);
+        _culm_stock_model->put(t, CulmStockModelNG::LEAF_BIOMASS_SUM, _leaf_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModelNG::INTERNODE_BIOMASS_SUM, _internode_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModelNG::LEAF_DEMAND_SUM, _leaf_demand_sum);
+        _culm_stock_model->put(t, CulmStockModelNG::INTERNODE_DEMAND_SUM, _internode_demand_sum);
+        _culm_stock_model->put(t, CulmStockModelNG::LAST_DEMAND, _leaf_last_demand_sum + _internode_last_demand_sum + _peduncle_last_demand);
+        _culm_stock_model->put(t, CulmStockModelNG::REALLOC_BIOMASS, _realloc_biomass_sum);
+        _culm_stock_model->put(t, CulmStockModelNG::PLANT_PHASE, _plant_phase);
+        _culm_stock_model->put(t, CulmStockModelNG::PANICLE_DEMAND, _panicle_day_demand);
+        _culm_stock_model->put(t, CulmStockModelNG::IS_FIRST_DAY_OF_INDIVIDUALIZATION, _is_first_day_pi);
+        _culm_stock_model->put(t, CulmStockModelNG::PEDUNCLE_DEMAND, _peduncle_day_demand);
         (*_culm_stock_model)(t);
     }
 
@@ -467,7 +462,7 @@ public:
     int get_alive_phytomer_number() const
     { return _phytomer_models.size() - _deleted_leaf_number; }
 
-    CulmStockModel * stock_model() const
+    CulmStockModelNG * stock_model() const
     { return _culm_stock_model.get(); }
 
     void delete_leaf(double t, int index, double leaf_biomass, double internode_biomass)
@@ -607,7 +602,7 @@ private:
     ecomeristem::ModelParameters _parameters;
 
     //  submodels
-    std::unique_ptr < CulmStockModel > _culm_stock_model;
+    std::unique_ptr < CulmStockModelNG > _culm_stock_model;
     std::deque < PhytomerModel* > _phytomer_models;
     std::unique_ptr < PanicleModel > _panicle_model;
     std::unique_ptr < PeduncleModel > _peduncle_model;

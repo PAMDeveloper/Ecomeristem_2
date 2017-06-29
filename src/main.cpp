@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   GlobalParameters globalParameters;
-  std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/old";
+  std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/ng";
 
   ecomeristem::ModelParameters parameters;
   utils::ParametersReader reader;

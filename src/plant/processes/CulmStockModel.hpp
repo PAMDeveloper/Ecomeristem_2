@@ -129,7 +129,7 @@ public:
         }
 
         _stock_internode = std::min(_stock, _maximum_reserve_in_internode * _internode_biomass_sum);
-    }   
+    }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
