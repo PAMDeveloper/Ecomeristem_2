@@ -286,6 +286,7 @@ public:
     void init(double t,
               const ecomeristem::ModelParameters& parameters)
     {
+        last_time = t-1;
         _parameters = parameters;
 
         //parameters

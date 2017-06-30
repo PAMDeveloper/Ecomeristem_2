@@ -14,10 +14,10 @@ public:
                      REMAIN_TO_STORE, REMAIN_TO_STORE_1, CULM_DEMAND_SUM,
                      CULM_SUPPLY, CULM_IC, CULM_DEFICIT, CULM_DEFICIT_1,
                      INTERMEDIATE, INTERMEDIATE2, INTERMEDIATE3,
-                     NEW_PLANT_SUPPLY, CULM_STOCK };
+                     NEW_PLANT_SUPPLY, CULM_STOCK, CULM_DEMAND, LEAF_STOCK_INIT };
 
 
-    enum externals { CULM_DEMAND, LEAF_DEMAND_SUM, INTERNODE_DEMAND_SUM,
+    enum externals { LEAF_DEMAND_SUM, INTERNODE_DEMAND_SUM,
                      PANICLE_DEMAND, PEDUNCLE_DEMAND, LAST_DEMAND, REALLOC_BIOMASS,
                      PLANT_LEAF_BIOMASS, PLANT_STOCK, PLANT_SURPLUS, PLANT_SUPPLY,
                      INTERNODE_BIOMASS_SUM, LEAF_BIOMASS_SUM, PLANT_PHASE,
@@ -44,9 +44,9 @@ public:
         Internal(INTERMEDIATE3, &CulmStockModelNG::_intermediate3);
         Internal(NEW_PLANT_SUPPLY, &CulmStockModelNG::_new_plant_supply);
         Internal(CULM_STOCK, &CulmStockModelNG::_culm_stock);
+        Internal(CULM_DEMAND, &CulmStockModelNG::_culm_demand);
+        Internal(LEAF_STOCK_INIT, &CulmStockModelNG::_leaf_stock_init);
 
-
-        External(CULM_DEMAND, &CulmStockModelNG::_culm_demand);
         External(LEAF_DEMAND_SUM, &CulmStockModelNG::_leaf_demand_sum);
         External(INTERNODE_DEMAND_SUM, &CulmStockModelNG::_internode_demand_sum);
         External(PANICLE_DEMAND, &CulmStockModelNG::_panicle_demand);
@@ -75,7 +75,8 @@ public:
 
         if(_is_first_day_of_individualization) {
             //First day, _leaf_stock initialisation
-            _leaf_stock = _plant_stock * (_leaf_biomass_sum / _plant_leaf_biomass);
+            _leaf_stock_init = _plant_stock * (_leaf_biomass_sum / _plant_leaf_biomass);
+            _leaf_stock = _leaf_stock_init;
         }
         //@TODO : vérifier si biomass ou biomass_1
         _max_reservoir_dispo_internode = _maximum_reserve_in_internode * _internode_biomass_sum;
@@ -90,11 +91,11 @@ public:
         _intermediate = _culm_supply - _culm_demand_sum + _realloc_biomass + _leaf_stock;
         _intermediate2 = std::max((1 - _coeff_remob) * _internode_stock, std::min(_internode_stock + _reservoir_dispo_internode, _internode_stock + _intermediate + _culm_deficit + _demand_internode_storage));
         _culm_deficit_1 = _culm_deficit;
-        _culm_deficit = std::min(0., _culm_deficit + _intermediate + (_coeff_remob * _internode_stock) +_demand_internode_storage);
+        _culm_deficit = std::min(0., _culm_deficit + _intermediate + (_coeff_remob * _internode_stock) + _demand_internode_storage);
         _remain_to_store = std::max(0., _intermediate + _demand_internode_storage - _reservoir_dispo_internode + _culm_deficit_1 - _culm_deficit);
         _remain_to_store_1 = _remain_to_store;
         _internode_stock = _intermediate2;
-        _leaf_stock = std::min(_reservoir_dispo_leaf, _remain_to_store);
+        _leaf_stock = std::min(_max_reservoir_dispo_leaf, _remain_to_store);
         _remain_to_store = _remain_to_store - _leaf_stock;
         _reservoir_dispo_internode = _max_reservoir_dispo_internode - _internode_stock;
         _reservoir_dispo_leaf = _max_reservoir_dispo_leaf - _leaf_stock;
@@ -116,15 +117,17 @@ public:
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
-        _parameters = parameters;
+        //permet le passage du get à t0 en mimant un isComputed au temps t
+        last_time = t-1;
 
         // parameters
+        _parameters = parameters;
         _maximum_reserve_in_internode = parameters.get < double >("maximumReserveInInternode");
         _leaf_stock_max = parameters.get < double >("leaf_stock_max");
         _coeff_remob = parameters.get < double >("coeff_remob");
         _coeff_active_storage_IN = parameters.get < double >("coeff_active_storage_IN");
 
-        // internals
+        // internals            
         _max_reservoir_dispo_internode = 0;
         _reservoir_dispo_internode = 0;
         _max_reservoir_dispo_leaf = 0;
@@ -143,6 +146,8 @@ public:
         _intermediate2 = 0;
         _intermediate3 = 0;
         _new_plant_supply = 0;
+        _culm_stock = 0;
+        _leaf_stock_init = 0;
 
     }
 
@@ -177,9 +182,10 @@ private:
     double _intermediate2;
     double _intermediate3;
     double _new_plant_supply;
+    double _culm_demand;
+    double _leaf_stock_init;
 
     //Externals
-    double _culm_demand;
     double _leaf_demand_sum;
     double _internode_demand_sum;
     double _panicle_demand;
