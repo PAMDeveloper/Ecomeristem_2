@@ -121,8 +121,6 @@ public:
             _blade_area = 0;
             _biomass = 0;
             _old_biomass = 0;
-            _senesc_dw = 0;
-            _senesc_dw_sum = 0;
             _demand = 0;
             _last_demand = 0;
             _time_from_app = 0;

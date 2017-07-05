@@ -14,7 +14,8 @@ public:
                      REMAIN_TO_STORE, REMAIN_TO_STORE_1, CULM_DEMAND_SUM,
                      CULM_SUPPLY, CULM_IC, CULM_DEFICIT, CULM_DEFICIT_1,
                      INTERMEDIATE, INTERMEDIATE2, INTERMEDIATE3,
-                     NEW_PLANT_SUPPLY, CULM_STOCK, CULM_DEMAND, LEAF_STOCK_INIT };
+                     NEW_PLANT_SUPPLY, CULM_STOCK, CULM_DEMAND, LEAF_STOCK_INIT,
+                     CULM_SURPLUS, MAX_RESERVOIR_DISPO };
 
 
     enum externals { LEAF_DEMAND_SUM, INTERNODE_DEMAND_SUM,
@@ -46,6 +47,8 @@ public:
         Internal(CULM_STOCK, &CulmStockModelNG::_culm_stock);
         Internal(CULM_DEMAND, &CulmStockModelNG::_culm_demand);
         Internal(LEAF_STOCK_INIT, &CulmStockModelNG::_leaf_stock_init);
+        Internal(CULM_SURPLUS, &CulmStockModelNG::_culm_surplus);
+        Internal(MAX_RESERVOIR_DISPO, &CulmStockModelNG::_max_reservoir_dispo);
 
         External(LEAF_DEMAND_SUM, &CulmStockModelNG::_leaf_demand_sum);
         External(INTERNODE_DEMAND_SUM, &CulmStockModelNG::_internode_demand_sum);
@@ -85,6 +88,7 @@ public:
             _culm_ic = 0;
             _culm_deficit = 0;
             _culm_deficit_1 = 0;
+            _culm_surplus = 0;
             _intermediate = 0;
             _intermediate2 = 0;
             _intermediate3 = 0;
@@ -101,6 +105,8 @@ public:
         //@TODO : vérifier si biomass ou biomass_1
         _max_reservoir_dispo_internode = _maximum_reserve_in_internode * _internode_biomass_sum;
         _max_reservoir_dispo_leaf = _leaf_stock_max * _leaf_biomass_sum;
+        _max_reservoir_dispo = (_maximum_reserve_in_internode *
+                                _internode_biomass_sum) + (_leaf_stock_max * _leaf_biomass_sum);
 
         _reservoir_dispo_internode = _max_reservoir_dispo_internode - _internode_stock;
         _culm_demand = _leaf_demand_sum + _panicle_demand + _peduncle_demand + _internode_demand_sum + _last_demand;
@@ -121,6 +127,7 @@ public:
         _reservoir_dispo_leaf = _max_reservoir_dispo_leaf - _leaf_stock;
         _culm_stock = _leaf_stock + _internode_stock;
         _new_plant_supply = _plant_supply - _culm_supply + _remain_to_store;
+        _culm_surplus = std::max(0., _culm_stock - _culm_demand + _culm_supply - _max_reservoir_dispo + _realloc_biomass);
     }
 
     void iterate_stock(double t) {
@@ -134,6 +141,7 @@ public:
         _reservoir_dispo_internode = _max_reservoir_dispo_internode - _internode_stock;
         _reservoir_dispo_leaf = _max_reservoir_dispo_leaf - _leaf_stock;
         _culm_stock = _leaf_stock + _internode_stock;
+        _culm_surplus = std::max(0., _culm_stock - _culm_demand + _culm_supply - _max_reservoir_dispo + _realloc_biomass);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {
@@ -168,6 +176,8 @@ public:
         _new_plant_supply = 0;
         _culm_stock = 0;
         _leaf_stock_init = 0;
+        _culm_surplus = 0;
+        _max_reservoir_dispo = 0;
 
     }
 
@@ -204,6 +214,8 @@ private:
     double _new_plant_supply;
     double _culm_demand;
     double _leaf_stock_init;
+    double _culm_surplus;
+    double _max_reservoir_dispo;
 
     //Externals
     double _leaf_demand_sum;

@@ -225,19 +225,11 @@ public:
                                              _assimilation_model->get < double >(t-1, AssimilationModel::INTERC));
         (*_water_balance_model)(t);
 
-        double nbc = 0;
-        std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
-        while(itnbc != _culm_models.end()) {
-            if(!((*itnbc)->get < bool, CulmModel >(t-1, CulmModel::KILL_CULM))) {
-                nbc++;
-            }
-            itnbc++;
-        }
+
 
         // Manager
         qDebug() << "BEFORE" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
         qDebug() << "NB CREATED CULMS:" << _culm_models.size();
-        qDebug() << "NB ALIVE CULMS:" << nbc;
 
         step_state(t);
         qDebug() << "AFTER" << QString::fromStdString(date) << "state:" << _plant_state << " - phase:" << _plant_phase;
@@ -337,14 +329,15 @@ public:
             _plant_supply = _assimilation_model->get < double >(t, AssimilationModel::ASSIM) + _realloc_sum_supply;
             it = _culm_models.begin();
             while(it != _culm_models.end()) {
-                    (*it)->stock_model()->put < double >(t, CulmStockModelNG::PLANT_SURPLUS, _stock_model->get < double >(t-1, PlantStockModel::SURPLUS));
-                    (*it)->stock_model()->put < double >(t, CulmStockModelNG::PLANT_SUPPLY, _plant_supply);
-                    (*it)->stock_model()->put < double >(t, CulmStockModelNG::PLANT_LEAF_BIOMASS, _leaf_biomass_sum);
-                    (*it)->compute_stock(t);
-                    _plant_supply = (*it)->stock_model()->get < double >(t, CulmStockModelNG::NEW_PLANT_SUPPLY);
-                    _tmp_culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_STOCK);
-                    _tmp_culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_DEFICIT);
-                    _tmp_internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
+                (*it)->stock_model()->put < double >(t, CulmStockModelNG::PLANT_SURPLUS, _stock_model->get < double >(t-1, PlantStockModel::SURPLUS));
+                (*it)->stock_model()->put < double >(t, CulmStockModelNG::PLANT_SUPPLY, _plant_supply);
+                (*it)->stock_model()->put < double >(t, CulmStockModelNG::PLANT_LEAF_BIOMASS, _leaf_biomass_sum);
+                (*it)->compute_stock(t);
+                _plant_supply = (*it)->stock_model()->get < double >(t, CulmStockModelNG::NEW_PLANT_SUPPLY);
+                _tmp_culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_STOCK);
+                _tmp_culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_DEFICIT);
+                _tmp_internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
+                //_tmp_culm_surplus_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::CULM_SURPLUS);
                 ++it;
             }
 
@@ -358,6 +351,7 @@ public:
                         _culm_stock_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_STOCK);
                         _culm_deficit_sum += (*it)->stock_model()->get < double >(t, CulmStockModelNG::CULM_DEFICIT);
                         _internode_stock_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::INTERNODE_STOCK);
+                        //_culm_surplus_sum += (*it)->stock_model()->get< double >(t, CulmStockModelNG::CULM_SURPLUS);
                     }
                     ++it;
                 }
@@ -365,7 +359,9 @@ public:
                 _culm_stock_sum = _tmp_culm_stock_sum;
                 _culm_deficit_sum = _tmp_culm_deficit_sum;
                 _internode_stock_sum = _tmp_internode_stock_sum;
+                //_culm_surplus_sum = _tmp_culm_surplus_sum;
             }
+            _culm_surplus_sum = _plant_supply;
         }
         //Root
         _root_model->put < double >(t, RootModel::LEAF_DEMAND_SUM, _leaf_demand_sum);
@@ -417,6 +413,18 @@ public:
 
         // PHT
         compute_height(t);
+
+        //NB Alive Culms
+        double nbc = 0;
+        std::deque < CulmModel* >::const_iterator itnbc = _culm_models.begin();
+        while(itnbc != _culm_models.end()) {
+            if(!((*itnbc)->get < bool, CulmModel >(t, CulmModel::KILL_CULM))) {
+                nbc++;
+            }
+            itnbc++;
+        }
+        qDebug() << QString::fromStdString(date) << " : NB ALIVE CULMS:" << nbc;
+
     }
 
 

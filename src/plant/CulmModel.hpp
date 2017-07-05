@@ -248,7 +248,6 @@ public:
             _last_ligulated_leaf = -1;
             _last_ligulated_leaf_len = 0;
             _realloc_biomass_sum = 0;
-            _deleted_senesc_dw = 0;
             _deleted_realloc_biomass = 0;
             _realloc_supply = 0;
             _culm_phase = culm::DEAD;
