@@ -42,7 +42,7 @@ public:
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
-                     SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF };
+                     SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK };
 
 
     virtual ~LeafModel()
@@ -99,6 +99,8 @@ public:
         External(SLA, &LeafModel::_sla);
         External(MGR, &LeafModel::_MGR);
         External(KILL_LEAF, &LeafModel::_kill_leaf);
+        External(CULM_DEFICIT, &LeafModel::_culm_deficit);
+        External(CULM_STOCK, &LeafModel::_culm_stock);
     }
 
 
@@ -172,7 +174,7 @@ public:
         if (_first_day == t) {
             _len = _ler * _dd;
         } else {
-            if (!(_plant_state & plant::NOGROWTH)) {
+            if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
                 _len = std::min(_predim, _len + _ler * std::min(_delta_t, _exp_time));
             }
         }
@@ -218,7 +220,7 @@ public:
             _realloc_biomass = 0;
             _sla_cste = _sla;
         } else {
-            if (!(_plant_state & plant::NOGROWTH) or (_is_lig and !(_is_lig_t))) {
+            if ((!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) or (_is_lig and !(_is_lig_t))) {
                 if (not _is_lig || _is_lig_t) {
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _realloc_biomass = 0;
@@ -257,7 +259,7 @@ public:
         if (_first_day == t) {
             _time_from_app = _dd;
         } else {
-            if (!(_plant_state & plant::NOGROWTH)) {
+            if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
@@ -265,7 +267,7 @@ public:
         _blade_len = (1 - (1 / _LL_BL)) * _len;
 
         if(_biomass == 0) {
-            _leaf_phase == LeafModel::DEAD;
+            _leaf_phase = LeafModel::DEAD;
         }
     }
 
@@ -396,6 +398,8 @@ private:
     double _delta_t;
     double _sla;
     bool _kill_leaf;
+    double _culm_deficit;
+    double _culm_stock;
 
 };
 

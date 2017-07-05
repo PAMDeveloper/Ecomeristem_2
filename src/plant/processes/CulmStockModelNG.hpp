@@ -21,7 +21,7 @@ public:
                      PANICLE_DEMAND, PEDUNCLE_DEMAND, LAST_DEMAND, REALLOC_BIOMASS,
                      PLANT_LEAF_BIOMASS, PLANT_STOCK, PLANT_SURPLUS, PLANT_SUPPLY,
                      INTERNODE_BIOMASS_SUM, LEAF_BIOMASS_SUM, PLANT_PHASE,
-                     IS_FIRST_DAY_OF_INDIVIDUALIZATION };
+                     IS_FIRST_DAY_OF_INDIVIDUALIZATION, KILL_CULM };
 
 
     CulmStockModelNG() {
@@ -61,6 +61,8 @@ public:
         External(LEAF_BIOMASS_SUM, &CulmStockModelNG::_leaf_biomass_sum);
         External(PLANT_PHASE, &CulmStockModelNG::_plant_phase);
         External(IS_FIRST_DAY_OF_INDIVIDUALIZATION, &CulmStockModelNG::_is_first_day_of_individualization);
+        External(KILL_CULM, &CulmStockModelNG::_kill_culm);
+
     }
 
     virtual ~CulmStockModelNG()
@@ -68,11 +70,29 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        if (_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
-            //_culm_surplus = 0;
+        if (_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _kill_culm) {
+            _max_reservoir_dispo_internode = 0;
+            _reservoir_dispo_internode = 0;
+            _max_reservoir_dispo_leaf = 0;
+            _reservoir_dispo_leaf = 0;
+            _internode_stock = 0;
+            _leaf_stock = 0;
+            _demand_internode_storage = 0;
+            _remain_to_store = 0;
+            _remain_to_store_1 = 0;
+            _culm_demand_sum = 0;
+            _culm_supply = 0;
+            _culm_ic = 0;
+            _culm_deficit = 0;
+            _culm_deficit_1 = 0;
+            _intermediate = 0;
+            _intermediate2 = 0;
+            _intermediate3 = 0;
+            _culm_stock = 0;
+            _leaf_stock_init = 0;
+            _new_plant_supply = _plant_supply;
             return;
         }
-
         if(_is_first_day_of_individualization) {
             //First day, _leaf_stock initialisation
             _leaf_stock_init = _plant_stock * (_leaf_biomass_sum / _plant_leaf_biomass);
@@ -199,6 +219,7 @@ private:
     double _internode_biomass_sum;
     double _leaf_biomass_sum;
     bool _is_first_day_of_individualization;
+    bool _kill_culm;
     plant::plant_phase _plant_phase;
 
 };

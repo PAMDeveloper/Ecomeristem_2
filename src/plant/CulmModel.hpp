@@ -53,7 +53,8 @@ public:
                      LAST_LEAF_BIOMASS_SUM, PANICLE_DAY_DEMAND, PEDUNCLE_BIOMASS,
                      PEDUNCLE_DAY_DEMAND, PEDUNCLE_LAST_DEMAND,
                      FIRST_LEAF_LEN, DELETED_SENESC_DW, PEDUNCLE_LEN, KILL_CULM,
-                     LAST_LIGULATED_LEAF_BLADE_LEN, DELETED_REALLOC_BIOMASS };
+                     LAST_LIGULATED_LEAF_BLADE_LEN, DELETED_REALLOC_BIOMASS, CULM_TEST_IC,
+                     CULM_DEFICIT, CULM_STOCK, LAST_LEAF_INDEX, REALLOC_SUPPLY };
 
     enum externals { BOOL_CROSSED_PLASTO, DD, EDD, DELTA_T, FTSW, FCSTR, PHENO_STAGE,
                      PREDIM_LEAF_ON_MAINSTEM, SLA, PLANT_PHASE,
@@ -104,6 +105,11 @@ public:
         Internal(KILL_CULM, &CulmModel::_kill_culm);
         Internal(LAST_LIGULATED_LEAF_BLADE_LEN, &CulmModel::_last_ligulated_leaf_blade_len);
         Internal(DELETED_REALLOC_BIOMASS, &CulmModel::_deleted_realloc_biomass);
+        Internal(CULM_TEST_IC, &CulmModel::_culm_test_ic);
+        Internal(CULM_DEFICIT, &CulmModel::_culm_deficit);
+        Internal(CULM_STOCK, &CulmModel::_culm_stock);
+        Internal(LAST_LEAF_INDEX, &CulmModel::_last_leaf_index);
+        Internal(REALLOC_SUPPLY, &CulmModel::_realloc_supply);
 
         //    externals
         External(BOOL_CROSSED_PLASTO, &CulmModel::_bool_crossed_plasto);
@@ -145,7 +151,8 @@ public:
                 || _culm_phase == culm::ELONG
                 || _culm_phase == culm::PI
                 )
-                && (get_phytomer_number() < _nb_leaf_pi + _nb_leaf_max_after_pi);
+                && (get_phytomer_number() < _nb_leaf_pi + _nb_leaf_max_after_pi)
+                && (_culm_deficit + _culm_stock >= 0);
     }
 
     void step_state(double t) {
@@ -241,6 +248,9 @@ public:
             _last_ligulated_leaf = -1;
             _last_ligulated_leaf_len = 0;
             _realloc_biomass_sum = 0;
+            _deleted_senesc_dw = 0;
+            _deleted_realloc_biomass = 0;
+            _realloc_supply = 0;
             _culm_phase = culm::DEAD;
             return;
         }
@@ -255,10 +265,18 @@ public:
             create_phytomer(t);
         }
 
+        //Nécessaire pour coder l'erreur delphi du passage de l'entrenoeud à réalisation à partir d'un certain index
+        if(_culm_phase == culm::VEGETATIVE or _culm_phase == culm::INITIAL) {
+            _last_leaf_index = _phytomer_models.size();
+        }
+
         step_state(t);
 
         //kill leaf
         _realloc_biomass_sum = 0;
+        _deleted_senesc_dw = 0;
+        _deleted_realloc_biomass = 0;
+        _realloc_supply = 0;
         if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE) {
             if(_is_first_day_pi) {
                 if((_plant_deficit * (_leaf_biomass_sum / _plant_leaf_biomass_sum)) + (_plant_stock * (_leaf_biomass_sum / _plant_leaf_biomass_sum)) < 0) {
@@ -343,6 +361,11 @@ public:
             _peduncle_len = _peduncle_model->get < double >(t, PeduncleModel::LENGTH);
             _peduncle_biomass = _peduncle_model->get < double >(t, PeduncleModel::BIOMASS);
         }
+
+        //        if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
+        //            delete_culmNG(t);
+        //        }
+
     }
 
     void get_nonvegetative_in(std::deque < PhytomerModel* >::iterator it, double t) {
@@ -367,7 +390,11 @@ public:
         _culm_stock_model->put(t, CulmStockModelNG::PANICLE_DEMAND, _panicle_day_demand);
         _culm_stock_model->put(t, CulmStockModelNG::IS_FIRST_DAY_OF_INDIVIDUALIZATION, _is_first_day_pi);
         _culm_stock_model->put(t, CulmStockModelNG::PEDUNCLE_DEMAND, _peduncle_day_demand);
+        _culm_stock_model->put(t, CulmStockModelNG::KILL_CULM, _kill_culm);
         (*_culm_stock_model)(t);
+        _culm_test_ic = std::min(1.,sqrt(_culm_stock_model->get < double >(t, CulmStockModelNG::CULM_IC)));
+        _culm_deficit = _culm_stock_model->get < double >(t, CulmStockModelNG::CULM_DEFICIT);
+        _culm_stock = _culm_stock_model->get < double >(t, CulmStockModelNG::CULM_STOCK);
     }
 
     void compute_phytomers(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
@@ -378,12 +405,22 @@ public:
         (*it)->put(t, PhytomerModel::SLA, _sla);
         (*it)->put < plant::plant_state >(t, PhytomerModel::PLANT_STATE, _plant_state);
         (*it)->put < plant::plant_phase >(t, PhytomerModel::PLANT_PHASE, _plant_phase);
-        (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
+        if(_plant_phase != plant::INITIAL and _plant_phase != plant::VEGETATIVE and !(_is_first_day_pi)) {
+            (*it)->put(t, PhytomerModel::TEST_IC, _culm_test_ic);
+        } else {
+            (*it)->put(t, PhytomerModel::TEST_IC, _test_ic);
+        }
         (*it)->leaf()->put(t, LeafModel::MGR, _MGR);
+        (*it)->leaf()->put(t, LeafModel::CULM_DEFICIT, _culm_deficit);
+        (*it)->leaf()->put(t, LeafModel::CULM_STOCK, _culm_stock);
+        (*it)->internode()->put(t, InternodeModel::CULM_DEFICIT, _culm_deficit);
+        (*it)->internode()->put(t, InternodeModel::CULM_STOCK, _culm_stock);
         (*it)->internode()->put(t, InternodeModel::CULM_PHASE, _culm_phase);
         (*it)->internode()->put(t, InternodeModel::PLASTO, _plasto);
         (*it)->internode()->put(t, InternodeModel::LIGULO, _ligulo);
         (*it)->internode()->put(t, InternodeModel::NB_LIG, _nb_lig);
+        (*it)->internode()->put(t, InternodeModel::BOOL_CROSSED_PLASTO, _bool_crossed_plasto);
+        (*it)->internode()->put(t, InternodeModel::LAST_LEAF_INDEX, _last_leaf_index);
         if (_is_first_culm) {
             if (i == 0) {
                 (*it)->put(t, PhytomerModel::PREDIM_LEAF_ON_MAINSTEM, 0.);
@@ -497,16 +534,66 @@ public:
     void delete_leafNG(double t, int index)
     {
         std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
-        _deleted_senesc_dw += (1 - _realocationCoeff) * _phytomer_models[index]->leaf()->get < double >(t-1, LeafModel::BIOMASS);
-        _deleted_realloc_biomass += (_realocationCoeff) * _phytomer_models[index]->leaf()->get < double >(t-1, LeafModel::BIOMASS);
+        _deleted_senesc_dw = (1 - _realocationCoeff) * _phytomer_models[index]->leaf()->get < double >(t-1, LeafModel::BIOMASS);
+        _deleted_realloc_biomass = (_realocationCoeff) * _phytomer_models[index]->leaf()->get < double >(t-1, LeafModel::BIOMASS);
         _phytomer_models[index]->kill_leaf(t);
         qDebug() << "Le : " << QString::fromStdString(date) << " on tue la feuille" << index + 1 << " sur la talle " << _index - 1;
         ++_deleted_leaf_number;
-        if (get_alive_phytomer_number() == 0) {
+
+        if(_nb_lig <= 1) {
             _kill_culm = true;
-            _deleted_senesc_dw += (1 - _realocationCoeff) * _phytomer_models[index]->internode()->get < double >(t-1, InternodeModel::BIOMASS);
+            if(_index == 1) {
+                qDebug() << "Plus de feuilles lig sur le brin maître, la plante est morte";
+            } else {
+                _deleted_realloc_biomass = (_realocationCoeff) * (_internode_biomass_sum + _leaf_biomass_sum);
+                _deleted_senesc_dw = (1 - _realocationCoeff) * (_internode_biomass_sum + _leaf_biomass_sum);
+                qDebug() << "Plus de feuilles lig sur la talle " << _index - 1 << " on tue la talle";
+            }
+
+            //kill leaves and internodes
+            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+            while(it != _phytomer_models.end()) {
+                (*it)->internode()->culm_dead(t);
+                (*it)->kill_leaf(t);
+                ++it;
+            }
+
+            //realocation to plant_supply
+            _realloc_supply = _deleted_realloc_biomass + _culm_deficit + _culm_stock;
+
+
         }
     }
+
+    //    void delete_culmNG(double t) {
+    //        //search for ligulated leaf:
+    //        double nb_ligulated_leaves = 0;
+    //        std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+    //        while(it != _phytomer_models.end()) {
+    //            if((*it)->is_leaf_lig(t)) {
+    //                ++nb_ligulated_leaves;
+    //            }
+    //            ++it;
+    //        }
+
+    //        //if no ligulated leaves
+    //        if(nb_ligulated_leaves == 0) {
+    //            _kill_culm = true;
+    //            if(_index == 1) {
+    //                qDebug() << "Plus de feuilles lig sur le brin maître, la plante est morte";
+    //            } else {
+    //                _deleted_realloc_biomass += (_realocationCoeff) * (_internode_biomass_sum + _leaf_biomass_sum);
+    //                _deleted_senesc_dw += (1 - _realocationCoeff) * (_internode_biomass_sum + _leaf_biomass_sum);
+    //            }
+    //            //kill leaves and internodes
+    //            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
+    //            while(it != _phytomer_models.end()) {
+    //                (*it)->internode()->culm_dead(t);
+    //                (*it)->kill_leaf(t);
+    //                ++it;
+    //            }
+    //        }
+    //    }
 
     double CulmModel::get_leaf_biomass(double t, int index) const
     {
@@ -578,6 +665,7 @@ public:
         _phytomer_models.push_back(first_phytomer);
         _culm_stock_model->init(t, parameters);
 
+        last_time = t-1;
         //parameters
         _parameters = parameters;
         _nb_leaf_pi = _parameters.get < double >("nbleaf_pi");
@@ -618,6 +706,11 @@ public:
         _kill_culm = false;
         _last_ligulated_leaf_blade_len = 0;
         _deleted_realloc_biomass = 0;
+        _culm_test_ic = 0; //@TODO: check init value
+        _culm_stock = 0;
+        _culm_deficit = 0;
+        _last_leaf_index = -1;
+        _realloc_supply = 0;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
@@ -692,6 +785,11 @@ private:
     bool _kill_culm;
     double _last_ligulated_leaf_blade_len;
     double _deleted_realloc_biomass;
+    double _culm_test_ic;
+    double _culm_stock;
+    double _culm_deficit;
+    double _last_leaf_index;
+    double _realloc_supply;
 
     //    externals
     int _plant_phenostage;

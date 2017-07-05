@@ -34,14 +34,15 @@ class InternodeModel : public AtomicModel < InternodeModel >
 public:
     enum internode_phase {  INITIAL, VEGETATIVE, REALIZATION,
                             REALIZATION_NOGROWTH, MATURITY,
-                            MATURITY_NOGROWTH };
+                            MATURITY_NOGROWTH, DEAD };
 
     enum internals { INTERNODE_PHASE, INTERNODE_PHASE_1, INTERNODE_PREDIM, INTERNODE_LEN,
                      REDUCTION_INER, INER, EXP_TIME, INTER_DIAMETER,
-                     VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP};
+                     VOLUME, BIOMASS, DEMAND, LAST_DEMAND, TIME_FROM_APP, CSTE_PLASTO, CSTE_LIGULO};
 
     enum externals { PLANT_PHASE, PLANT_STATE, CULM_PHASE, LIG, IS_LIG, LEAF_PREDIM, FTSW,
-                     DD, DELTA_T, PLASTO, LIGULO, NB_LIG };
+                     DD, DELTA_T, PLASTO, LIGULO, NB_LIG, CULM_DEFICIT, CULM_STOCK,
+                     BOOL_CROSSED_PLASTO, LAST_LEAF_INDEX };
 
     //    enum internals { BIOMASS, DEMAND, LAST_DEMAND, LEN };
     //    enum externals { DD, DELTA_T, FTSW, P, PHASE, STATE, PREDIM_LEAF,
@@ -64,6 +65,8 @@ public:
         Internal(DEMAND, &InternodeModel::_demand);
         Internal(LAST_DEMAND, &InternodeModel::_last_demand);
         Internal(TIME_FROM_APP, &InternodeModel::_time_from_app);
+        Internal(CSTE_PLASTO, &InternodeModel::_cste_plasto);
+        Internal(CSTE_LIGULO, &InternodeModel::_cste_ligulo);
 
         External(PLANT_STATE, &InternodeModel::_plant_state);
         External(PLANT_PHASE, &InternodeModel::_plant_phase);
@@ -77,6 +80,10 @@ public:
         External(PLASTO, &InternodeModel::_plasto);
         External(LIGULO, &InternodeModel::_ligulo);
         External(NB_LIG, &InternodeModel::_nb_lig);
+        External(CULM_STOCK, &InternodeModel::_culm_stock);
+        External(CULM_DEFICIT, &InternodeModel::_culm_deficit);
+        External(BOOL_CROSSED_PLASTO, &InternodeModel::_bool_crossed_plasto);
+        External(LAST_LEAF_INDEX, &InternodeModel::_last_leaf_index);
     }
 
     virtual ~InternodeModel()
@@ -85,7 +92,8 @@ public:
     void compute(double t, bool /* update */){
         _p = _parameters.get(t).P;
 
-        if ((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _lig == t and _plant_phase != plant::FLO and _nb_lig > 0 ){
+        //@TODO : vérifier condition bool_crosed_plasto, _index et lig : erreur dans delphi
+        if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _bool_crossed_plasto > 0 and (_index >= _last_leaf_index - 1) and _plant_phase != plant::FLO and _nb_lig > 0 and _inter_phase == VEGETATIVE) {
             _cste_ligulo = _ligulo;
             _cste_plasto = _plasto;
         }
@@ -110,7 +118,7 @@ public:
         if (_inter_phase == REALIZATION) {
             _iner = _inter_predim * _reduction_iner / (_cste_plasto + _index * (_cste_ligulo - _cste_plasto));
         } else {
-            _iner = _inter_predim * _reduction_iner / (_cste_plasto + _index * (_ligulo - _plasto));
+            _iner = _inter_predim * _reduction_iner / (_plasto + _index * (_ligulo - _plasto));
         }
         //InternodeManager
         step_state(t);
@@ -123,8 +131,8 @@ public:
             if (_inter_phase_1 == VEGETATIVE and _inter_phase == REALIZATION) {
                 _inter_len = _iner * _dd;
                 _exp_time = (_inter_predim - _inter_len) / _iner;
-            } else {
-                if (!(_plant_state & plant::NOGROWTH) and (_plant_phase == plant::ELONG or _plant_phase == plant::PI or _plant_phase == plant::PRE_FLO or _plant_phase == plant::FLO)) {
+            } else if(_culm_deficit + _culm_stock >= 0){ //@TODO : vérifier pertinence
+                if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0) and (_plant_phase == plant::ELONG or _plant_phase == plant::PI or _plant_phase == plant::PRE_FLO or _plant_phase == plant::FLO)) {
                     _exp_time = (_inter_predim - _inter_len) / _iner;
                     _inter_len = std::min(_inter_predim, _inter_len + _iner * std::min(_delta_t, _exp_time));
                 }
@@ -140,7 +148,9 @@ public:
 
         //Biomass
         double biomass_1 = _biomass;
-        _biomass = _inter_volume * _density;
+        if(_culm_deficit + _culm_stock >= 0) {
+            _biomass = _inter_volume * _density;
+        }
 
         //InternodeDemand & InternodeLastDemand
         _last_demand = 0;
@@ -158,10 +168,27 @@ public:
         if (_first_day == t) {
             _time_from_app = _dd;
         } else {
-            if (!(_plant_state & plant::NOGROWTH)) {
+            if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
+    }
+
+    void culm_dead(double t) {
+        _inter_phase_1 = _inter_phase;
+        _inter_phase = DEAD;
+        _inter_len = 0;
+        _reduction_iner = 0;
+        _iner = 0;
+        _exp_time = 0;
+        _inter_diameter = 0;
+        _inter_volume = 0;
+        _biomass = 0;
+        _demand = 0;
+        _last_demand = 0;
+        _first_day = t;
+        _time_from_app = 0;
+        _is_mature = false;
     }
 
     void step_state(double t) {
@@ -172,8 +199,8 @@ public:
             _inter_phase = VEGETATIVE;
             break;
         case VEGETATIVE:
-            //@TODO : virer la condition nb_lig, erreur dans delphi
-            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _lig == t and _plant_phase != plant::FLO and _nb_lig > 0) {
+            //@TODO : vérifier condition bool_crosed_plasto, _index et lig : erreur dans delphi
+            if((_culm_phase == culm::ELONG or _culm_phase == culm::PI or _culm_phase == culm::PRE_FLO) and _bool_crossed_plasto > 0 and (_index >= _last_leaf_index - 1) and _plant_phase != plant::FLO and _nb_lig > 0) {
                 _inter_phase = REALIZATION;
             }
             break;
@@ -278,6 +305,10 @@ private:
     double _ligulo;
     double _plasto;
     double _nb_lig;
+    double _culm_deficit;
+    double _culm_stock;
+    double _bool_crossed_plasto;
+    double _last_leaf_index;
 
     //// external variables
     //    double _dd;
