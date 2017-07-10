@@ -430,15 +430,17 @@ public:
 
     void create_culm(double t, int n)
     {
-        for (int i = 0; i < n; ++i) {
-            CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
-            setsubmodel(CULMS, meristem);
-            meristem->put(t, CulmModel::LL_BL, _LL_BL);
-            meristem->put(t, CulmModel::PLASTO, _plasto);
-            meristem->put(t, CulmModel::LIGULO, _ligulo);
-            meristem->init(t, _parameters);
-            _culm_models.push_back(meristem);
-        }
+        //if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+            for (int i = 0; i < n; ++i) {
+                CulmModel* meristem = new CulmModel(_culm_models.size() + 1);
+                setsubmodel(CULMS, meristem);
+                meristem->put(t, CulmModel::LL_BL, _LL_BL);
+                meristem->put(t, CulmModel::PLASTO, _plasto);
+                meristem->put(t, CulmModel::LIGULO, _ligulo);
+                meristem->init(t, _parameters);
+                _culm_models.push_back(meristem);
+            }
+        //}
     }
 
     void compute_culms(double t)
@@ -548,10 +550,11 @@ public:
         _deleted_leaf_blade_area = 0;
         if (_stock_model->get < double >(t, PlantStockModel::STOCK) == 0) {
             std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-            int i = 0;
             if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
                 _qty = 0;
                 double tmp_date = t;
+                std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
+                int i = 0;
                 while (it != _culm_models.end()) {
                     double creation_date = (*it)->get_first_alive_leaf_creation_date(t);
                     if(creation_date < tmp_date) {
@@ -562,56 +565,14 @@ public:
                     ++it;
                     ++i;
                 }
-
-                if (_leaf_index != -1) {
-                    _deleted_leaf_biomass = _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
-                    _deleted_leaf_blade_area = _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
-                    if (_culm_models[_culm_index]->get_alive_phytomer_number() == 1) {
-                        _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
-                        if(_culm_index == 0) {
-                            _plant_phase = plant::DEAD;
-                        }
-                    }
-                }
-            } else {
-                while (it != _culm_models.end()) {
-                    if((*it)->get_phytomer_number() <= _nb_leaf_enabling_tillering) {
-                        _leaf_index = (*it)->get_first_alive_leaf_index(t);
-                        _culm_index = i;
-                    }
-                    ++it;
-                    ++i;
-                }
-                if(_leaf_index == -1) {
-                    _qty = 0;
-                    double tmp_date = t;
-                    std::deque < CulmModel* >::const_iterator it = _culm_models.begin();
-                    int i = 0;
-                    while (it != _culm_models.end()) {
-                        double creation_date = (*it)->get_first_alive_leaf_creation_date(t);
-                        if(creation_date < tmp_date) {
-                            _culm_index = i;
-                            _leaf_index = (*it)->get_first_alive_leaf_index(t);
-                            tmp_date = creation_date;
-                        }
-                        ++it;
-                        ++i;
-                    }
-                }
-                if (_leaf_index != -1) {
-                    _deleted_leaf_biomass =
-                            _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
-                    _deleted_leaf_blade_area =
-                            _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
-                    if (_culm_models[_culm_index]->get_alive_phytomer_number() <= 2) {
-                        if(_culm_models[_culm_index]->get_alive_phytomer_number() == 1) {
-                            _deleted_internode_biomass = _culm_models[_culm_index]->get < double, CulmModel >(t, CulmModel::INTERNODE_BIOMASS_SUM);
-                        }
-                        if(_culm_index == 0) {
-                            _plant_phase = plant::DEAD;
-                        }
-                    }
-
+            }
+            if (_leaf_index != -1) {
+                _deleted_leaf_biomass =
+                        _culm_models[_culm_index]->get_leaf_biomass(t, _leaf_index);
+                _deleted_leaf_blade_area =
+                        _culm_models[_culm_index]->get_leaf_blade_area(t,_leaf_index);
+                if (_culm_models[_culm_index]->get_alive_phytomer_number() < 2 and _culm_index == 0) {
+                    _plant_phase = plant::DEAD;
                 }
             }
         }

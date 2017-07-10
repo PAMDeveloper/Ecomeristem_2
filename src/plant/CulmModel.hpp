@@ -538,7 +538,7 @@ public:
         _phytomer_models[index]->kill_leaf(t);
         qDebug() << "Le : " << QString::fromStdString(date) << " on tue la feuille" << index + 1 << " sur la talle " << _index - 1;
         ++_deleted_leaf_number;
-
+        //@TODO: vérifier si on tue la talle même s'il reste une feuille en croissance non lig
         if(_nb_lig <= 1) {
             _kill_culm = true;
             if(_index == 1) {
