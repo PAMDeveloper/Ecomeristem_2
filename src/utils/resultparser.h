@@ -72,17 +72,20 @@ public:
             transform(s->begin(), s->end(), s->begin(), ::tolower);
             filteredVObs.insert( pair<string,vector<double> >(*s, vector<double>()) );
         }
-        map<string,bool> validity;
-        for(auto const &token : vObs)  {
-            bool valid = true;
-            string * s = new string(token.first);
-            transform(s->begin(), s->end(), s->begin(), ::tolower);
-            if(constraints.find(*s) != constraints.end()) {
-                valid |= token.second[i] == constraints[*s];
-            }
-        }
-        for (int i = 0; i < vObs[dayId].size(); ++i) {
 
+        for (int i = 0; i < vObs[dayId].size(); ++i) {
+            bool valid = true;
+
+            valid &= vObs[dayId][i] <= dayMax;
+            if(valid){
+                for(auto const &token : vObs)  {
+                    string * s = new string(token.first);
+                    transform(s->begin(), s->end(), s->begin(), ::tolower);
+                    if(constraints.find(*s) != constraints.end()) {
+                        valid &= token.second[i] == constraints[*s];
+                    }
+                }
+            }
 
             if(valid){
                 for(auto token : vObs) {
@@ -94,8 +97,9 @@ public:
             }
         }
 
-        return filteredVObs;
-    }
+
+            return filteredVObs;
+        }
 
 
     void display(map<string, vector<double>> map){
@@ -118,7 +122,7 @@ public:
 
         map<string, vector<double>> filteredVObs;
         if(constraints.size() > 0)
-            filteredVObs = filterVObs(vObs, constraints, dayId);
+            filteredVObs = filterVObs(vObs, results.begin()->second.size(), constraints, dayId);
         else
             filteredVObs = vObs;
 
