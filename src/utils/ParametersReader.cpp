@@ -234,11 +234,28 @@
 #include <utils/ParametersReader.hpp>
 #include <artis/utils/DateTime.hpp>
 #include <fstream>
+#include <string>
 
-
+using namespace std;
 
 using namespace ecomeristem;
 namespace utils {
+
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+inline std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
 
 inline double round( double val, int decimal )
 {
@@ -258,6 +275,38 @@ inline double round( double val, int decimal )
 		load_simulation(id, connection, parameters);
 		load_meteo(connection, parameters);
 	}
+
+    map<string, vector<double>> ParametersReader::loadVObsFromFile(const std::string &file_path) {
+        std::ifstream vObsFile(file_path);
+        std::string line;
+        std::getline(vObsFile, line); //headers
+        vector<string> headers;
+        istringstream iss(line);
+        copy(istream_iterator<string>(iss),
+             istream_iterator<string>(),
+             back_inserter(headers));
+
+        map<string, vector<double> > obs;
+        for (string s: headers) {
+            obs.insert ( std::pair<string,vector<double> >(s, vector<double>()) );
+        }
+
+        while (std::getline(vObsFile, line))
+        {
+            vector<string> data = split(line, '\t');
+            for (int i = 0; i < data.size(); ++i) {
+                string s = data[i];
+                char* p;
+                double converted = strtod(s.c_str(), &p);
+                if (*p) {
+                   obs[headers[i]].push_back(nan(""));
+                }
+                else {
+                   obs[headers[i]].push_back(converted);
+                }
+            }
+        }
+    }
 
 
 	void ParametersReader::loadParametersFromFiles(const std::string &folder,

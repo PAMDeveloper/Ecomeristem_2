@@ -84,6 +84,7 @@
 #include <utils/Connections.hpp>
 
 using namespace ecomeristem;
+using namespace std;
 namespace utils {
 
 	class ParametersReader {
@@ -99,6 +100,8 @@ namespace utils {
 
 		void loadParametersFromFiles(const std::string &folder,
             ModelParameters &parameters);
+
+        map<string, vector<double>> loadVObsFromFile(const std::string &file_path);
 
 	private:
         void load_meteo(PGconn* connection, ModelParameters &parameters);
