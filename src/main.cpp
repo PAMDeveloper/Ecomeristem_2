@@ -35,6 +35,8 @@
 #include <observer/PlantView.hpp>
 #include <plant/PlantModel.hpp>
 #include <utils/ParametersReader.hpp>
+#include <utils/resultparser.h>
+
 
 //using namespace artis::kernel;
 
@@ -47,6 +49,7 @@ int main(int argc, char *argv[]) {
   std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/old";
 //    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
 
+  ResultParser parser;
   ecomeristem::ModelParameters parameters;
   utils::ParametersReader reader;
   reader.loadParametersFromFiles(dirName, parameters);
