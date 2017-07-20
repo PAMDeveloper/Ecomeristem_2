@@ -34,7 +34,7 @@ namespace model {
 class PlantStockModel : public AtomicModel < PlantStockModel >
 {
 public:
-    enum internals { DAY_DEMAND, IC, TEST_IC, RESERVOIR_DISPO, SEED_RES, STOCK,
+    enum internals { DAY_DEMAND, IC, IC_1, TEST_IC, RESERVOIR_DISPO, SEED_RES, STOCK,
                      SUPPLY, SURPLUS, DEFICIT };
 
     enum externals { DEMAND_SUM, LEAF_LAST_DEMAND_SUM,
@@ -48,6 +48,7 @@ public:
         //    computed variables
         Internal(DAY_DEMAND, &PlantStockModel::_day_demand);
         Internal(IC, &PlantStockModel::_ic);
+        Internal(IC_1, &PlantStockModel::_ic_1);
         Internal(TEST_IC, &PlantStockModel::_test_ic);
         Internal(RESERVOIR_DISPO, &PlantStockModel::_reservoir_dispo);
         Internal(SEED_RES, &PlantStockModel::_seed_res);
@@ -77,6 +78,7 @@ public:
 
     void compute_IC(double t)
     {
+        std::string date = artis::utils::DateTime::toJulianDayFmt(t, artis::utils::DATE_FORMAT_YMD);
         if (t != _parameters.beginDate) {
             double resDiv, mean;
             double total = 0.;
@@ -108,10 +110,8 @@ public:
             } else {
                 mean = _ic_1;
             }
-
             double tmp = std::min(5., mean);
 
-            _ic_1 = _ic;
             if (tmp == 0 and _seed_res_[0] == 0 and _seed_res_[1] == 0 and
                     _seed_res_[2] == 0) {
                 _ic = 0.001;
@@ -120,6 +120,7 @@ public:
                 _ic = tmp;
                 _test_ic = std::min(1., std::sqrt(tmp));
             }
+            _ic_1 = _ic;
         }
     }
 

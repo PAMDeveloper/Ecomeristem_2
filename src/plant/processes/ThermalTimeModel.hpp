@@ -41,13 +41,10 @@ public:
 
     ThermalTimeModel() {
         //    computed variables
-        Internal(DELTA_T, &ThermalTimeModel::_deltaT);
-        Internal(TT, &ThermalTimeModel::_TT);
         Internal(BOOL_CROSSED_PLASTO, &ThermalTimeModel::_boolCrossedPlasto);
         Internal(PLASTO_VISU, &ThermalTimeModel::_plastoVisu);
         Internal(LIGULO_VISU, &ThermalTimeModel::_liguloVisu);
         Internal(PHENO_STAGE, &ThermalTimeModel::_phenoStage);
-        Internal(SLA, &ThermalTimeModel::_sla);
         Internal(DD, &ThermalTimeModel::_DD);
         Internal(EDD, &ThermalTimeModel::_EDD);
 
@@ -56,6 +53,7 @@ public:
         External(PLANT_STATE, &ThermalTimeModel::_plant_state);
         External(PLASTO, &ThermalTimeModel::_plasto);
         External(STOCK, &ThermalTimeModel::_stock);
+        External(DELTA_T, &ThermalTimeModel::_deltaT);
 
     }
 
@@ -65,11 +63,6 @@ public:
 
 
     void compute(double t, bool /* update */) {
-        _Ta = _parameters.get(t).Temperature;
-
-        _deltaT = _Ta - _Tb;
-        _TT = _TT + _deltaT;
-
         if (_stock != 0) {
             double tempDD = _DD + _deltaT + _plasto_delay;
 
@@ -89,8 +82,6 @@ public:
             _plastoVisu = _plastoVisu + _EDD;
             _liguloVisu = _liguloVisu + _EDD;
         }
-
-        _sla = _FSLA - _SLAp * std::log(_phenoStage);
     }
 
 
@@ -98,20 +89,14 @@ public:
     void init(double /*t*/, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
         //    paramaters variables
-        _Tb = _parameters.get < double >("Tb");
         _coef_ligulo = _parameters.get < double >("coef_ligulo1");
-        _FSLA = _parameters.get < double >("FSLA");
-        _SLAp = _parameters.get < double >("SLAp");
         _plasto_init = _parameters.get < double >("plasto_init");
 
         //    computed variables
-        _deltaT = 0;
-        _TT = 0;
         _boolCrossedPlasto = 0;
         _plastoVisu = _plasto_init;
         _liguloVisu = _plasto_init * _coef_ligulo;
         _phenoStage = 1;
-        _sla = _FSLA;
         _DD = 0;
         _EDD = 0;
     }
@@ -119,23 +104,14 @@ public:
 private:
     ecomeristem::ModelParameters _parameters;
     //    parameters
-    double _Tb;
     double _coef_ligulo;
-    double _FSLA;
-    double _SLAp;
     double _plasto_init;
 
-    //    parameters(t)
-    double _Ta;
-
     //    internals
-    double _deltaT;
-    double _TT;
     double _boolCrossedPlasto;
     double _plastoVisu;
     double _liguloVisu;
     int _phenoStage;
-    double _sla;
     double _DD;
     double _EDD;
 
@@ -144,6 +120,7 @@ private:
     double _plasto_delay;
     double _stock;
     plant::plant_state _plant_state;
+    double _deltaT;
 };
 
 } // namespace model

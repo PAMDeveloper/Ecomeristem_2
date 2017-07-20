@@ -9,8 +9,8 @@ VisibleTraceModel::VisibleTraceModel(const TraceElements<DoubleTime> & elements,
 
 #include <QDebug>
 bool VisibleTraceModel::filterAcceptsRow(int sourceRow,const QModelIndex &sourceParent) const {
-    if(sourceRow % 10000 == 0)
-        qDebug() << sourceRow;
+    //if(sourceRow % 10000 == 0)
+        //qDebug() << sourceRow;
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if(date_i + model_i + var_i + phase == -4)
         return true;

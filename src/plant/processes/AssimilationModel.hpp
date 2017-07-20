@@ -76,7 +76,7 @@ public:
                 std::pow(2., (_Ta - _Tresp) / 10.);
 
         //  assim
-        _assim = std::max(0., (_assim_pot) / _density) - _resp_maint;
+        _assim = std::max(0., (_assim_pot / _density) - _resp_maint);
     }
 
     void init(double t, const ecomeristem::ModelParameters& parameters) {

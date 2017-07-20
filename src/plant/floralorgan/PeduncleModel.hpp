@@ -71,7 +71,6 @@ public:
     virtual ~PeduncleModel()
     { }
 
-
     void compute(double t, bool /* update */)
     {
         _p = _parameters.get(t).P;
@@ -87,8 +86,7 @@ public:
 
             //Reduction INER
             if (_ftsw < _thresINER) {
-                _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw)  * //@TODO vérifier l'équation
-                                           (1. + (_p * _respINER)));
+                _reduction_iner = std::max(1e-4, ((1./_thresINER) * _ftsw) * (1. + (_p * _respINER)));
             } else {
                 _reduction_iner = 1. + _p * _respINER;
             }

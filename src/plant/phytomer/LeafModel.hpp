@@ -36,12 +36,13 @@ public:
                      TT_LIG, BLADE_AREA, BIOMASS, DEMAND, LAST_DEMAND,
                      REALLOC_BIOMASS, SENESC_DW, SENESC_DW_SUM,
                      TIME_FROM_APP, LIG_T, IS_LIG, IS_LIG_T, OLD_BIOMASS,
-                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO, FIRST_DAY
+                     LAST_LEAF_BIOMASS, SLA_CSTE, LL_BL, PLASTO, LIGULO, FIRST_DAY,
+                     BLADE_LEN
                    };
 
     enum externals { DD, DELTA_T, FTSW, FCSTR,
                      LEAF_PREDIM_ON_MAINSTEM, PREVIOUS_LEAF_PREDIM,
-                     SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF };
+                     SLA, PLANT_STATE, TEST_IC, MGR, KILL_LEAF, CULM_DEFICIT, CULM_STOCK };
 
 
     virtual ~LeafModel()
@@ -84,6 +85,7 @@ public:
         Internal(PLASTO, &LeafModel::_plasto);
         Internal(LIGULO, &LeafModel::_ligulo);
         Internal(FIRST_DAY, &LeafModel::_first_day);
+        Internal(BLADE_LEN, &LeafModel::_blade_len);
 
         //externals
         External(PLANT_STATE, &LeafModel::_plant_state);
@@ -97,6 +99,8 @@ public:
         External(SLA, &LeafModel::_sla);
         External(MGR, &LeafModel::_MGR);
         External(KILL_LEAF, &LeafModel::_kill_leaf);
+        External(CULM_DEFICIT, &LeafModel::_culm_deficit);
+        External(CULM_STOCK, &LeafModel::_culm_stock);
     }
 
 
@@ -117,8 +121,6 @@ public:
             _blade_area = 0;
             _biomass = 0;
             _old_biomass = 0;
-            _senesc_dw = 0;
-            _senesc_dw_sum = 0;
             _demand = 0;
             _last_demand = 0;
             _time_from_app = 0;
@@ -170,7 +172,7 @@ public:
         if (_first_day == t) {
             _len = _ler * _dd;
         } else {
-            if (!(_plant_state & plant::NOGROWTH)) {
+            if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
                 _len = std::min(_predim, _len + _ler * std::min(_delta_t, _exp_time));
             }
         }
@@ -216,7 +218,7 @@ public:
             _realloc_biomass = 0;
             _sla_cste = _sla;
         } else {
-            if (!(_plant_state & plant::NOGROWTH) or (_is_lig and !(_is_lig_t))) {
+            if ((!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) or (_is_lig and !(_is_lig_t))) {
                 if (not _is_lig || _is_lig_t) {
                     _biomass = (1. / _G_L) * _blade_area / _sla_cste;
                     _realloc_biomass = 0;
@@ -255,13 +257,18 @@ public:
         if (_first_day == t) {
             _time_from_app = _dd;
         } else {
-            if (!(_plant_state & plant::NOGROWTH)) {
+            if (!(_plant_state & plant::NOGROWTH) and (_culm_deficit + _culm_stock >= 0)) {
                 _time_from_app = _time_from_app + _delta_t;
             }
         }
+
+        _blade_len = (1 - (1 / _LL_BL)) * _len;
+
+        if(_biomass == 0) {
+            _leaf_phase = LeafModel::DEAD;
+        }
     }
 
-    //@TODO modifier LIG en flag pour signifier le bool _lig
     void step_state() {
         switch (_leaf_phase) {
         case LeafModel::INITIAL:
@@ -278,6 +285,7 @@ public:
     void init(double t,
               const ecomeristem::ModelParameters& parameters)
     {
+        last_time = t-1;
         _parameters = parameters;
 
         //parameters
@@ -318,6 +326,7 @@ public:
         _last_blade_area = 0;
         _last_leaf_biomass = 0;
         _sla_cste = 0;
+        _blade_len = 0;
     }
 
     //    double get_blade_area() const
@@ -371,6 +380,7 @@ private:
     double _lig_t;
     double _last_blade_area;
     double _last_leaf_biomass;
+    double _blade_len;
 
     // external variables
     double _MGR;
@@ -385,6 +395,8 @@ private:
     double _delta_t;
     double _sla;
     bool _kill_leaf;
+    double _culm_deficit;
+    double _culm_stock;
 
 };
 
