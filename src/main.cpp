@@ -40,28 +40,39 @@
 
 //using namespace artis::kernel;
 
+void display(map<string, vector<double>> map){
+    for(auto token: map) {
+        if(token.first != "LIG" && token.first != "lig")
+            continue;
+        qDebug() << "**************" << QString::fromStdString(token.first) << "**************";
+        QString vals = "";
+        for(double val: token.second) {
+            vals += QString::number(val) + ",";
+        }
+        qDebug() << vals;
+    }
+}
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   GlobalParameters globalParameters;
 //    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
-  std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/old";
+  std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/ng";
 //    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
 
-  ResultParser parser;
+
   ecomeristem::ModelParameters parameters;
   utils::ParametersReader reader;
   reader.loadParametersFromFiles(dirName, parameters);
 
   QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
                                   "dd/MM/yyyy");
-//  parameters.set <std::string>("EndDate", "22/02/2014");
   QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
                                 "dd/MM/yyyy");
   parameters.beginDate = start.toJulianDay();
   qDebug() << parameters.beginDate << end.toJulianDay();
-  EcomeristemContext context(start.toJulianDay(), end.toJulianDay());
+  EcomeristemContext context(start.toJulianDay(), start.toJulianDay() + 50/*end.toJulianDay()*//* - (end.toJulianDay() - start.toJulianDay())/2*/ );
 
   ::Trace::trace().clear();
   EcomeristemSimulator simulator(new PlantModel, globalParameters);
@@ -69,6 +80,21 @@ int main(int argc, char *argv[]) {
   simulator.attachView("plant", view);
   simulator.init(start.toJulianDay(), parameters);
   simulator.run(context);
+
+  ResultParser parser;
+  auto resultMap = parser.resultsToMap(&simulator);
+  auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
+  auto vobsFilteredMap = parser.filterVObs(vobsMap);
+  auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
+
+  qDebug() << "RESULT";
+  display(resultMap);
+  qDebug() << "VOBS";
+  display(vobsMap);
+  qDebug() << "FILTERED VOBS";
+  display(vobsFilteredMap);
+  qDebug() << "REDUCED";
+  display(reducedRMap);
 
 //    std::ofstream out("Trace.txt");
 //    out << std::fixed << ::Trace::trace().elements().to_string();

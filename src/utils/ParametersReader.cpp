@@ -287,8 +287,10 @@ inline double round( double val, int decimal )
              back_inserter(headers));
 
         map<string, vector<double> > obs;
-        for (string s: headers) {
-            obs.insert ( std::pair<string,vector<double> >(s, vector<double>()) );
+        for (string h: headers) {
+            string * s = new string(h);
+            transform(s->begin(), s->end(), s->begin(), ::tolower);
+            obs.insert ( std::pair<string,vector<double> >(*s, vector<double>()) );
         }
 
         while (std::getline(vObsFile, line))
@@ -296,16 +298,19 @@ inline double round( double val, int decimal )
             vector<string> data = split(line, '\t');
             for (int i = 0; i < data.size(); ++i) {
                 string s = data[i];
+                string * h = new string(headers[i]);
+                transform(h->begin(), h->end(), h->begin(), ::tolower);
                 char* p;
                 double converted = strtod(s.c_str(), &p);
                 if (*p) {
-                   obs[headers[i]].push_back(nan(""));
+                   obs[*h].push_back(nan(""));
                 }
                 else {
-                   obs[headers[i]].push_back(converted);
+                   obs[*h].push_back(converted);
                 }
             }
         }
+        return obs;
     }
 
 

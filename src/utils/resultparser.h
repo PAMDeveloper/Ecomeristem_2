@@ -9,6 +9,7 @@
 //#include <boost/property_tree/ptree.hpp>
 //#include <boost/lexical_cast.hpp>
 
+#include <QDebug>
 class ResultParser
 {
 public:
@@ -21,37 +22,39 @@ public:
         map<string, vector<double>> result;
         const Observer& observer = simulator->observer();
         const Observer::Views& views = observer.views();
-        unsigned int gindex = 0;
-
         Observer::Views::const_iterator it = views.begin();
         View::Values values = it->second->values();
         double begin = it->second->begin();
         double end = it->second->end();
 
         for (View::Values::const_iterator itv = values.begin(); itv != values.end(); ++itv) {
-            result.insert(std::pair<string,vector<double> >(itv->first, vector<double>()) );
+            string s = itv->first;
+            transform(s.begin(), s.end(), s.begin(), ::tolower);
+            result.insert(std::pair<string,vector<double> >(s, vector<double>()) );
         }
 
         // write values
-        unsigned int index = 1;
         for (View::Values::const_iterator itv = values.begin(); itv != values.end(); ++itv) {
             View::Value::const_iterator itp = itv->second.begin();
+            string s = itv->first;
+            transform(s.begin(), s.end(), s.begin(), ::tolower);
+
             for (double t = begin; t <= end; ++t) {
                 while (itp != itv->second.end() and itp->first < t) {
                     ++itp;
                 }
 
                 if (itp != itv->second.end()) {
-                    string s = itp->second;
+                    string c = itp->second;
                     char* p;
-                    double converted = strtod(s.c_str(), &p);
+                    double converted = strtod(c.c_str(), &p);
                     if (*p) {
-                        result[itv->first].push_back(nan(""));
+                        result[s].push_back(nan(""));
                     } else {
-                        result[itv->first].push_back(converted);
+                        result[s].push_back(converted);
                     }
                 } else {
-                    result[itv->first].push_back(nan(""));
+                    result[s].push_back(nan(""));
                 }
             }
         }
@@ -59,34 +62,60 @@ public:
     }
 
     map<string, vector<double>> filterVObs( map<string, vector<double>> vObs,
+                                            double dayMax,
                                             map<string, double> constraints = map<string,double>(),
-                                            string dayId = "Day")
+                                            string dayId = "day")
     {
         map<string, vector<double>> filteredVObs;
         for(auto const &token : vObs) {
-            filteredVObs.insert( pair<string,vector<double> >(token.first, vector<double>()) );
+            string * s = new string(token.first);
+            transform(s->begin(), s->end(), s->begin(), ::tolower);
+            filteredVObs.insert( pair<string,vector<double> >(*s, vector<double>()) );
+        }
+        map<string,bool> validity;
+        for(auto const &token : vObs)  {
+            bool valid = true;
+            string * s = new string(token.first);
+            transform(s->begin(), s->end(), s->begin(), ::tolower);
+            if(constraints.find(*s) != constraints.end()) {
+                valid |= token.second[i] == constraints[*s];
+            }
+        }
+        for (int i = 0; i < vObs[dayId].size(); ++i) {
+
+
+            if(valid){
+                for(auto token : vObs) {
+                    string * h = new string(token.first);
+                    string * s = new string(token.first);
+                    transform(s->begin(), s->end(), s->begin(), ::tolower);
+                    filteredVObs[*s].push_back(vObs[*h][i]);
+                }
+            }
         }
 
-        for (int i = 0; i < vObs[dayId].size(); ++i) {
-            bool valid = true;
-            for(auto const &token : vObs)  {
-                if(constraints.find(token.first) != constraints.end()) {
-                    valid |= vObs[token.first][i] == constraints[token.first];
-                }
-            }
-            if(valid){
-                for(auto const &token : vObs) {
-                    filteredVObs[token.first].push_back(vObs[token.first][i]);
-                }
-            }
-        }
         return filteredVObs;
     }
 
-    map<string, vector<double>> reduceResults(map<string, vector<double>> results,
-                                              map<string, vector<double>> vObs,
+
+    void display(map<string, vector<double>> map){
+        for(auto token: map) {
+            if(token.first != "lig")
+                continue;
+            qDebug() << "**************" << QString::fromStdString(token.first) << "**************";
+            QString vals = "";
+            for(double val: token.second) {
+                vals += QString::number(val) + ",";
+            }
+            qDebug() << vals;
+        }
+    }
+
+    map<string, vector<double>> reduceResults(map<string, vector<double> > results,
+                                              map<string, vector<double> > vObs,
                                               map<string, double> constraints = map<string,double>(),
-                                              string dayId = "Day") {
+                                              string dayId = "day") {
+
         map<string, vector<double>> filteredVObs;
         if(constraints.size() > 0)
             filteredVObs = filterVObs(vObs, constraints, dayId);
@@ -95,17 +124,23 @@ public:
 
         map<string, vector<double>> reducedResults;
         for(auto const &token : filteredVObs) {
-            if(results.find(token.first) != results.end()) {
-                reducedResults.insert( pair<string,vector<double> >(token.first, vector<double>()) );
+            string s = token.first;
+            transform(s.begin(), s.end(), s.begin(), ::tolower);
+            if(results.find(s) != results.end()) {
+                reducedResults.insert( pair<string,vector<double> >(s, vector<double>()) );
             }
-
-            for(auto const &token : reducedResults) {
-                for (int i = 0; i < filteredVObs[dayId].size(); ++i) {
-
-                }
-            }
-
         }
+
+
+       for(auto const &r : reducedResults) {
+            for (int i = 0; i < filteredVObs[dayId].size(); ++i) {
+                int day = filteredVObs[dayId][i];
+                if(day <= results[r.first].size())
+                    reducedResults[r.first].push_back(results[r.first][day-1]);
+            }
+        }
+
+        return reducedResults;
     }
 };
 
