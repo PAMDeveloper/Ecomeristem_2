@@ -29,6 +29,7 @@
 #include <QDebug>
 #include <defines.hpp>
 #include <plant/processes/CulmStockModel.hpp>
+#include <plant/processes/ThermalTimeModelNG.hpp>
 #include <plant/processes/CulmStockModelNG.hpp>
 #include <plant/phytomer/PhytomerModel.hpp>
 #include <plant/floralorgan/PanicleModel.hpp>
@@ -65,7 +66,8 @@ public:
 
     CulmModel(int index):
         _index(index), _is_first_culm(index == 1),
-        _culm_stock_model(new CulmStockModelNG)
+        _culm_stock_model(new CulmStockModelNG),
+        _culm_thermaltime_model(new ThermalTimeModelNG)
     {
         // submodels
         //        Submodels( ((CULM_STOCK, _culm_stock_model.get())) );
@@ -254,14 +256,34 @@ public:
             return;
         }
 
-        //phenostage update
-        if(_bool_crossed_plasto >= 0) {
-            _culm_phenostage = _culm_phenostage +1;
+        //thermaltimevalues update
+        //qDebug() << "test0";
+        if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE or _is_first_day_pi or _creation_date == t) {
+            _culm_EDD = _edd;
+            _culm_DD = _dd;
+            _culm_bool_crossed_plasto = _bool_crossed_plasto;
+            if(_culm_bool_crossed_plasto >= 0) {
+                _culm_phenostage = _culm_phenostage +1;
+                _culm_phenostage_cste = _culm_phenostage;
+            }
+        } else {
+            //qDebug() << "test1";
+            _culm_DD = _culm_thermaltime_model->get < double >(t, ThermalTimeModelNG::CULM_DD);
+            _culm_EDD = _culm_thermaltime_model->get < double >(t, ThermalTimeModelNG::EDD);
+            _culm_bool_crossed_plasto = _culm_thermaltime_model->get < double >(t, ThermalTimeModelNG::CULM_BOOL_CROSSED_PLASTO);
+            _culm_phenostage = _culm_phenostage_cste + _culm_thermaltime_model->get < int >(t, ThermalTimeModelNG::PHENO_STAGE);
+            //qDebug() << "test2";
         }
 
         //phytomer creation
-        if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
-            create_phytomer(t);
+        if(_plant_phase == plant::INITIAL or _plant_phase == plant::VEGETATIVE) {
+            if( ( _plant_state & plant::NEW_PHYTOMER_AVAILABLE ) && is_phytomer_creatable()) {
+                create_phytomer(t);
+            }
+        } else {
+            if(is_phytomer_creatable() and _culm_bool_crossed_plasto >= 0) {
+                create_phytomer(t);
+            }
         }
 
         //Nécessaire pour coder l'erreur delphi du passage de l'entrenoeud à réalisation à partir d'un certain index
@@ -347,7 +369,7 @@ public:
             _peduncle_model->put (t, PeduncleModel::INTER_PREDIM, _peduncle_inerlen_predim);
             _peduncle_model->put (t, PeduncleModel::INTER_DIAM, _peduncle_inerdiam_predim);
             _peduncle_model->put(t, PeduncleModel::FTSW, _ftsw);
-            _peduncle_model->put(t, PeduncleModel::EDD, _edd);
+            _peduncle_model->put(t, PeduncleModel::EDD, _culm_EDD);
             _peduncle_model->put (t, PeduncleModel::DELTA_T, _delta_t);
             _peduncle_model->put (t, PeduncleModel::PLASTO, _plasto);
             _peduncle_model->put (t, PeduncleModel::LIGULO, _ligulo);
@@ -361,10 +383,10 @@ public:
             _peduncle_biomass = _peduncle_model->get < double >(t, PeduncleModel::BIOMASS);
         }
 
+        // @TODO : Ajouter un test à partir de ce moment pour tuer les talles sans feuilles du à senesc
         //        if(_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) {
         //            delete_culmNG(t);
         //        }
-
     }
 
     void get_nonvegetative_in(std::deque < PhytomerModel* >::iterator it, double t) {
@@ -396,8 +418,17 @@ public:
         _culm_stock = _culm_stock_model->get < double >(t, CulmStockModelNG::CULM_STOCK);
     }
 
+    void compute_thermaltime(double t) {
+        _culm_thermaltime_model->put(t, ThermalTimeModelNG::CULM_STOCK, _culm_stock);
+        _culm_thermaltime_model->put(t, ThermalTimeModelNG::CULM_DEFICIT, _culm_deficit);
+        _culm_thermaltime_model->put(t, ThermalTimeModelNG::PLASTO, _plasto);
+        _culm_thermaltime_model->put(t, ThermalTimeModelNG::IS_FIRST_DAY_OF_INDIVIDUALIZATION, _is_first_day_pi);
+        _culm_thermaltime_model->put(t, ThermalTimeModelNG::PLASTO_DELAY, 0.); //@TODO : mettre vraie valeur de plasto_delay
+        (*_culm_thermaltime_model)(t);
+    }
+
     void compute_phytomers(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
-        (*it)->put(t, PhytomerModel::DD, _dd);
+        (*it)->put(t, PhytomerModel::DD, _culm_DD);
         (*it)->put(t, PhytomerModel::DELTA_T, _delta_t);
         (*it)->put(t, PhytomerModel::FTSW, _ftsw);
         (*it)->put(t, PhytomerModel::FCSTR, _fcstr);
@@ -418,7 +449,7 @@ public:
         (*it)->internode()->put(t, InternodeModel::PLASTO, _plasto);
         (*it)->internode()->put(t, InternodeModel::LIGULO, _ligulo);
         (*it)->internode()->put(t, InternodeModel::NB_LIG, _nb_lig);
-        (*it)->internode()->put(t, InternodeModel::BOOL_CROSSED_PLASTO, _bool_crossed_plasto);
+        (*it)->internode()->put(t, InternodeModel::BOOL_CROSSED_PLASTO, _culm_bool_crossed_plasto);
         (*it)->internode()->put(t, InternodeModel::LAST_LEAF_INDEX, _last_leaf_index);
         if (_is_first_culm) {
             if (i == 0) {
@@ -446,11 +477,11 @@ public:
     void compute_vars(std::deque < PhytomerModel* >::iterator it, std::deque < PhytomerModel* >::iterator previous_it, int i, double t) {
         if (not (*it)->is_leaf_dead()) {
             if((*it)->is_leaf_lig(t)) {
-                ++_nb_lig;
+                ++ _nb_lig;
                 ++ _nb_lig_tot;
             }
-            //@TODO : condition sur nb_leaf_param2 à retirer erreur en delphi, sur première simu nb_leaf_param2 - 1
-            if (_index == 1 and i < _nb_leaf_pi - 1) {
+
+            if (_index == 1) {
                 _stem_leaf_predim = (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_PREDIM);
             }
             if (_index == 1 and (*it)->is_leaf_lig(t) and t != (*it)->leaf()->get < double >(t, LeafModel::LIG_T)) {
@@ -459,7 +490,6 @@ public:
                 _last_ligulated_leaf_blade_len = (*it)->leaf()->get < double >(t, LeafModel::BLADE_LEN);
             }
         } else {
-            //@TODO : vérifier que la feuille était bien ligulée quand on a l'a tué
             ++_nb_lig_tot;
         }
         _leaf_biomass_sum += (*it)->get < double, LeafModel >(t, PhytomerModel::LEAF_BIOMASS);
@@ -519,6 +549,9 @@ public:
     CulmStockModelNG * stock_model() const
     { return _culm_stock_model.get(); }
 
+    ThermalTimeModelNG * thermaltime_model() const
+    { return _culm_thermaltime_model.get(); }
+
     void delete_leaf(double t, int index, double leaf_biomass, double internode_biomass)
     {
         _deleted_senesc_dw += (1 - _realocationCoeff) * leaf_biomass;
@@ -538,7 +571,6 @@ public:
         _phytomer_models[index]->kill_leaf(t);
         qDebug() << "Le : " << QString::fromStdString(date) << " on tue la feuille" << index + 1 << " sur la talle " << _index - 1;
         ++_deleted_leaf_number;
-        //@TODO: vérifier si on tue la talle même s'il reste une feuille en croissance non lig
         if(_nb_lig <= 1) {
             _kill_culm = true;
             if(_index == 1) {
@@ -563,36 +595,6 @@ public:
 
         }
     }
-
-    //    void delete_culmNG(double t) {
-    //        //search for ligulated leaf:
-    //        double nb_ligulated_leaves = 0;
-    //        std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
-    //        while(it != _phytomer_models.end()) {
-    //            if((*it)->is_leaf_lig(t)) {
-    //                ++nb_ligulated_leaves;
-    //            }
-    //            ++it;
-    //        }
-
-    //        //if no ligulated leaves
-    //        if(nb_ligulated_leaves == 0) {
-    //            _kill_culm = true;
-    //            if(_index == 1) {
-    //                qDebug() << "Plus de feuilles lig sur le brin maître, la plante est morte";
-    //            } else {
-    //                _deleted_realloc_biomass += (_realocationCoeff) * (_internode_biomass_sum + _leaf_biomass_sum);
-    //                _deleted_senesc_dw += (1 - _realocationCoeff) * (_internode_biomass_sum + _leaf_biomass_sum);
-    //            }
-    //            //kill leaves and internodes
-    //            std::deque < PhytomerModel* >::const_iterator it = _phytomer_models.begin();
-    //            while(it != _phytomer_models.end()) {
-    //                (*it)->internode()->culm_dead(t);
-    //                (*it)->kill_leaf(t);
-    //                ++it;
-    //            }
-    //        }
-    //    }
 
     double CulmModel::get_leaf_biomass(double t, int index) const
     {
@@ -663,6 +665,8 @@ public:
         first_phytomer->init(t, parameters);
         _phytomer_models.push_back(first_phytomer);
         _culm_stock_model->init(t, parameters);
+        _culm_thermaltime_model->init(t, parameters);
+
 
         last_time = t-1;
         //parameters
@@ -705,21 +709,27 @@ public:
         _kill_culm = false;
         _last_ligulated_leaf_blade_len = 0;
         _deleted_realloc_biomass = 0;
-        _culm_test_ic = 0; //@TODO: check init value
+        _culm_test_ic = 0;
         _culm_stock = 0;
         _culm_deficit = 0;
         _last_leaf_index = -1;
         _realloc_supply = 0;
+        _creation_date = t;
 
         _started_PI = false;
         _culm_phase = culm::INITIAL;
         _last_phase = _culm_phase;
         _culm_phenostage = 1;
+        _culm_phenostage_cste = _culm_phenostage;
         _culm_phenostage_at_lag = 0;
         _culm_phenostage_at_pi = 0;
         _culm_phenostage_at_pre_flo = 0;
         _lag = false;
         _is_lagged = false;
+
+        _culm_EDD = 0;
+        _culm_DD = 0;
+        _culm_bool_crossed_plasto = 0;
     }
 
 private:
@@ -727,6 +737,7 @@ private:
 
     //  submodels
     std::unique_ptr < CulmStockModelNG > _culm_stock_model;
+    std::unique_ptr < ThermalTimeModelNG > _culm_thermaltime_model;
     std::deque < PhytomerModel* > _phytomer_models;
     std::unique_ptr < PanicleModel > _panicle_model;
     std::unique_ptr < PeduncleModel > _peduncle_model;
@@ -789,6 +800,11 @@ private:
     double _culm_deficit;
     double _last_leaf_index;
     double _realloc_supply;
+    int _culm_phenostage_cste;
+    double _culm_EDD;
+    double _culm_DD;
+    double _culm_bool_crossed_plasto;
+    double _creation_date;
 
     //    externals
     int _plant_phenostage;

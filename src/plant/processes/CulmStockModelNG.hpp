@@ -102,7 +102,6 @@ public:
             _leaf_stock_init = _plant_stock * (_leaf_biomass_sum / _plant_leaf_biomass);
             _leaf_stock = _leaf_stock_init;
         }
-        //@TODO : vérifier si biomass ou biomass_1
         _max_reservoir_dispo_internode = _maximum_reserve_in_internode * _internode_biomass_sum;
         _max_reservoir_dispo_leaf = _leaf_stock_max * _leaf_biomass_sum;
         _max_reservoir_dispo = (_maximum_reserve_in_internode *

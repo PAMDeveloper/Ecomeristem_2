@@ -59,20 +59,14 @@ public:
                      PlantModel::LIG });
         selector("TT_LIG", artis::kernel::DOUBLE, {
                      PlantModel::TT_LIG });
-
-        //ThermalTimeModel
         selector("TT", artis::kernel::DOUBLE, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::TT});
+                     PlantModel::TT});
         selector("DD", artis::kernel::DOUBLE, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::DD});
+                     PlantModel::DD});
         selector("EDD", artis::kernel::DOUBLE, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::EDD});
+                     PlantModel::EDD});
         selector("SLA", artis::kernel::DOUBLE, {
-                     PlantModel::THERMAL_TIME,
-                     ThermalTimeModel::SLA});
+                     PlantModel::SLA});
 
         //AssimilationModel
         selector("ASSIM", artis::kernel::DOUBLE, {

@@ -101,15 +101,7 @@ public:
         //Deficit
         _deficit = std::min(0., _intermediate);
 
-        //@TODO : vérifier d'où vient ce calcul
         //CulmSurplus
-//        if (_first_day == t) {
-//            _surplus = std::max(0., _plant_stock - _internode_demand_sum -
-//                                _leaf_demand_sum - _leaf_last_demand_sum -
-//                                _internode_last_demand_sum + _supply -
-//                                _max_reservoir_dispo + _realloc_biomass_sum);
-//        } else {
-            //@TODO:  @TODO : correction erreur delphi "(_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)" à retirer
             if((_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) or (_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)) {
                 _surplus = std::max(0., _stock_culm - _internode_demand_sum -
                                     _leaf_demand_sum - _leaf_last_demand_sum -
@@ -118,10 +110,7 @@ public:
                                     + _supply - _max_reservoir_dispo +
                                     _realloc_biomass_sum);
             }
-//        }
 
-
-        //CulmStock @TODO : correction erreur delphi "(_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)" à retirer
         if((_culm_phase != culm::INITIAL and _culm_phase != culm::VEGETATIVE) or (_plant_phase == plant::ELONG and _culm_phase == culm::VEGETATIVE)) {
             _stock = std::max(0., std::min(_max_reservoir_dispo, _intermediate));
         } else {
@@ -134,8 +123,7 @@ public:
     void init(double t, const ecomeristem::ModelParameters& parameters) {
         _parameters = parameters;
         //    parameters variables
-        _maximum_reserve_in_internode =
-                parameters.get < double >("maximumReserveInInternode");
+        _maximum_reserve_in_internode = parameters.get < double >("maximumReserveInInternode");
         _leaf_stock_max = parameters.get < double >("leaf_stock_max");
         _realocationCoeff = parameters.get < double >("realocationCoeff");
 

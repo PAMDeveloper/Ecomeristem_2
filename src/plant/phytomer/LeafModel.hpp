@@ -269,7 +269,6 @@ public:
         }
     }
 
-    //@TODO modifier LIG en flag pour signifier le bool _lig
     void step_state() {
         switch (_leaf_phase) {
         case LeafModel::INITIAL:
