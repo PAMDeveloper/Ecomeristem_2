@@ -62,15 +62,19 @@ public:
     }
 
     map<string, vector<double>> filterVObs( map<string, vector<double>> vObs,
-                                            double dayMax,
+                                            map<string, vector<double> > results,
+                                            bool keepDay = true,
                                             map<string, double> constraints = map<string,double>(),
                                             string dayId = "day")
     {
+        double dayMax = results.begin()->second.size();
         map<string, vector<double>> filteredVObs;
         for(auto const &token : vObs) {
             string * s = new string(token.first);
             transform(s->begin(), s->end(), s->begin(), ::tolower);
-            filteredVObs.insert( pair<string,vector<double> >(*s, vector<double>()) );
+            if(results.find(*s) != results.end() || (keepDay && *s == dayId)) {
+                filteredVObs.insert( pair<string,vector<double> >(*s, vector<double>()) );
+            }
         }
 
         for (int i = 0; i < vObs[dayId].size(); ++i) {
@@ -78,17 +82,17 @@ public:
 
             valid &= vObs[dayId][i] <= dayMax;
             if(valid){
-                for(auto const &token : vObs)  {
+                for(auto const &token : filteredVObs)  {
                     string * s = new string(token.first);
                     transform(s->begin(), s->end(), s->begin(), ::tolower);
                     if(constraints.find(*s) != constraints.end()) {
-                        valid &= token.second[i] == constraints[*s];
+                        valid &= vObs[*s][i] == constraints[*s];
                     }
                 }
             }
 
             if(valid){
-                for(auto token : vObs) {
+                for(auto token : filteredVObs) {
                     string * h = new string(token.first);
                     string * s = new string(token.first);
                     transform(s->begin(), s->end(), s->begin(), ::tolower);
@@ -104,8 +108,6 @@ public:
 
     void display(map<string, vector<double>> map){
         for(auto token: map) {
-            if(token.first != "lig")
-                continue;
             qDebug() << "**************" << QString::fromStdString(token.first) << "**************";
             QString vals = "";
             for(double val: token.second) {
@@ -120,11 +122,7 @@ public:
                                               map<string, double> constraints = map<string,double>(),
                                               string dayId = "day") {
 
-        map<string, vector<double>> filteredVObs;
-        if(constraints.size() > 0)
-            filteredVObs = filterVObs(vObs, results.begin()->second.size(), constraints, dayId);
-        else
-            filteredVObs = vObs;
+        map<string, vector<double>> filteredVObs = filterVObs(vObs, results, true, constraints, dayId);
 
         map<string, vector<double>> reducedResults;
         for(auto const &token : filteredVObs) {
@@ -135,7 +133,8 @@ public:
             }
         }
 
-
+       qDebug() << "--------tmp filter------";
+       display(filteredVObs);
        for(auto const &r : reducedResults) {
             for (int i = 0; i < filteredVObs[dayId].size(); ++i) {
                 int day = filteredVObs[dayId][i];

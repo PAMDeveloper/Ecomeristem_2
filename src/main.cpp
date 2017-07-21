@@ -42,8 +42,8 @@
 
 void display(map<string, vector<double>> map){
     for(auto token: map) {
-        if(token.first != "LIG" && token.first != "lig")
-            continue;
+//        if(token.first != "LIG" && token.first != "lig")
+//            continue;
         qDebug() << "**************" << QString::fromStdString(token.first) << "**************";
         QString vals = "";
         for(double val: token.second) {
@@ -84,13 +84,18 @@ int main(int argc, char *argv[]) {
   ResultParser parser;
   auto resultMap = parser.resultsToMap(&simulator);
   auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
-  auto vobsFilteredMap = parser.filterVObs(vobsMap);
+  auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap, false);
   auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
 
-  qDebug() << "RESULT";
-  display(resultMap);
-  qDebug() << "VOBS";
-  display(vobsMap);
+  string lis= "";
+  for(auto token: resultMap) {
+      lis += " " + token.first;
+  }
+  qDebug() << QString::fromStdString(lis);
+//  qDebug() << "RESULT";
+//  display(resultMap);
+//  qDebug() << "VOBS";
+//  display(vobsMap);
   qDebug() << "FILTERED VOBS";
   display(vobsFilteredMap);
   qDebug() << "REDUCED";
