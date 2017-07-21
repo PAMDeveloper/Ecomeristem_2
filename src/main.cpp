@@ -22,6 +22,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+//#define _CRTDBG_MAP_ALLOC
+//#include <stdlib.h>
+//#include <crtdbg.h>
+
 #include <qtapp/mainwindow.h>
 #include <QApplication>
 #include <QDebug>
@@ -42,8 +46,8 @@
 
 void display(map<string, vector<double>> map){
     for(auto token: map) {
-//        if(token.first != "LIG" && token.first != "lig")
-//            continue;
+        //        if(token.first != "LIG" && token.first != "lig")
+        //            continue;
         qDebug() << "**************" << QString::fromStdString(token.first) << "**************";
         QString vals = "";
         for(double val: token.second) {
@@ -54,63 +58,64 @@ void display(map<string, vector<double>> map){
 }
 
 int main(int argc, char *argv[]) {
-  QApplication a(argc, argv);
+    QApplication a(argc, argv);
 
-  GlobalParameters globalParameters;
-//    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
-  std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/ng";
-//    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
+    //    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/sample";
+    //    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
 
 
-  ecomeristem::ModelParameters parameters;
-  utils::ParametersReader reader;
-  reader.loadParametersFromFiles(dirName, parameters);
+    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/ng";
+    ecomeristem::ModelParameters parameters;
+    utils::ParametersReader reader;
+    reader.loadParametersFromFiles(dirName, parameters);
+    qDebug() << parameters.beginDate << parameters.get("EndDate");
 
-//  QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
-//                                  "dd/MM/yyyy");
-//  QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
-//                                "dd/MM/yyyy");
-//  parameters.beginDate = start.toJulianDay();
-  qDebug() << parameters.beginDate << parameters.get("EndDate");
-  EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+    //  ::Trace::trace().clear();
 
-  ::Trace::trace().clear();
-  EcomeristemSimulator simulator(new PlantModel, globalParameters);
-  observer::PlantView *view = new observer::PlantView();
-  simulator.attachView("plant", view);
-  simulator.init(parameters.get("BeginDate"), parameters);
-  simulator.run(context);
+    auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
+    for (int i = 0; i < 200000; ++i) {
+        GlobalParameters globalParameters;
+        EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+        PlantModel * m = new PlantModel;
+        EcomeristemSimulator simulator(m, globalParameters);
+        observer::PlantView *view = new observer::PlantView();
+        simulator.attachView("plant", view);
+        simulator.init(parameters.get("BeginDate"), parameters);
+        simulator.run(context);
 
-  ResultParser parser;
-  auto resultMap = parser.resultsToMap(&simulator);
-  auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
-  auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap);
-  auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
+        ResultParser parser;
+        auto resultMap = parser.resultsToMap(&simulator);
+        auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap);
+        auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
+        qDebug() << i ;
+    }
 
-//  string lis= "";
-//  for(auto token: resultMap) {
-//      lis += " " + token.first;
-//  }
-//  qDebug() << QString::fromStdString(lis);
-//  qDebug() << "RESULT";
-//  display(resultMap);
-//  qDebug() << "VOBS";
-//  display(vobsMap);
-//  qDebug() << "FILTERED VOBS";
-//  display(vobsFilteredMap);
-  qDebug() << "REDUCED";
-  display(reducedRMap);
+    //  string lis= "";
+    //  for(auto token: resultMap) {
+    //      lis += " " + token.first;
+    //  }
+    //  qDebug() << QString::fromStdString(lis);
+    //  qDebug() << "RESULT";
+    //  display(resultMap);
+    //  qDebug() << "VOBS";
+    //  display(vobsMap);
+    //  qDebug() << "FILTERED VOBS";
+    //  display(vobsFilteredMap);
+    //  qDebug() << "REDUCED";
+    //  display(reducedRMap);
 
-//    std::ofstream out("Trace.txt");
-//    out << std::fixed << ::Trace::trace().elements().to_string();
-//    out.close();
+    //    std::ofstream out("Trace.txt");
+    //    out << std::fixed << ::Trace::trace().elements().to_string();
+    //    out.close();
 
     MainWindow w;
     w.show();
-//    w.show_trace();
-  w.displayData(view, QString::fromStdString(dirName), &parameters,
-                parameters.get("BeginDate"),
-                parameters.get("EndDate"));
+    //    w.show_trace();
+    //  w.displayData(view, QString::fromStdString(dirName), &parameters,
+    //                parameters.get("BeginDate"),
+    //                parameters.get("EndDate"));
 
-  return a.exec();
+    a.exec();
+    //  _CrtDumpMemoryLeaks();
+    return 0;
 }
