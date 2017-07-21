@@ -32,7 +32,7 @@ public:
 
     void displayData(observer::PlantView * view, QString dirName,
                      ecomeristem::ModelParameters * parameters,
-                     QString begin, QString end);
+                     double begin, double end);
     void addChart(int row, int col, QLineSeries * series, QLineSeries *refseries,
                   QGridLayout * lay, QString name);
 

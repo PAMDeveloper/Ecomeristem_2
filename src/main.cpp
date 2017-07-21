@@ -66,38 +66,38 @@ int main(int argc, char *argv[]) {
   utils::ParametersReader reader;
   reader.loadParametersFromFiles(dirName, parameters);
 
-  QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
-                                  "dd/MM/yyyy");
-  QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
-                                "dd/MM/yyyy");
-  parameters.beginDate = start.toJulianDay();
-  qDebug() << parameters.beginDate << end.toJulianDay();
-  EcomeristemContext context(start.toJulianDay(), start.toJulianDay() + 50/*end.toJulianDay()*//* - (end.toJulianDay() - start.toJulianDay())/2*/ );
+//  QDate start = QDate::fromString(QString::fromStdString(parameters.get < std::string >("BeginDate")),
+//                                  "dd/MM/yyyy");
+//  QDate end = QDate::fromString(QString::fromStdString(parameters.get < std::string >("EndDate")),
+//                                "dd/MM/yyyy");
+//  parameters.beginDate = start.toJulianDay();
+  qDebug() << parameters.beginDate << parameters.get("EndDate");
+  EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
 
   ::Trace::trace().clear();
   EcomeristemSimulator simulator(new PlantModel, globalParameters);
   observer::PlantView *view = new observer::PlantView();
   simulator.attachView("plant", view);
-  simulator.init(start.toJulianDay(), parameters);
+  simulator.init(parameters.get("BeginDate"), parameters);
   simulator.run(context);
 
   ResultParser parser;
   auto resultMap = parser.resultsToMap(&simulator);
   auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
-  auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap, false);
+  auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap);
   auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
 
-  string lis= "";
-  for(auto token: resultMap) {
-      lis += " " + token.first;
-  }
-  qDebug() << QString::fromStdString(lis);
+//  string lis= "";
+//  for(auto token: resultMap) {
+//      lis += " " + token.first;
+//  }
+//  qDebug() << QString::fromStdString(lis);
 //  qDebug() << "RESULT";
 //  display(resultMap);
 //  qDebug() << "VOBS";
 //  display(vobsMap);
-  qDebug() << "FILTERED VOBS";
-  display(vobsFilteredMap);
+//  qDebug() << "FILTERED VOBS";
+//  display(vobsFilteredMap);
   qDebug() << "REDUCED";
   display(reducedRMap);
 
@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
     w.show();
 //    w.show_trace();
   w.displayData(view, QString::fromStdString(dirName), &parameters,
-                QString::fromStdString(parameters.get < std::string >("BeginDate")),
-                QString::fromStdString(parameters.get < std::string >("EndDate")));
+                parameters.get("BeginDate"),
+                parameters.get("EndDate"));
 
   return a.exec();
 }

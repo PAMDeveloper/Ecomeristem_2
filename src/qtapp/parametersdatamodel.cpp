@@ -21,14 +21,14 @@ QVariant ParametersDataModel::data(const QModelIndex &index, int role) const{
 
 
     if(index.column() == 1 && role == Qt::DisplayRole) {
-        try
-        {
-          return parameters->get<double>(keys[index.row()].toStdString());
+//        try
+//        {
+          return parameters->get(keys[index.row()].toStdString());
 
-        }
-        catch(...) {
-            return QString::fromStdString(parameters->get<std::string>(keys[index.row()].toStdString()));
-        }
+//        }
+//        catch(...) {
+//            return QString::fromStdString(parameters->get<std::string>(keys[index.row()].toStdString()));
+//        }
 
     }
 

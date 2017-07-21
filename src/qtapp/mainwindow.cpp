@@ -174,7 +174,7 @@ QLineSeries * MainWindow::getSeries(QString fileName, QDate endDate){
 void MainWindow::displayData(observer::PlantView * view,
                              QString dirName,
                              ecomeristem::ModelParameters * parameters,
-                             QString begin, QString end){
+                             double begin, double end){
 
     ParametersDataModel * paramModel = new ParametersDataModel(parameters);
     ui->parametersTableView->setModel(paramModel);
@@ -194,8 +194,8 @@ void MainWindow::displayData(observer::PlantView * view,
     ui->tabWidget->setCurrentWidget(scrollArea);
 
 
-    startDate = QDate::fromString(begin, "dd/MM/yyyy");
-    QDate endDate = QDate::fromString(end, "dd/MM/yyyy");
+    startDate = QDate::fromJulianDay(begin);
+    QDate endDate = QDate::fromJulianDay(end);
     currentDate = startDate;
     const int numCol = 2;
 
