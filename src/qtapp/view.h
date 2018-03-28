@@ -55,10 +55,13 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+//    void mousePressEvent(QMouseEvent *event);
 
 public slots:
+    void ShowContextMenu(const QPoint &pos);
     void keepCallout();
     void tooltip(QPointF point, bool state);
+    void saveChart();
 
 private:
     QGraphicsSimpleTextItem *m_coordX;

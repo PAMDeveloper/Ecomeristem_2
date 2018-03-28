@@ -15,13 +15,26 @@
 #include <QTabWidget>
 #include <QDir>
 #include <QDebug>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QDate>
+#include <iostream>
+#include <defines.hpp>
+#include <artis/utils/DateTime.hpp>
+#include <artis/utils/Trace.hpp>
+
+#include <observer/PlantView.hpp>
+#include <plant/PlantModel.hpp>
+#include <utils/ParametersReader.hpp>
+#include <utils/resultparser.h>
+
 
 #include <qtapp/view.h>
 #include <qtapp/meteodatamodel.h>
 #include <qtapp/parametersdatamodel.h>
 
+#include <algorithm>
 
-#include <defines.hpp>
 
 using namespace artis::kernel;
 
@@ -31,14 +44,32 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     ui->setupUi(this);
     ui->splitter->setStretchFactor(0,0);
     ui->splitter->setStretchFactor(1,1);
-    trace_model = new VisibleTraceModel(::Trace::trace().elements());
-//    ui->tableView->setModel(trace_model);
 //    ui->tableView->horizontalHeader()->setStretchLastSection(true);
 //    ui->tableView->horizontalHeader()->hide();
 //    ui->tableView->verticalHeader()->hide();
+
+    QScrollArea *scrollArea = new QScrollArea;
+    QWidget *client = new QWidget();
+    scrollArea->setWidget(client);
+    scrollArea->setWidgetResizable(true);
+
+    lay = new QGridLayout();
+    client->setLayout(lay);
+    lay->setSpacing(0);
+    ui->tabWidget->addTab(scrollArea, "Variables");
+
+    settings = new QSettings("CIRAD", "Ecomeristem");
+    QString folder = settings->value("simulation_folder", "").toString();
+//    if(!folder.isEmpty() && QDir(folder).exists()) {
+//        folderName = folder;
+//        ui->pathLabel->setText(folder);
+//        load_simulation(folder);
+//        on_actionLaunch_simulation_triggered();
+//    }
 }
 
 MainWindow::~MainWindow()
@@ -50,10 +81,10 @@ MainWindow::~MainWindow()
 #include <ctime>
 void MainWindow::show_trace()
 {
-    ui->tableView->setModel(NULL);
+//    ui->tableView->setModel(NULL);
+    trace_model->setFilters(ui->lineEdit->text(), ui->lineEdit_2->text(), ui->lineEdit_3->text(), ui->lineEdit_4->text(), ui->checkBox->isChecked());
     ui->tableView->reset();
-    trace_model->setFilters(ui->lineEdit->text(), ui->lineEdit_2->text(), ui->lineEdit_3->text(), ui->lineEdit_4->text());
-    ui->tableView->setModel(trace_model);
+//    ui->tableView->setModel(trace_model);
 }
 
 void MainWindow::addChart(int row, int col,
@@ -171,27 +202,36 @@ QLineSeries * MainWindow::getSeries(QString fileName, QDate endDate){
     return series;
 }
 
-void MainWindow::displayData(observer::PlantView * view,
-                             QString dirName,
-                             ecomeristem::ModelParameters * parameters,
-                             double begin, double end){
+void MainWindow::displayModels(){
 
-    ParametersDataModel * paramModel = new ParametersDataModel(parameters);
+    if(ui->parametersTableView->model() != nullptr)
+        delete ui->parametersTableView->model();
+
+    if(ui->meteoTableView->model() != nullptr)
+        delete ui->meteoTableView->model();
+
+    ParametersDataModel * paramModel = new ParametersDataModel(&parameters);
     ui->parametersTableView->setModel(paramModel);
 
-    MeteoDataModel * meteoModel = new MeteoDataModel(parameters);
+    MeteoDataModel * meteoModel = new MeteoDataModel(&parameters);
     ui->meteoTableView->setModel(meteoModel);
+}
 
-    QScrollArea *scrollArea = new QScrollArea;
-    QWidget *client = new QWidget();
-    scrollArea->setWidget(client);
-    scrollArea->setWidgetResizable(true);
+void MainWindow::displayData(observer::PlantView * view,
+                             QString dirName,
+                             double begin, double end){
 
-    QGridLayout * lay = new QGridLayout();
-    client->setLayout(lay);
-    lay->setSpacing(0);
-    ui->tabWidget->addTab(scrollArea, "Variables");
-    ui->tabWidget->setCurrentWidget(scrollArea);
+//    ui->tabWidget->setCurrentWidget(scrollArea);
+    QLayoutItem *item;
+    while((item = lay->takeAt(0))) {
+        if (item->layout()) {
+            delete item->layout();
+        }
+        if (item->widget()) {
+            delete item->widget();
+        }
+        delete item;
+    }
 
 
     startDate = QDate::fromJulianDay(begin);
@@ -263,3 +303,96 @@ void MainWindow::on_lineEdit_4_returnPressed()
 {
     show_trace();
 }
+
+void MainWindow::on_checkBox_stateChanged(int arg1)
+{
+    show_trace();
+}
+
+void MainWindow::on_actionSave_trace_triggered()
+{
+    QString fileName =  QFileDialog::getSaveFileName(this,
+                                                     tr("Save trace"), "",
+                                                     tr("txt (*.txt)"));
+    std::ofstream out(fileName.toStdString());
+    out << std::fixed << ::Trace::trace().elements().to_string();
+    out.close();
+
+}
+
+void MainWindow::load_simulation(QString folderName) {
+    ui->pathLabel->setText(folderName);
+    std::string dirName = folderName.toStdString();
+    utils::ParametersReader reader;
+    reader.loadParametersFromFiles(dirName, parameters);
+    displayModels();
+}
+
+void MainWindow::on_actionLoad_simulation_triggered()
+{
+    folderName = QFileDialog::getExistingDirectory(this, "Simulation folder", settings->value("simulation_folder", "").toString());
+    if(folderName.isEmpty())
+        return;
+    settings->setValue("simulation_folder", folderName);
+    load_simulation(folderName);
+//    auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
+    //for (int i = 0; i < 200000; ++i) {
+
+}
+
+void MainWindow::on_actionLaunch_simulation_triggered()
+{
+    ::Trace::trace().clear();
+    GlobalParameters globalParameters;
+    EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+    PlantModel * m = new PlantModel;
+    EcomeristemSimulator simulator(m, globalParameters);
+    observer::PlantView *view = new observer::PlantView();
+    simulator.attachView("plant", view);
+    simulator.init(parameters.get("BeginDate"), parameters);
+    simulator.run(context);
+
+//    ResultParser * parser = new ResultParser();
+//    std::map <std::string, std::vector<double> > resultMap = parser->resultsToMap(&simulator);
+//    std::vector<double> tillers = resultMap["tillernb_1"];
+//    for(auto t: tillers)
+//        std::cout << t;
+
+/* TEST */
+//    QString folderName = settings->value("simulation_folder", "").toString();
+//    std::string dirName = folderName.toStdString();
+//    utils::ParametersReader reader;
+//    reader.loadParametersFromFiles(dirName, parameters);
+
+//    ::Trace::trace().clear();
+//    GlobalParameters globalParameters2;
+//    EcomeristemContext context2(parameters.get("BeginDate"), parameters.get("EndDate"));
+//    PlantModel * m2 = new PlantModel;
+//    EcomeristemSimulator simulator2(m2, globalParameters2);
+//    observer::PlantView *view2 = new observer::PlantView();
+//    simulator.attachView("plant2", view2);
+//    simulator.init(parameters.get("BeginDate"), parameters);
+//    simulator.run(context2);
+
+//    ResultParser * parser2 = new ResultParser();
+//    std::map <std::string, std::vector<double> > resultMap2 = parser2->resultsToMap(&simulator);
+//    std::vector<double> tillers_2 = resultMap2["tillernb_1"];
+//    qDebug() << std::equal(tillers.begin(), tillers.end(), tillers_2.begin());
+//    for(auto t: tillers_2)
+//        std::cout << t;
+/*     */
+
+    if(ui->tableView->model() != nullptr)
+        delete ui->tableView->model();
+
+    trace_model = new VisibleTraceModel(::Trace::trace().elements());
+    ui->tableView->setModel(trace_model);
+    show_trace();
+    displayData(view, folderName,
+                parameters.get("BeginDate"),
+                parameters.get("EndDate"));
+
+//    QMessageBox::about(this, "Simulation finished", folderName + " simulation done.");
+}
+
+

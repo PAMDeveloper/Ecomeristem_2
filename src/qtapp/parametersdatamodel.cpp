@@ -49,3 +49,21 @@ QVariant ParametersDataModel::headerData(int section, Qt::Orientation orientatio
 
     return QAbstractTableModel::headerData(section, orientation, role);
 }
+
+Qt::ItemFlags ParametersDataModel::flags(const QModelIndex &index) const {
+    if(index.column() == 1)
+        return Qt::ItemIsEditable | QAbstractTableModel::flags(index);
+
+    return QAbstractTableModel::flags(index);
+}
+
+bool ParametersDataModel::setData(const QModelIndex &idx, const QVariant &value, int role) {
+    if(role != Qt::EditRole)
+        return false;
+    std::string key = data(index(idx.row(),0), Qt::DisplayRole).toString().toStdString();
+    bool ok;
+    double d = value.toDouble(&ok);
+    if(ok)
+        parameters->mParams[key] = d;
+    return ok;
+}

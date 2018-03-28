@@ -64,31 +64,31 @@ int main(int argc, char *argv[]) {
     //    std::string dirName = "D:/Samples/ecomeristem_og_testSample";
 
 
-    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/ng";
-    ecomeristem::ModelParameters parameters;
-    utils::ParametersReader reader;
-    reader.loadParametersFromFiles(dirName, parameters);
-    qDebug() << parameters.beginDate << parameters.get("EndDate");
+//    std::string dirName = "D:/PAMStudio_dev/data/ecomeristem/ng";
+//    ecomeristem::ModelParameters parameters;
+//    utils::ParametersReader reader;
+//    reader.loadParametersFromFiles(dirName, parameters);
+//    qDebug() << parameters.beginDate << parameters.get("EndDate");
 
     //  ::Trace::trace().clear();
 
-    auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
-    for (int i = 0; i < 200000; ++i) {
-        GlobalParameters globalParameters;
-        EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
-        PlantModel * m = new PlantModel;
-        EcomeristemSimulator simulator(m, globalParameters);
-        observer::PlantView *view = new observer::PlantView();
-        simulator.attachView("plant", view);
-        simulator.init(parameters.get("BeginDate"), parameters);
-        simulator.run(context);
+//    auto vobsMap = reader.loadVObsFromFile("D:/PAMStudio_dev/data/ecomeristem/ng/vobs_G1_C_BFF2015.txt");
+//    for (int i = 0; i < 200000; ++i) {
+//        GlobalParameters globalParameters;
+//        EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+//        PlantModel * m = new PlantModel;
+//        EcomeristemSimulator simulator(m, globalParameters);
+//        observer::PlantView *view = new observer::PlantView();
+//        simulator.attachView("plant", view);
+//        simulator.init(parameters.get("BeginDate"), parameters);
+//        simulator.run(context);
 
-        ResultParser parser;
-        auto resultMap = parser.resultsToMap(&simulator);
-        auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap);
-        auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
-        qDebug() << i ;
-    }
+//        ResultParser parser;
+//        auto resultMap = parser.resultsToMap(&simulator);
+//        auto vobsFilteredMap = parser.filterVObs(vobsMap, resultMap);
+//        auto reducedRMap = parser.reduceResults(resultMap, vobsMap);
+//        qDebug() << i ;
+//    }
 
     //  string lis= "";
     //  for(auto token: resultMap) {

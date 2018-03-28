@@ -37,6 +37,8 @@
 #include <QtCharts/QDateTimeAxis>
 #include <QDate>
 #include <QDebug>
+#include <QMenu>
+#include <QFileDialog>
 
 #include <qtapp/callout.h>
 
@@ -80,6 +82,11 @@ ChartView::ChartView(QChart * chart, QLineSeries *series, QLineSeries *refseries
     //    connect(series2, SIGNAL(hovered(QPointF, bool)), this, SLOT(tooltip(QPointF,bool)));
 
     this->setMouseTracking(true);
+
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(ShowContextMenu(const QPoint &)));
 }
 
 void ChartView::resizeEvent(QResizeEvent *event)
@@ -115,6 +122,45 @@ void ChartView::mouseMoveEvent(QMouseEvent *event)
     QGraphicsView::mouseMoveEvent(event);
 }
 
+void ChartView::saveChart() {
+    QPixmap p( this->size()*3 );
+    QPainter ptr(&p);
+    this->render( &ptr, p.rect(), this->rect() );
+    QString fileName =  QFileDialog::getSaveFileName(this,
+                                                     tr("Save chart"), "",
+                                                     tr("PNG (*.png)"));
+    p.save(fileName);
+}
+void ChartView::ShowContextMenu(const QPoint &pos)
+{
+    qDebug() << "test";
+   QMenu contextMenu(tr("Context menu"), this);
+
+   QAction action1("Save chart", this);
+   connect(&action1, SIGNAL(triggered()), this, SLOT(saveChart()));
+   contextMenu.addAction(&action1);
+   contextMenu.exec(mapToGlobal(pos));
+}
+
+//void ChartView::mousePressEvent(QMouseEvent *event)
+//{
+
+//    double startX = ((QDateTimeAxis*)(m_chart->axisX(series)))->min().toMSecsSinceEpoch();
+//    double endX = ((QDateTimeAxis*)(m_chart->axisX(series)))->max().toMSecsSinceEpoch();
+//    double xValue = m_chart->mapToValue(event->pos()).x();
+//    double xPos = (startX - xValue)/(startX-endX);
+//    double serieIdx = qRound(xPos * series->points().size());
+
+//    m_coordX->setText(QString("X: %1").arg(QDateTime::fromMSecsSinceEpoch(xValue).toString("dd-MM")));
+//    if(serieIdx >=0 && serieIdx < series->points().size())
+//        m_coordY->setText(QString("Y: %1").arg(series->at(serieIdx).y()));
+//    if(refseries != NULL)
+//        if(serieIdx >=0 && serieIdx < refseries->points().size())
+//            m_coordRefY->setText(QString("Ref: %1").arg(refseries->at(serieIdx).y()));
+
+//    QGraphicsView::mouseMoveEvent(event);
+//}
+
 void ChartView::keepCallout()
 {
     m_callouts.append(m_tooltip);
@@ -136,3 +182,4 @@ void ChartView::tooltip(QPointF point, bool state)
         m_tooltip->hide();
     }
 }
+

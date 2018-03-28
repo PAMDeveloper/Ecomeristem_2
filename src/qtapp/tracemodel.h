@@ -10,7 +10,8 @@ enum customRole {
     VAR_ROLE = 22,
     INT_VAR_ROLE = 23,
     PHASE_ROLE = 24,
-    INT_MODEL_ROLE = 25
+    INT_MODEL_ROLE = 25,
+    VALUE_MODEL_ROLE = 26
 };
 
 using namespace artis::utils;
@@ -31,9 +32,10 @@ public:
 class VisibleTraceModel : public QSortFilterProxyModel {
 public:
     int date_i; int model_i; int var_i;  int phase;
+    bool null_i;
     VisibleTraceModel(const TraceElements<DoubleTime> & elements, QObject *parent = 0);
     bool filterAcceptsRow(int sourceRow,const QModelIndex &sourceParent) const;
-    void setFilters(QString date, QString model, QString var, QString phase);
+    void setFilters(QString date, QString model, QString var, QString phase, bool nullOnly);
 };
 
 #endif // TRACEMODEL_H
