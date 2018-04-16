@@ -1,44 +1,17 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QtCharts/QChartView>
-#include <QtCore/QDateTime>
-#include <QtCharts/QDateTimeAxis>
-#include <QtCore/QFile>
-#include <QtCore/QTextStream>
-#include <QtCore/QDebug>
+#include <QtCharts/QChart>
+#include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
-#include <QtCore/qmath.h>
-#include <QMap>
-#include <QDesktopWidget>
-#include <QVBoxLayout>
-#include <QTabWidget>
-#include <QDir>
-#include <QDebug>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QDate>
-#include <iostream>
-#include <defines.hpp>
-#include <artis/utils/DateTime.hpp>
-#include <artis/utils/Trace.hpp>
+#include <QtCharts/QDateTimeAxis>
+#include <QTextStream>
 
-#include <observer/PlantView.hpp>
-#include <plant/PlantModel.hpp>
-#include <utils/ParametersReader.hpp>
-#include <utils/resultparser.h>
+#include <chrono>
+#include <ctime>
+#include <qmath.h>
 
-
-#include <qtapp/view.h>
-#include <qtapp/meteodatamodel.h>
-#include <qtapp/parametersdatamodel.h>
-
-#include <algorithm>
-
-
-using namespace artis::kernel;
-
-QT_CHARTS_USE_NAMESPACE
+//using namespace artis::kernel;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -77,8 +50,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-#include <chrono>
-#include <ctime>
 void MainWindow::show_trace()
 {
 //    ui->tableView->setModel(NULL);
@@ -88,10 +59,10 @@ void MainWindow::show_trace()
 }
 
 void MainWindow::addChart(int row, int col,
-                          QLineSeries *series, QLineSeries *refSeries,
+                          QtCharts::QLineSeries *series, QtCharts::QLineSeries *refSeries,
                           QGridLayout * lay, QString name){
     QColor color = series->color();
-    QChart *chart = new QChart();
+    QtCharts::QChart *chart = new QtCharts::QChart();
     series->setColor(color.darker(200));
     if(refSeries != NULL){
         QPen pen;
@@ -105,7 +76,7 @@ void MainWindow::addChart(int row, int col,
     chart->legend()->hide();
     chart->setTitle(name);
 
-    QDateTimeAxis *axisX = new QDateTimeAxis;
+    QtCharts::QDateTimeAxis *axisX = new QtCharts::QDateTimeAxis;
     axisX->setTickCount(10);
     axisX->setFormat("dd-MM");
     chart->addAxis(axisX, Qt::AlignBottom);
@@ -136,7 +107,7 @@ void MainWindow::addChart(int row, int col,
         }
     }
 
-    QValueAxis *axisY = new QValueAxis;
+    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis;
     axisY->setLabelFormat("%i");
     chart->addAxis(axisY, Qt::AlignLeft);
     axisY->setMax(maxVal*1.1 + 0.001);
@@ -165,8 +136,8 @@ QColor getColor(int i){
 }
 
 
-QLineSeries * MainWindow::getSeries(QString fileName, QDate endDate){
-    QLineSeries *series = new QLineSeries();
+QtCharts::QLineSeries * MainWindow::getSeries(QString fileName, QDate endDate){
+    QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
     QList<double> values;
     QFile inputFile(fileName);
     QDate lastDate;
@@ -257,9 +228,9 @@ void MainWindow::displayData(observer::PlantView * view,
     int j = 0;
     for(auto it = m.begin(); it != m.end(); ++it) {
         QString param = QString::fromStdString(it->first);
-        QLineSeries *series = new QLineSeries();
+        QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
         series->setColor(getColor(j));
-        QLineSeries * refSeries;
+        QtCharts::QLineSeries * refSeries;
         QString pCpy = param;
         refSeries = NULL;
         QString refName = pCpy.replace("Plant:","").toLower() +"_out.txt";
@@ -342,6 +313,8 @@ void MainWindow::on_actionLoad_simulation_triggered()
 
 void MainWindow::on_actionLaunch_simulation_triggered()
 {
+    load_simulation(settings->value("simulation_folder", "").toString());
+
     ::Trace::trace().clear();
     GlobalParameters globalParameters;
     EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
@@ -396,3 +369,12 @@ void MainWindow::on_actionLaunch_simulation_triggered()
 }
 
 
+void MainWindow::on_pushButton_clicked()
+{
+    QString selectedFilter;
+    QString filePath = QFileDialog::getSaveFileName(
+                this, "Save trace as csv", "" , "csv tab separated (*.csv);;csv semicolon separated (*.csv)",&selectedFilter);
+    if(filePath.isEmpty()) return;
+    QString sep = (selectedFilter == "csv tab separated (*.csv)" ? "\t" : ";");
+    trace_model->save(filePath, sep);
+}

@@ -2,7 +2,6 @@
 #define PARAMETERSDATAMODEL_H
 
 #include <QAbstractTableModel>
-#include <ModelParameters.hpp>
 
 class ParametersDataModel : public QAbstractTableModel
 {

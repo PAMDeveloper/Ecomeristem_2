@@ -2,7 +2,6 @@
 #define METEODATAMODEL_H
 
 #include <QAbstractTableModel>
-#include <ModelParameters.hpp>
 
 class MeteoDataModel : public QAbstractTableModel
 {

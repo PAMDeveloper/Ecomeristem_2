@@ -2,8 +2,11 @@
 #define TRACEMODEL_H
 
 #include <QAbstractTableModel>
-#include <artis/utils/Trace.hpp>
-#include <artis/utils/DoubleTime.hpp>
+#include <QSortFilterProxyModel>
+#include <QDate>
+#include <defines.hpp>
+using namespace artis::utils;
+
 enum customRole {
     DATE_ROLE = 20,
     MODEL_ROLE = 21,
@@ -14,7 +17,6 @@ enum customRole {
     VALUE_MODEL_ROLE = 26
 };
 
-using namespace artis::utils;
 class TraceModel : public QAbstractTableModel
 {
 public:
@@ -26,16 +28,18 @@ public:
     TraceElements<DoubleTime> elements;
 };
 
-#include <QSortFilterProxyModel>
-#include <QDate>
 
 class VisibleTraceModel : public QSortFilterProxyModel {
 public:
-    int date_i; int model_i; int var_i;  int phase;
+    int date_i;
+    int model_i;
+    int var_i;
+    int phase;
     bool null_i;
     VisibleTraceModel(const TraceElements<DoubleTime> & elements, QObject *parent = 0);
     bool filterAcceptsRow(int sourceRow,const QModelIndex &sourceParent) const;
     void setFilters(QString date, QString model, QString var, QString phase, bool nullOnly);
+    bool save(QString path, QString sep);
 };
 
 #endif // TRACEMODEL_H

@@ -1,6 +1,9 @@
 #include "tracemodel.h"
 
 #include <QDebug>
+#include <QFile>
+#include <utils/juliancalculator.h>
+
 VisibleTraceModel::VisibleTraceModel(const TraceElements<DoubleTime> & elements, QObject *parent)
 : QSortFilterProxyModel(parent)
 {
@@ -71,7 +74,7 @@ QVariant TraceModel::data(const QModelIndex &index, int role) const {
 //            return time;
             if(time != DoubleTime::null)
                 return QString::fromStdString(
-                            artis::utils::DateTime::toJulianDayFmt(time, artis::utils::DATE_FORMAT_YMD)
+                            JulianCalculator::toStringDate(time, JulianCalculator::YMD, '/')
                         );
             return "";
         } else if(index.column() == 1) {
@@ -138,4 +141,20 @@ QVariant TraceModel::headerData(int section, Qt::Orientation orientation, int ro
 
 int TraceModel::rowCount(const QModelIndex &) const {
     return elements.size();
+}
+
+bool VisibleTraceModel::save(QString path, QString sep) {
+    QFile file(path);
+    if(file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        for (int row = 0; row < rowCount(); row++) {
+            for (int col = 0; col < columnCount(); col++) {
+                out << this->index(row, col).data().toString() << sep;
+            }
+            out << "\n";
+        }
+        file.close();
+        return true;
+    }
+    return false;
 }

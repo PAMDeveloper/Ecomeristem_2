@@ -42,6 +42,8 @@
 
 #include <qtapp/callout.h>
 
+QT_CHARTS_USE_NAMESPACE
+
 ChartView::ChartView(QChart * chart, QLineSeries *series, QLineSeries *refseries, QWidget *parent)
     : QGraphicsView(new QGraphicsScene, parent),
       m_coordX(0), m_coordY(0), m_coordRefY(0),

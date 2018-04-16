@@ -36,21 +36,17 @@
 class QGraphicsScene;
 class QMouseEvent;
 class QResizeEvent;
-
-QT_CHARTS_BEGIN_NAMESPACE
-class QChart;
-QT_CHARTS_END_NAMESPACE
+class QtCharts::QChart;
 
 class Callout;
 
-QT_CHARTS_USE_NAMESPACE
 
 class ChartView: public QGraphicsView
 {
     Q_OBJECT
 
 public:
-    ChartView(QChart * chart, QLineSeries *series, QLineSeries *refseries, QWidget *parent = 0);
+    ChartView(QtCharts::QChart * chart, QtCharts::QLineSeries *series, QtCharts::QLineSeries *refseries, QWidget *parent = 0);
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -67,11 +63,11 @@ private:
     QGraphicsSimpleTextItem *m_coordX;
     QGraphicsSimpleTextItem *m_coordY;
     QGraphicsSimpleTextItem *m_coordRefY;
-    QChart *m_chart;
+    QtCharts::QChart *m_chart;
     Callout *m_tooltip;
     QList<Callout *> m_callouts;
-    QLineSeries *series;
-    QLineSeries *refseries;
+    QtCharts::QLineSeries *series;
+    QtCharts::QLineSeries *refseries;
 };
 
 #endif

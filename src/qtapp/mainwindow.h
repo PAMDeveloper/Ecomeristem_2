@@ -2,21 +2,21 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QSplineSeries>
 #include <QGridLayout>
+#include <QSettings>
+#include <QFileDialog>
+#include <QDir>
 
-#include <ModelParameters.hpp>
+#include <defines.hpp>
 #include <observer/PlantView.hpp>
 #include <utils/ParametersReader.hpp>
-#include <artis/utils/DateTime.hpp>
-#include <QSettings>
+
 #include <qtapp/tracemodel.h>
+#include <qtapp/meteodatamodel.h>
+#include <qtapp/parametersdatamodel.h>
+#include <qtapp/view.h>
 
-#include <QMouseEvent>
-#include <QDate>
-
-QT_CHARTS_USE_NAMESPACE
+#include <QtCharts/QLineSeries>
 
 namespace Ui {
 class MainWindow;
@@ -35,10 +35,10 @@ public:
     void displayData(observer::PlantView * view, QString dirName,
                      double begin, double end);
 
-    void addChart(int row, int col, QLineSeries * series, QLineSeries *refseries,
+    void addChart(int row, int col, QtCharts::QLineSeries * series, QtCharts::QLineSeries *refseries,
                   QGridLayout * lay, QString name);
 
-     QLineSeries * getSeries(QString fileName, QDate endDate);
+     QtCharts::QLineSeries * getSeries(QString fileName, QDate endDate);
 
      void show_trace();
      void load_simulation(QString folderName);
@@ -53,6 +53,8 @@ public:
      void on_actionLaunch_simulation_triggered();
 
      void on_checkBox_stateChanged(int arg1);
+
+     void on_pushButton_clicked();
 
 private:
      Ui::MainWindow *ui;
