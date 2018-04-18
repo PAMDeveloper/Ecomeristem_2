@@ -313,7 +313,7 @@ void MainWindow::on_actionLoad_simulation_triggered()
 
 void MainWindow::on_actionLaunch_simulation_triggered()
 {
-    load_simulation(settings->value("simulation_folder", "").toString());
+//    load_simulation(settings->value("simulation_folder", "").toString());
 
     ::Trace::trace().clear();
     GlobalParameters globalParameters;
