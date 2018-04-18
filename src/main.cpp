@@ -68,29 +68,52 @@ void display(map<string, vector<double>> map){
 //}
 #endif
 
+#include <ctime>
 int main(int argc, char *argv[]) {
 
-#ifdef UNSAFE_RUN
-    /*********** SIMU *********/
+//    /***TIMER***/
+
 //    std::string dirName = "D:\\Samples\\_Estimation\\G1";
 //    ecomeristem::ModelParameters parameters;
 //    utils::ParametersReader reader;
 //    reader.loadParametersFromFiles(dirName, parameters);
-//    qDebug() << parameters.beginDate << parameters.get("EndDate");
+//    qDebug() << fixed << parameters.beginDate << parameters.get("EndDate");
+//    const clock_t begin_time = clock();
 //    GlobalParameters globalParameters;
 //    EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
-//    PlantModel * m = new PlantModel;
-//    EcomeristemSimulator simulator(m, globalParameters);
-//    observer::PlantView *view = new observer::PlantView();
-//    simulator.attachView("plant", view);
-//    simulator.init(parameters.get("BeginDate"), parameters);
-//    simulator.run(context);
-//    qDebug() << "done";
-
-//    int step = 0;
-//    for (double j = context.begin(); j < context.end(); ++j) {
-//        traceModel(m, step++);
+//    for(int i = 0; i < 1000; i++) {
+//        PlantModel * m = new PlantModel;
+//        EcomeristemSimulator simulator(m, globalParameters);
+//        observer::PlantView *view = new observer::PlantView();
+//        simulator.attachView("plant", view);
+//        simulator.init(parameters.get("BeginDate"), parameters);
+//        simulator.run(context);
 //    }
+//    std::cout << float( clock () - begin_time ) /  (CLOCKS_PER_SEC*1000);
+//    return 1;
+
+
+#ifdef UNSAFE_RUN
+    /*********** SIMU *********/
+    //    std::string dirName = "D:\\Samples\\_Estimation\\G1";
+    //    ecomeristem::ModelParameters parameters;
+    //    utils::ParametersReader reader;
+    //    reader.loadParametersFromFiles(dirName, parameters);
+    //    qDebug() << parameters.beginDate << parameters.get("EndDate");
+    //    GlobalParameters globalParameters;
+    //    EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+    //    PlantModel * m = new PlantModel;
+    //    EcomeristemSimulator simulator(m, globalParameters);
+    //    observer::PlantView *view = new observer::PlantView();
+    //    simulator.attachView("plant", view);
+    //    simulator.init(parameters.get("BeginDate"), parameters);
+    //    simulator.run(context);
+    //    qDebug() << "done";
+
+    //    int step = 0;
+    //    for (double j = context.begin(); j < context.end(); ++j) {
+    //        traceModel(m, step++);
+    //    }
 
     /*********** RESULTS *********/
     //    ResultParser parser;
@@ -153,33 +176,33 @@ int main(int argc, char *argv[]) {
     //    out << std::fixed << ::Trace::trace().elements().to_string();
     //    out.close();
 
-//#ifndef UNSAFE_RUN
+    //#ifndef UNSAFE_RUN
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
 
-//        std::string dirName = "D:\\Samples\\_Estimation\\G1";
-//        ecomeristem::ModelParameters parameters;
-//        utils::ParametersReader reader;
-//        reader.loadParametersFromFiles(dirName, parameters);
-//        qDebug() << parameters.beginDate << parameters.get("EndDate");
-//        GlobalParameters globalParameters;
-//        EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
-//        PlantModel * m = new PlantModel;
-//        EcomeristemSimulator simulator(m, globalParameters);
-//        observer::PlantView *view = new observer::PlantView();
-//        simulator.attachView("plant", view);
-//        simulator.init(parameters.get("BeginDate"), parameters);
-//        simulator.run(context);
-//        qDebug() << "done";
+    //        std::string dirName = "D:\\Samples\\_Estimation\\G1";
+    //        ecomeristem::ModelParameters parameters;
+    //        utils::ParametersReader reader;
+    //        reader.loadParametersFromFiles(dirName, parameters);
+    //        qDebug() << parameters.beginDate << parameters.get("EndDate");
+    //        GlobalParameters globalParameters;
+    //        EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+    //        PlantModel * m = new PlantModel;
+    //        EcomeristemSimulator simulator(m, globalParameters);
+    //        observer::PlantView *view = new observer::PlantView();
+    //        simulator.attachView("plant", view);
+    //        simulator.init(parameters.get("BeginDate"), parameters);
+    //        simulator.run(context);
+    //        qDebug() << "done";
 
-//        int step = 0;
-//        for (double j = context.begin(); j < context.end(); ++j) {
-//            traceModel(m, step++);
-//        }
+    //        int step = 0;
+    //        for (double j = context.begin(); j < context.end(); ++j) {
+    //            traceModel(m, step++);
+    //        }
 
     a.exec();
-//#endif
+    //#endif
     //    w.show_trace();
     //  w.displayData(view, QString::fromStdString(dirName), &parameters,
     //                parameters.get("BeginDate"),

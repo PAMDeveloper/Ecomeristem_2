@@ -224,7 +224,7 @@ void MainWindow::displayData(observer::PlantView * view,
         }
     }
 
-    std::map<std::string, std::vector < std::pair < double, std::string > > > m = view->values();
+    auto m = view->values();
     int j = 0;
     for(auto it = m.begin(); it != m.end(); ++it) {
         QString param = QString::fromStdString(it->first);
