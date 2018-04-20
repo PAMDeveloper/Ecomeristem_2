@@ -81,26 +81,26 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-    std::string dirName = "D:\\Samples\\_Estimation\\G1";
-    ecomeristem::ModelParameters parameters;
-    utils::ParametersReader reader;
-    reader.loadParametersFromFiles(dirName, parameters);
-    std::map <std::string, std::vector<double> > obsMap = reader.loadVObsFromFile(dirName + "\\vobs_moy.txt");
-    Simulation * s = new Simulation();
-    s->parameters = parameters;
-    s->parameters.beginDate = s->parameters.get("BeginDate");
-    s->beginDate = s->parameters.get("BeginDate");
-    s->endDate = s->parameters.get("EndDate");
-    s->context.setBegin(s->beginDate);
-    s->context.setEnd(s->endDate);
-    observer::PlantView view;
-    s->filter.init(&view, obsMap, "day");
-    EcomeristemSimulator simulator(new PlantModel(), s->globalParameters);
-    simulator.init(s->beginDate, s->parameters);
-    map<string,vector<double>> res = simulator.runOptim(s->context, s->filter);
-    display(res);
-    display(obsMap);
-    return 1;
+//    std::string dirName = "D:\\Samples\\_Estimation\\G1";
+//    ecomeristem::ModelParameters parameters;
+//    utils::ParametersReader reader;
+//    reader.loadParametersFromFiles(dirName, parameters);
+//    std::map <std::string, std::vector<double> > obsMap = reader.loadVObsFromFile(dirName + "\\vobs_moy.txt");
+//    Simulation * s = new Simulation();
+//    s->parameters = parameters;
+//    s->parameters.beginDate = s->parameters.get("BeginDate");
+//    s->beginDate = s->parameters.get("BeginDate");
+//    s->endDate = s->parameters.get("EndDate");
+//    s->context.setBegin(s->beginDate);
+//    s->context.setEnd(s->endDate);
+//    observer::PlantView view;
+//    s->filter.init(&view, obsMap, "day");
+//    EcomeristemSimulator simulator(new PlantModel(), s->globalParameters);
+//    simulator.init(s->beginDate, s->parameters);
+//    map<string,vector<double>> res = simulator.runOptim(s->context, s->filter);
+//    display(res);
+//    display(obsMap);
+//    return 1;
     /***TIMER***/
 
 //        std::string dirName = "D:\\Samples\\_Estimation\\G1";
