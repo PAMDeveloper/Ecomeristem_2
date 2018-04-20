@@ -69,28 +69,59 @@ void display(map<string, vector<double>> map){
 #endif
 
 #include <ctime>
+struct Simulation {
+public:
+  Simulation(){}
+  GlobalParameters globalParameters;
+  ecomeristem::ModelParameters parameters;
+  double beginDate;
+  double endDate;
+  EcomeristemContext context;
+  SimulatorFilter filter;
+};
+
 int main(int argc, char *argv[]) {
+    std::string dirName = "D:\\Samples\\_Estimation\\G1";
+    ecomeristem::ModelParameters parameters;
+    utils::ParametersReader reader;
+    reader.loadParametersFromFiles(dirName, parameters);
+    std::map <std::string, std::vector<double> > obsMap = reader.loadVObsFromFile(dirName + "\\vobs_moy.txt");
+    Simulation * s = new Simulation();
+    s->parameters = parameters;
+    s->parameters.beginDate = s->parameters.get("BeginDate");
+    s->beginDate = s->parameters.get("BeginDate");
+    s->endDate = s->parameters.get("EndDate");
+    s->context.setBegin(s->beginDate);
+    s->context.setEnd(s->endDate);
+    observer::PlantView view;
+    s->filter.init(&view, obsMap, "day");
+    EcomeristemSimulator simulator(new PlantModel(), s->globalParameters);
+    simulator.init(s->beginDate, s->parameters);
+    map<string,vector<double>> res = simulator.runOptim(s->context, s->filter);
+    display(res);
+    display(obsMap);
+    return 1;
+    /***TIMER***/
 
-//    /***TIMER***/
-
-//    std::string dirName = "D:\\Samples\\_Estimation\\G1";
-//    ecomeristem::ModelParameters parameters;
-//    utils::ParametersReader reader;
-//    reader.loadParametersFromFiles(dirName, parameters);
-//    qDebug() << fixed << parameters.beginDate << parameters.get("EndDate");
-//    const clock_t begin_time = clock();
-//    GlobalParameters globalParameters;
-//    EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
-//    for(int i = 0; i < 1000; i++) {
-//        PlantModel * m = new PlantModel;
-//        EcomeristemSimulator simulator(m, globalParameters);
+//        std::string dirName = "D:\\Samples\\_Estimation\\G1";
+//        ecomeristem::ModelParameters parameters;
+//        utils::ParametersReader reader;
+//        reader.loadParametersFromFiles(dirName, parameters);
+//        // qDebug() << fixed << parameters.beginDate << parameters.get("EndDate");
+//        const clock_t begin_time = clock();
+//        GlobalParameters globalParameters;
+//        EcomeristemContext context(parameters.get("BeginDate"), parameters.get("EndDate"));
+//        double beginDate = parameters.get("BeginDate");
 //        observer::PlantView *view = new observer::PlantView();
-//        simulator.attachView("plant", view);
-//        simulator.init(parameters.get("BeginDate"), parameters);
-//        simulator.run(context);
-//    }
-//    std::cout << float( clock () - begin_time ) /  (CLOCKS_PER_SEC*1000);
-//    return 1;
+//        for(int i = 0; i < 100000; i++) {
+//            PlantModel * m = new PlantModel;
+//            EcomeristemSimulator simulator(m, globalParameters);
+//            simulator.attachView("plant", view);
+//            simulator.init(beginDate, parameters);
+//            simulator.run(context);
+//        }
+//        std::cout << float( clock () - begin_time ) /  (CLOCKS_PER_SEC) << " ms";
+//        return 1;
 
 
 #ifdef UNSAFE_RUN
