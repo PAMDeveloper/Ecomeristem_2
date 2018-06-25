@@ -69,7 +69,7 @@ void display(map<string, vector<double>> map){
 #endif
 
 #include <ctime>
-struct Simulation {
+/*struct Simulation {
 public:
   Simulation(){}
   GlobalParameters globalParameters;
@@ -78,7 +78,7 @@ public:
   double endDate;
   EcomeristemContext context;
   SimulatorFilter filter;
-};
+};*/
 
 int main(int argc, char *argv[]) {
 //    std::string dirName = "D:\\Samples\\_Estimation\\G1";
